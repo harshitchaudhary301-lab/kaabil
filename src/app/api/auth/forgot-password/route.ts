@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { z } from "zod";
 import { db, checkDatabaseConnection } from "@/lib/db";
+import { devStore } from "@/lib/dev-store";
 import { checkRateLimit } from "@/lib/auth/rate-limiter";
 
 export const dynamic = "force-dynamic";
@@ -61,7 +62,11 @@ export async function POST(req: NextRequest) {
         });
       }
     } else {
-      userExists = email === "demo.student@kaabil.in";
+      const offlineUser = devStore.getUserByEmail(email);
+      if (offlineUser) {
+        userExists = true;
+        devStore.saveResetToken(token, email, expiresAt);
+      }
     }
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";

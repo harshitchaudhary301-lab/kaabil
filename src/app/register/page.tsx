@@ -6,21 +6,18 @@ import { useRouter } from "next/navigation";
 import {
   Sparkles,
   Shield,
-  ShieldAlert,
   ArrowRight,
   GraduationCap,
   Building2,
   Briefcase,
   Eye,
   EyeOff,
-  CheckCircle2,
   AlertCircle,
   Loader2,
-  Info,
-  Compass,
-  ArrowLeft,
-  Award,
   ShieldCheck,
+  Lock,
+  Clock,
+  ArrowLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,23 +26,33 @@ import { evaluatePasswordStrengthClient } from "@/lib/auth/client-password";
 export default function RegisterPage() {
   const router = useRouter();
 
-  // Role Tab
+  // Role Tab: STUDENT | INSTITUTION_ADMIN | EMPLOYER_ADMIN
   const [role, setRole] = useState<"STUDENT" | "INSTITUTION_ADMIN" | "EMPLOYER_ADMIN">("STUDENT");
 
   // Common Fields
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [termsAgreed, setTermsAgreed] = useState(false);
 
   // Student-specific fields
   const [educationStage, setEducationStage] = useState<string>("CLASS_12");
+  const [currentStream, setCurrentStream] = useState<string>("NON_MEDICAL_PCM");
+  const [institutionName, setInstitutionName] = useState("");
   const [guardianConsent, setGuardianConsent] = useState(false);
 
-  // Institution & Employer fields
-  const [organizationName, setOrganizationName] = useState("");
-  const [orgType, setOrgType] = useState<string>("COLLEGE_UNIVERSITY");
+  // College-specific fields
+  const [collegeName, setCollegeName] = useState("");
+  const [institutionType, setInstitutionType] = useState<string>("COLLEGE_UNIVERSITY");
+
+  // Employer-specific fields
+  const [companyName, setCompanyName] = useState("");
+  const [industry, setIndustry] = useState<string>("IT_SOFTWARE");
+
+  // Location fields (for Institution & Employer)
   const [city, setCity] = useState("");
   const [stateName, setStateName] = useState("");
 
@@ -53,19 +60,28 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Minor evaluation
+  // Minor evaluation under DPDP Act 2023
   const isMinor =
     role === "STUDENT" &&
     ["CLASS_8", "CLASS_9", "CLASS_10", "CLASS_11", "CLASS_12"].includes(educationStage);
 
   const passwordEvaluation = evaluatePasswordStrengthClient(password);
+  const isPasswordMismatch = confirmPassword.length > 0 && password !== confirmPassword;
+
+  const handleRoleChange = (newRole: "STUDENT" | "INSTITUTION_ADMIN" | "EMPLOYER_ADMIN") => {
+    setRole(newRole);
+    setErrorMessage(null);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
 
-    if (!termsAgreed) {
-      setErrorMessage("You must agree to the Terms of Service and Privacy Policy to register.");
+    // Client-side validations
+    const trimmedEmail = email.trim().toLowerCase();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      setErrorMessage("Please enter a valid email address (e.g., name@example.com).");
       return;
     }
 
@@ -74,8 +90,23 @@ export default function RegisterPage() {
       return;
     }
 
+    if (passwordEvaluation.score < 2) {
+      setErrorMessage("Password is too weak. Include a combination of uppercase letters, lowercase letters, numbers, or symbols.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setErrorMessage("Passwords do not match. Please re-enter your password to confirm.");
+      return;
+    }
+
     if (isMinor && !guardianConsent) {
-      setErrorMessage("Parent or legal guardian consent is required under DPDP Act 2023 for school students.");
+      setErrorMessage("Parent or legal guardian consent is mandatory under the DPDP Act 2023 for school-aged students.");
+      return;
+    }
+
+    if (!termsAgreed) {
+      setErrorMessage("You must accept the Terms of Service and Privacy Policy to create an account.");
       return;
     }
 
@@ -85,20 +116,28 @@ export default function RegisterPage() {
       const payload: Record<string, unknown> = {
         role,
         name: name.trim(),
-        email: email.trim().toLowerCase(),
+        email: trimmedEmail,
         password,
       };
 
       if (role === "STUDENT") {
         payload.educationStage = educationStage;
+        payload.currentStream = currentStream;
+        if (institutionName.trim()) payload.institutionName = institutionName.trim();
         payload.guardianConsent = isMinor ? guardianConsent : true;
-        if (city) payload.city = city.trim();
-        if (stateName) payload.state = stateName.trim();
-      } else {
-        payload.organizationName = organizationName.trim();
-        payload.orgType = orgType;
+        if (city.trim()) payload.city = city.trim();
+        if (stateName.trim()) payload.state = stateName.trim();
+      } else if (role === "INSTITUTION_ADMIN") {
+        payload.organizationName = collegeName.trim() || name.trim();
+        payload.orgType = institutionType;
         payload.city = city.trim() || "New Delhi";
         payload.state = stateName.trim() || "Delhi";
+      } else if (role === "EMPLOYER_ADMIN") {
+        payload.organizationName = companyName.trim() || name.trim();
+        payload.orgType = "CORPORATE_EMPLOYER";
+        payload.industry = industry;
+        payload.city = city.trim() || "Bengaluru";
+        payload.state = stateName.trim() || "Karnataka";
       }
 
       const res = await fetch("/api/auth/register", {
@@ -110,12 +149,12 @@ export default function RegisterPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setErrorMessage(data.error || "Registration failed. Please review your details.");
+        setErrorMessage(data.error || "Registration failed. Please check your information.");
         setIsLoading(false);
         return;
       }
 
-      // Success routing
+      // Successful registration routing
       if (role === "STUDENT") {
         router.push("/onboarding");
       } else if (role === "INSTITUTION_ADMIN") {
@@ -124,7 +163,7 @@ export default function RegisterPage() {
         router.push("/employer/dashboard");
       }
     } catch {
-      setErrorMessage("An unexpected network error occurred. Please check your connection.");
+      setErrorMessage("A network error occurred. Please check your internet connection and try again.");
       setIsLoading(false);
     }
   };
@@ -161,10 +200,10 @@ export default function RegisterPage() {
               <ShieldCheck className="h-3.5 w-3.5" /> DPDP Act 2023 Compliant Core
             </span>
             <h2 className="font-heading text-3xl xl:text-4xl font-extrabold text-white leading-tight">
-              Begin Your Verified Skill Journey Today.
+              Universal Education &amp; Career Gateway.
             </h2>
             <p className="text-slate-300 text-sm leading-relaxed">
-              Join thousands of learners and educators across India discovering authentic career pathways with personalized AI guidance.
+              Empowering learners across all 13 educational streams with deterministic career readiness, AI mentorship, and verified skill credentials.
             </p>
           </div>
 
@@ -175,8 +214,8 @@ export default function RegisterPage() {
                 01
               </div>
               <div>
-                <h4 className="text-xs font-bold text-white">Create Your Account</h4>
-                <p className="text-[11px] text-slate-400">Select your educational stage or institutional affiliation.</p>
+                <h4 className="text-xs font-bold text-white">Select Persona</h4>
+                <p className="text-[11px] text-slate-400">Student, College / University, or Corporate Employer.</p>
               </div>
             </div>
 
@@ -186,7 +225,7 @@ export default function RegisterPage() {
               </div>
               <div>
                 <h4 className="text-xs font-bold text-white">Initialize Career Digital Twin</h4>
-                <p className="text-[11px] text-slate-400">Connect your subjects and discover baseline readiness index.</p>
+                <p className="text-[11px] text-slate-400">Map your stream, subjects, and baseline Career Readiness Index.</p>
               </div>
             </div>
 
@@ -195,8 +234,8 @@ export default function RegisterPage() {
                 03
               </div>
               <div>
-                <h4 className="text-xs font-bold text-white">Unlock Digital Skill Passport</h4>
-                <p className="text-[11px] text-slate-400">Mint cryptographically anchored credentials with evidence.</p>
+                <h4 className="text-xs font-bold text-white">Verified Skill Passport</h4>
+                <p className="text-[11px] text-slate-400">Cryptographically anchored evidence with HMAC checksums.</p>
               </div>
             </div>
           </div>
@@ -204,8 +243,8 @@ export default function RegisterPage() {
 
         {/* Footer info */}
         <div className="relative z-10 pt-4 border-t border-white/10 flex items-center justify-between text-xs text-slate-400">
-          <span>Zero Recruiter Commercialization for Minors</span>
-          <span className="text-slate-300 font-medium">100% Free Core</span>
+          <span>Minors under 18 shielded from recruiter queries</span>
+          <span className="text-slate-300 font-medium">100% Free Core for Students</span>
         </div>
       </div>
 
@@ -221,8 +260,23 @@ export default function RegisterPage() {
               <span className="font-heading font-black text-lg text-text-primary">KAABIL</span>
             </Link>
             <Link href="/login" className="text-xs text-primary font-bold">
-              Sign In →
+              Sign In &rarr;
             </Link>
+          </div>
+
+          {/* Auth Mode Switcher */}
+          <div className="flex rounded-2xl bg-slate-100 p-1.5 border border-slate-200/80">
+            <Link
+              href="/login"
+              className="flex-1 py-2.5 text-xs font-bold rounded-xl flex items-center justify-center gap-2 text-text-secondary hover:text-text-primary transition-all hover:bg-white/60"
+            >
+              <Lock className="h-3.5 w-3.5" />
+              <span>Sign In</span>
+            </Link>
+            <div className="flex-1 py-2.5 text-xs font-bold rounded-xl flex items-center justify-center gap-2 bg-white text-primary shadow-soft-sm border border-slate-200">
+              <Sparkles className="h-3.5 w-3.5" />
+              <span>Create Account</span>
+            </div>
           </div>
 
           <div className="space-y-1.5">
@@ -230,25 +284,22 @@ export default function RegisterPage() {
               Create Your KAABIL Account
             </h1>
             <p className="text-xs text-text-secondary">
-              Select your persona to get started with a customized workspace.
+              Select your persona to create your personalized workspace.
             </p>
           </div>
 
-          {/* Role Choice Tabs */}
+          {/* Role Choice Tabs — Explicitly STUDENT, COLLEGE, EMPLOYER only. Admin accounts are NOT publicly registrable. */}
           <div className="flex rounded-2xl bg-slate-100 p-1.5 border border-slate-200/80">
             {[
-              { id: "STUDENT", label: "Student Learner", icon: <GraduationCap className="h-4 w-4" /> },
+              { id: "STUDENT", label: "Student", icon: <GraduationCap className="h-4 w-4" /> },
               { id: "INSTITUTION_ADMIN", label: "College / School", icon: <Building2 className="h-4 w-4" /> },
-              { id: "EMPLOYER_ADMIN", label: "Corporate Employer", icon: <Briefcase className="h-4 w-4" /> },
+              { id: "EMPLOYER_ADMIN", label: "Employer / Company", icon: <Briefcase className="h-4 w-4" /> },
             ].map((r) => (
               <button
                 key={r.id}
                 type="button"
-                onClick={() => {
-                  setRole(r.id as "STUDENT" | "INSTITUTION_ADMIN" | "EMPLOYER_ADMIN");
-                  setErrorMessage(null);
-                }}
-                className={`flex-1 py-2.5 text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition-all ${
+                onClick={() => handleRoleChange(r.id as "STUDENT" | "INSTITUTION_ADMIN" | "EMPLOYER_ADMIN")}
+                className={`flex-1 py-2.5 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all ${
                   role === r.id
                     ? "bg-white text-primary shadow-soft-sm border border-slate-200"
                     : "text-text-secondary hover:text-text-primary"
@@ -260,6 +311,18 @@ export default function RegisterPage() {
             ))}
           </div>
 
+          {/* Pending Verification Notice for Organizations */}
+          {role !== "STUDENT" && (
+            <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-start gap-2.5">
+              <Clock className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+              <div className="leading-relaxed">
+                <span className="font-bold block">Institutional Verification Notice</span>
+                New {role === "INSTITUTION_ADMIN" ? "college and school" : "company"} accounts are created in a{" "}
+                <strong>pending verification</strong> state. An administrator will verify your institutional credentials before full placement/recruitment privileges are activated.
+              </div>
+            </div>
+          )}
+
           {/* Error Banner */}
           {errorMessage && (
             <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-800 flex items-start gap-2.5">
@@ -269,59 +332,30 @@ export default function RegisterPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Common Name */}
-            <div>
-              <Input
-                label={role === "STUDENT" ? "Full Legal Name" : "Authorized Representative Name"}
-                type="text"
-                placeholder={role === "STUDENT" ? "e.g. Aryan Sharma" : "e.g. Dr. Priya Raman"}
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                className="h-11 rounded-xl"
-              />
-            </div>
-
-            {/* Common Email */}
-            <div>
-              <Input
-                label={
-                  role === "STUDENT"
-                    ? "Personal Email Address"
-                    : role === "INSTITUTION_ADMIN"
-                    ? "Institutional Official Email"
-                    : "Corporate Work Email"
-                }
-                type="email"
-                placeholder={
-                  role === "STUDENT"
-                    ? "you@example.com"
-                    : role === "INSTITUTION_ADMIN"
-                    ? "dean@university.edu.in"
-                    : "talent@company.com"
-                }
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="h-11 rounded-xl"
-              />
-            </div>
-
-            {/* Organization Specific Fields */}
-            {role !== "STUDENT" && (
+            {/* 1. STUDENT REGISTRATION FORM */}
+            {role === "STUDENT" && (
               <>
                 <div>
                   <Input
-                    label={role === "INSTITUTION_ADMIN" ? "Institution Name" : "Company / Enterprise Name"}
+                    label="Full Name"
                     type="text"
-                    placeholder={
-                      role === "INSTITUTION_ADMIN"
-                        ? "e.g. Delhi Technological University"
-                        : "e.g. Apex Diagnostics Ltd."
-                    }
-                    value={organizationName}
-                    onChange={(e) => setOrganizationName(e.target.value)}
+                    placeholder="e.g. Aryan Sharma"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
                     required
+                    className="h-11 rounded-xl"
+                  />
+                </div>
+
+                <div>
+                  <Input
+                    label="Email Address"
+                    type="email"
+                    placeholder="name@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    autoComplete="email"
                     className="h-11 rounded-xl"
                   />
                 </div>
@@ -329,138 +363,327 @@ export default function RegisterPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-semibold text-text-primary mb-1">
-                      Organization Type
+                      Current Education Stage
                     </label>
                     <select
-                      value={orgType}
-                      onChange={(e) => setOrgType(e.target.value)}
+                      value={educationStage}
+                      onChange={(e) => setEducationStage(e.target.value)}
                       className="w-full text-xs rounded-xl border border-border bg-white px-3 py-2.5 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 h-11"
                     >
-                      {role === "INSTITUTION_ADMIN" ? (
-                        <>
-                          <option value="COLLEGE_UNIVERSITY">College / University</option>
-                          <option value="SCHOOL">School (Class 8–12)</option>
-                          <option value="VOCATIONAL_INSTITUTE">Polytechnic / ITI / Skill Center</option>
-                        </>
-                      ) : (
-                        <>
-                          <option value="CORPORATE_EMPLOYER">Corporate Employer</option>
-                          <option value="HEALTHCARE_ORG">Healthcare / Hospital Group</option>
-                          <option value="LEGAL_FIRM">Legal Firm / Practice</option>
-                          <option value="GOVERNMENT_PSU">Government / PSU</option>
-                          <option value="NON_PROFIT">Non-Profit / NGO</option>
-                        </>
-                      )}
+                      <option value="CLASS_8">Class 8 (Secondary School)</option>
+                      <option value="CLASS_9">Class 9 (Secondary School)</option>
+                      <option value="CLASS_10">Class 10 (Secondary School)</option>
+                      <option value="CLASS_11">Class 11 (Senior Secondary)</option>
+                      <option value="CLASS_12">Class 12 (Senior Secondary)</option>
+                      <option value="DIPLOMA">Polytechnic / Diploma</option>
+                      <option value="ITI">ITI Technical Trade</option>
+                      <option value="UNDERGRADUATE">Undergraduate (B.Tech, B.Sc, B.Com, B.A, etc.)</option>
+                      <option value="POSTGRADUATE">Postgraduate (M.Tech, M.Sc, MBA, M.A, etc.)</option>
+                      <option value="WORKING_PROFESSIONAL">Working Professional</option>
+                      <option value="OTHER">Other Stream</option>
                     </select>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2">
-                    <Input
-                      label="City"
-                      type="text"
-                      placeholder="e.g. Delhi"
-                      value={city}
-                      onChange={(e) => setCity(e.target.value)}
-                      className="h-11 rounded-xl"
-                    />
-                    <Input
-                      label="State"
-                      type="text"
-                      placeholder="e.g. Delhi"
-                      value={stateName}
-                      onChange={(e) => setStateName(e.target.value)}
-                      className="h-11 rounded-xl"
-                    />
+                  <div>
+                    <label className="block text-xs font-semibold text-text-primary mb-1">
+                      Educational Stream
+                    </label>
+                    <select
+                      value={currentStream}
+                      onChange={(e) => setCurrentStream(e.target.value)}
+                      className="w-full text-xs rounded-xl border border-border bg-white px-3 py-2.5 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 h-11"
+                    >
+                      <option value="MEDICAL_PCB">Medical &amp; Healthcare (PCB)</option>
+                      <option value="NON_MEDICAL_PCM">Non-Medical / STEM (PCM)</option>
+                      <option value="COMMERCE">Commerce &amp; Finance</option>
+                      <option value="ARTS_HUMANITIES">Arts, Humanities &amp; Social Sciences</option>
+                      <option value="LAW">Law &amp; Legal Studies</option>
+                      <option value="MANAGEMENT">Management &amp; Business</option>
+                      <option value="CREATIVE_DESIGN">Creative Arts &amp; Design</option>
+                      <option value="AGRICULTURE">Agriculture &amp; Food Technology</option>
+                      <option value="VOCATIONAL_TRADES">Vocational &amp; Technical Trades (ITI)</option>
+                      <option value="SPORTS_PHYSICAL_ED">Sports &amp; Physical Education</option>
+                      <option value="HOSPITALITY_TOURISM">Hospitality, Tourism &amp; Culinary</option>
+                      <option value="INTERDISCIPLINARY">Interdisciplinary &amp; Emerging</option>
+                      <option value="UNDECIDED">Undecided / Exploring</option>
+                    </select>
                   </div>
+                </div>
+
+                <div>
+                  <Input
+                    label="College / Institution (Optional)"
+                    type="text"
+                    placeholder="e.g. Delhi Technological University or St. Xavier's High School"
+                    value={institutionName}
+                    onChange={(e) => setInstitutionName(e.target.value)}
+                    className="h-11 rounded-xl"
+                  />
                 </div>
               </>
             )}
 
-            {/* Student Specific Fields */}
-            {role === "STUDENT" && (
-              <div>
-                <label className="block text-xs font-semibold text-text-primary mb-1">
-                  Current Education Stage
-                </label>
-                <select
-                  value={educationStage}
-                  onChange={(e) => setEducationStage(e.target.value)}
-                  className="w-full text-xs rounded-xl border border-border bg-white px-3 py-2.5 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 h-11"
-                >
-                  <option value="CLASS_8">Class 8 (Secondary School)</option>
-                  <option value="CLASS_9">Class 9 (Secondary School)</option>
-                  <option value="CLASS_10">Class 10 (Secondary School)</option>
-                  <option value="CLASS_11">Class 11 (Senior Secondary)</option>
-                  <option value="CLASS_12">Class 12 (Senior Secondary)</option>
-                  <option value="DIPLOMA">Polytechnic / Diploma</option>
-                  <option value="ITI">ITI Technical Trade</option>
-                  <option value="UNDERGRADUATE">Undergraduate (BA, BSc, BTech, BCom, etc.)</option>
-                  <option value="POSTGRADUATE">Postgraduate (MA, MSc, MTech, MBA, etc.)</option>
-                  <option value="WORKING_PROFESSIONAL">Working Professional / Career Transition</option>
-                  <option value="OTHER">Other Learning Stream</option>
-                </select>
+            {/* 2. COLLEGE / INSTITUTION REGISTRATION FORM */}
+            {role === "INSTITUTION_ADMIN" && (
+              <>
+                <div>
+                  <Input
+                    label="Institution Name"
+                    type="text"
+                    placeholder="e.g. Delhi Technological University"
+                    value={collegeName}
+                    onChange={(e) => setCollegeName(e.target.value)}
+                    required
+                    className="h-11 rounded-xl"
+                  />
+                </div>
+
+                <div>
+                  <Input
+                    label="Official Institutional Email"
+                    type="email"
+                    placeholder="dean@university.edu.in"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    autoComplete="email"
+                    className="h-11 rounded-xl"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-text-primary mb-1">
+                      Institution Type
+                    </label>
+                    <select
+                      value={institutionType}
+                      onChange={(e) => setInstitutionType(e.target.value)}
+                      className="w-full text-xs rounded-xl border border-border bg-white px-3 py-2.5 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 h-11"
+                    >
+                      <option value="COLLEGE_UNIVERSITY">College / University</option>
+                      <option value="SCHOOL">School (Class 8–12)</option>
+                      <option value="VOCATIONAL_INSTITUTE">Polytechnic / ITI / Skill Center</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <Input
+                      label="Authorized Representative Name"
+                      type="text"
+                      placeholder="e.g. Dr. Priya Raman"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      required
+                      className="h-11 rounded-xl"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <Input
+                    label="City"
+                    type="text"
+                    placeholder="e.g. New Delhi"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    required
+                    className="h-11 rounded-xl"
+                  />
+                  <Input
+                    label="State"
+                    type="text"
+                    placeholder="e.g. Delhi"
+                    value={stateName}
+                    onChange={(e) => setStateName(e.target.value)}
+                    required
+                    className="h-11 rounded-xl"
+                  />
+                </div>
+              </>
+            )}
+
+            {/* 3. EMPLOYER / COMPANY REGISTRATION FORM */}
+            {role === "EMPLOYER_ADMIN" && (
+              <>
+                <div>
+                  <Input
+                    label="Company Name"
+                    type="text"
+                    placeholder="e.g. Apex Diagnostics Ltd. / Tata MedTech"
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    required
+                    className="h-11 rounded-xl"
+                  />
+                </div>
+
+                <div>
+                  <Input
+                    label="Official Work Email"
+                    type="email"
+                    placeholder="talent@company.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    autoComplete="email"
+                    className="h-11 rounded-xl"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-text-primary mb-1">
+                      Industry Sector
+                    </label>
+                    <select
+                      value={industry}
+                      onChange={(e) => setIndustry(e.target.value)}
+                      className="w-full text-xs rounded-xl border border-border bg-white px-3 py-2.5 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 h-11"
+                    >
+                      <option value="IT_SOFTWARE">Information Technology &amp; Software</option>
+                      <option value="HEALTHCARE_PHARMA">Healthcare, Hospitals &amp; Pharma</option>
+                      <option value="BFSI">Banking, Financial Services &amp; Insurance (BFSI)</option>
+                      <option value="MANUFACTURING">Manufacturing, Automotive &amp; Engineering</option>
+                      <option value="LEGAL">Legal Services &amp; Compliance</option>
+                      <option value="MEDIA_DESIGN">Media, Advertising &amp; Creative Design</option>
+                      <option value="AGRICULTURE_FOOD">Agriculture &amp; Food Technology</option>
+                      <option value="HOSPITALITY">Hospitality, Travel &amp; Tourism</option>
+                      <option value="OTHER">Other Enterprise Sector</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <Input
+                      label="Authorized Representative Name"
+                      type="text"
+                      placeholder="e.g. Dr. Alok Verma"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      required
+                      className="h-11 rounded-xl"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <Input
+                    label="City"
+                    type="text"
+                    placeholder="e.g. Bengaluru"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    required
+                    className="h-11 rounded-xl"
+                  />
+                  <Input
+                    label="State"
+                    type="text"
+                    placeholder="e.g. Karnataka"
+                    value={stateName}
+                    onChange={(e) => setStateName(e.target.value)}
+                    required
+                    className="h-11 rounded-xl"
+                  />
+                </div>
+              </>
+            )}
+
+            {/* PASSWORD AND CONFIRM PASSWORD FIELDS (Common to all roles) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <div className="relative">
+                  <Input
+                    label="Password (min 8 characters)"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Create a strong password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    autoComplete="new-password"
+                    className="h-11 rounded-xl pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-8 text-slate-400 hover:text-slate-600 p-1"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <div className="relative">
+                  <Input
+                    label="Confirm Password"
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="Re-enter your password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    autoComplete="new-password"
+                    className={`h-11 rounded-xl pr-10 ${
+                      isPasswordMismatch ? "border-rose-400 focus:border-rose-500" : ""
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-8 text-slate-400 hover:text-slate-600 p-1"
+                    aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Real-time Password Mismatch Alert */}
+            {isPasswordMismatch && (
+              <p className="text-[11px] text-rose-600 font-medium flex items-center gap-1">
+                <AlertCircle className="h-3.5 w-3.5" /> Passwords do not match.
+              </p>
+            )}
+
+            {/* Password Strength Meter */}
+            {password.length > 0 && (
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-text-secondary">Password Strength:</span>
+                  <span
+                    className={`font-bold ${
+                      passwordEvaluation.label === "Strong"
+                        ? "text-emerald-600"
+                        : passwordEvaluation.label === "Fair"
+                        ? "text-amber-600"
+                        : "text-rose-600"
+                    }`}
+                  >
+                    {passwordEvaluation.label}
+                  </span>
+                </div>
+                <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden flex gap-1">
+                  {[1, 2, 3, 4].map((step) => (
+                    <div
+                      key={step}
+                      className={`h-full flex-1 transition-all rounded-full ${
+                        step <= passwordEvaluation.score
+                          ? passwordEvaluation.score >= 4
+                            ? "bg-emerald-500"
+                            : passwordEvaluation.score === 3
+                            ? "bg-amber-500"
+                            : "bg-rose-500"
+                          : "bg-slate-200"
+                      }`}
+                    />
+                  ))}
+                </div>
               </div>
             )}
 
-            {/* Password Field with Toggle & Strength */}
-            <div className="space-y-1.5">
-              <div className="relative">
-                <Input
-                  label="Password (minimum 8 characters)"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Create a strong password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="h-11 rounded-xl pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-8 text-text-muted hover:text-text-primary p-1"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-
-              {/* Password Strength Meter */}
-              {password.length > 0 && (
-                <div className="space-y-1 pt-1">
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-text-secondary">Password Strength:</span>
-                    <span
-                      className={`font-bold ${
-                        passwordEvaluation.label === "Strong"
-                          ? "text-emerald-600"
-                          : passwordEvaluation.label === "Fair"
-                          ? "text-amber-600"
-                          : "text-rose-600"
-                      }`}
-                    >
-                      {passwordEvaluation.label}
-                    </span>
-                  </div>
-                  <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden flex gap-1">
-                    {[1, 2, 3, 4].map((step) => (
-                      <div
-                        key={step}
-                        className={`h-full flex-1 transition-all rounded-full ${
-                          step <= passwordEvaluation.score
-                            ? passwordEvaluation.score >= 4
-                              ? "bg-emerald-500"
-                              : passwordEvaluation.score === 3
-                              ? "bg-amber-500"
-                              : "bg-rose-500"
-                            : "bg-slate-200"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* DPDP Act Minor Shield Alert */}
+            {/* DPDP Act Minor Shield Alert (Only for School-age Students) */}
             {isMinor && (
               <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 space-y-2">
                 <div className="flex items-start gap-2">
@@ -486,7 +709,7 @@ export default function RegisterPage() {
               </div>
             )}
 
-            {/* Terms and Conditions Checkbox */}
+            {/* Terms and Privacy Policy Consent */}
             <div className="flex items-start gap-2 pt-1">
               <input
                 id="terms"
@@ -514,7 +737,7 @@ export default function RegisterPage() {
               type="submit"
               variant="gradient"
               className="w-full h-12 rounded-xl font-bold text-sm shadow-soft-md gap-2"
-              disabled={isLoading}
+              disabled={isLoading || isPasswordMismatch}
             >
               {isLoading ? (
                 <div className="flex items-center justify-center gap-2">
@@ -525,8 +748,10 @@ export default function RegisterPage() {
                 <div className="flex items-center justify-center gap-2">
                   <span>
                     {role === "STUDENT"
-                      ? "Create Account & Start Onboarding"
-                      : "Register Organization"}
+                      ? "Create Student Account & Begin"
+                      : role === "INSTITUTION_ADMIN"
+                      ? "Register College / School"
+                      : "Register Corporate Account"}
                   </span>
                   <ArrowRight className="h-4 w-4" />
                 </div>
@@ -537,7 +762,7 @@ export default function RegisterPage() {
           <p className="text-center text-xs text-text-secondary pt-2">
             Already have an account?{" "}
             <Link href="/login" className="font-bold text-primary hover:underline">
-              Sign In here
+              Sign In here &rarr;
             </Link>
           </p>
         </div>

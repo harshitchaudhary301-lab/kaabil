@@ -83,15 +83,38 @@ export function PortalLayout({
         if (res.ok) {
           const data = await res.json();
           if ((data.authenticated || data.isAuthenticated) && data.user) {
-            setCurrentUser(data.user);
+            const user = data.user;
+            setCurrentUser(user);
+
+            // Role guard check: prevent unauthorized role access between portals
+            const role = user.role;
+            const isAuthorized =
+              role === "SUPER_ADMIN" ||
+              role === "ADMIN" ||
+              (portalRole === "STUDENT" && role === "STUDENT") ||
+              (portalRole === "INSTITUTION" && (role === "INSTITUTION_ADMIN" || role === "FACULTY")) ||
+              (portalRole === "EMPLOYER" && (role === "EMPLOYER_ADMIN" || role === "RECRUITER")) ||
+              (portalRole === "ADMIN" && (role === "SUPER_ADMIN" || role === "ADMIN" || role === "CONTENT_ADMIN"));
+
+            if (!isAuthorized) {
+              // Redirect to user's authorized portal
+              if (role === "STUDENT") router.push("/student/dashboard");
+              else if (role === "INSTITUTION_ADMIN" || role === "FACULTY") router.push("/institution/dashboard");
+              else if (role === "EMPLOYER_ADMIN" || role === "RECRUITER") router.push("/employer/dashboard");
+              else router.push("/login");
+            }
+          } else {
+            router.push("/login");
           }
+        } else {
+          router.push("/login");
         }
       } catch {
-        // Fallback
+        router.push("/login");
       }
     }
     checkAuth();
-  }, []);
+  }, [portalRole, router]);
 
   const handleLogout = async () => {
     try {

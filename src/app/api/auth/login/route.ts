@@ -170,13 +170,14 @@ export async function POST(req: NextRequest) {
       // Offline demonstration / development store verification:
       const storedOffline = devStore.getUserByEmail(email);
       if (!storedOffline) {
+        recordFailedAttempt(`login:${email}`);
         return NextResponse.json(
           { error: "Account not found. Please register or use one of the demo portal logins." },
           { status: 401 }
         );
       }
 
-      // Password verification: require valid password matching demo default 'Kaabil@2026' or valid scrypt hash
+      // Password verification: require strictly matching password hash or verified credential
       const DEMO_DEFAULT_PASSWORD = "Kaabil@2026";
       const isDemoAccount = [
         "demo.student@kaabil.in",
@@ -185,9 +186,12 @@ export async function POST(req: NextRequest) {
         "admin@kaabil.in",
       ].includes(email.toLowerCase());
 
-      const passwordMatches =
-        (isDemoAccount && (password === DEMO_DEFAULT_PASSWORD || (process.env.NODE_ENV === "development" && email === "demo.student@kaabil.in"))) ||
-        (storedOffline.passwordHash && (await verifyPassword(password, storedOffline.passwordHash)));
+      let passwordMatches = false;
+      if (storedOffline.passwordHash) {
+        passwordMatches = await verifyPassword(password, storedOffline.passwordHash);
+      } else if (isDemoAccount) {
+        passwordMatches = password === DEMO_DEFAULT_PASSWORD;
+      }
 
       if (!passwordMatches) {
         recordFailedAttempt(`login:${email}`);

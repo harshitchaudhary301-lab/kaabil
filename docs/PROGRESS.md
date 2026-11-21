@@ -9,7 +9,23 @@
 
 ---
 
-## 1. Executive Implementation Status
+### Authentication & Registration Flow Enhancement (November 21, 2026)
+- **Resolved Pre-filled Login Issue:**
+  - Removed automatic hardcoded pre-filling of demo email and password in `LoginPage` (`src/app/login/page.tsx`). Inputs now start completely empty with role-sensitive placeholders (`name@example.com`, `dean@university.edu.in`, `talent@company.com`, `admin@kaabil.in`).
+  - Selecting a persona tab (`Student | College | Employer | Admin`) changes the context without overwriting user-typed credentials.
+  - Replaced the intrusive active demo banner with a voluntary, non-intrusive demo auto-fill action (`⚡ Testing Demo Accounts`) allowing testers to optionally auto-fill credentials on demand, with a `Clear Fields` button.
+- **Enhanced Signup Flow & Multi-Role Onboarding:**
+  - Added seamless top segmented auth switcher (`[ Sign In ]` / `[ Create Account ]`) on both `/login` and `/register`.
+  - Supports Student Learner, College / School (`INSTITUTION_ADMIN`), and Corporate Employer (`EMPLOYER_ADMIN`).
+  - Added DPDP Act 2023 server-side parental consent enforcement for school-aged minor students (Class 8–12).
+  - Ensured offline devStore persistence for student, institution, and employer signups so registered users can immediately log in with their custom passwords.
+- **Automated Verification:**
+  - Added `src/__tests__/signup-flow.test.ts` covering student signup, DPDP minor consent validation, password length constraints, duplicate prevention (409 Conflict), institution registration, employer registration, and complete signup-to-login roundtrip.
+  - Test suite: 50 test files, 245 passing tests.
+
+---
+
+## 2. Executive Implementation Status
 
 KAABIL — Final UI Implementation & Vercel Readiness delivers a complete rebuild of the Student Dashboard matching the uploaded visual specification (`media_1795192011744_3bf81ea7.jpg`), complete full-stack backend and database persistence, and end-to-end Vercel serverless deployment readiness.
 

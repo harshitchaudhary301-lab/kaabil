@@ -7,7 +7,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db, checkDatabaseConnection } from "@/lib/db";
 import { devStore } from "@/lib/dev-store";
-import { hashPassword } from "@/lib/auth/password";
+import { hashPassword, evaluatePasswordStrength } from "@/lib/auth/password";
+import { checkRateLimit } from "@/lib/auth/rate-limiter";
 import {
   createDatabaseSession,
   storeFallbackSession,
@@ -47,6 +48,24 @@ const registerSchema = z.object({
       "OTHER",
     ])
     .optional(),
+  currentStream: z
+    .enum([
+      "MEDICAL_PCB",
+      "NON_MEDICAL_PCM",
+      "COMMERCE",
+      "ARTS_HUMANITIES",
+      "LAW",
+      "MANAGEMENT",
+      "CREATIVE_DESIGN",
+      "AGRICULTURE",
+      "VOCATIONAL_TRADES",
+      "SPORTS_PHYSICAL_ED",
+      "HOSPITALITY_TOURISM",
+      "INTERDISCIPLINARY",
+      "UNDECIDED",
+    ])
+    .optional(),
+  institutionName: z.string().max(150).optional(),
   guardianConsent: z.boolean().optional(),
   // Organization-specific fields
   organizationName: z.string().min(2).max(150).optional(),
@@ -62,6 +81,7 @@ const registerSchema = z.object({
       "NON_PROFIT",
     ])
     .optional(),
+  industry: z.string().max(100).optional(),
   city: z.string().max(80).optional(),
   state: z.string().max(80).optional(),
 });
@@ -69,6 +89,27 @@ const registerSchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+
+    // 0. Check rate limiting (10 attempts per 15 minutes)
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "127.0.0.1";
+    const rateLimit = checkRateLimit(`register:${ip}`, 10, 900);
+    if (!rateLimit.isAllowed) {
+      return NextResponse.json(
+        {
+          error: `Too many registration attempts from your network. Please wait ${rateLimit.resetInSeconds} seconds.`,
+        },
+        { status: 429 }
+      );
+    }
+
+    // Explicitly reject Admin registration attempts
+    if (body.role && ["SUPER_ADMIN", "ADMIN", "CONTENT_ADMIN"].includes(body.role)) {
+      return NextResponse.json(
+        { error: "Administrative accounts cannot be registered publicly." },
+        { status: 403 }
+      );
+    }
+
     const parsed = registerSchema.safeParse(body);
 
     if (!parsed.success) {
@@ -87,9 +128,12 @@ export async function POST(req: NextRequest) {
       email,
       password,
       educationStage,
+      currentStream,
+      institutionName,
       guardianConsent,
       organizationName,
       orgType,
+      industry,
       city,
       state,
     } = parsed.data;
@@ -102,10 +146,32 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Evaluate password strength: require minimum score of 2 and 8+ characters
+    const strength = evaluatePasswordStrength(password);
+    if (password.length < 8 || strength.score < 2) {
+      return NextResponse.json(
+        {
+          error: "Password is too weak. Must be at least 8 characters long and include uppercase, lowercase, numbers, or symbols.",
+          details: strength.feedback,
+        },
+        { status: 400 }
+      );
+    }
+
     const conn = await checkDatabaseConnection();
     const passwordHash = await hashPassword(password);
     const stage = educationStage || EducationStage.CLASS_12;
     const isMinor = role === "STUDENT" && isMinorStage(stage);
+
+    if (isMinor && !guardianConsent) {
+      return NextResponse.json(
+        {
+          error:
+            "Parent or legal guardian consent is mandatory under the DPDP Act 2023 for school-aged students.",
+        },
+        { status: 400 }
+      );
+    }
 
     let createdUser: AuthenticatedUser | null = null;
 
@@ -155,7 +221,8 @@ export async function POST(req: NextRequest) {
             data: {
               userId: u.id,
               educationStage: stage as EducationStage,
-              currentStream: EducationalStream.UNDECIDED,
+              currentStream: (currentStream as EducationalStream) || EducationalStream.UNDECIDED,
+              institutionName: institutionName || null,
               city: city || null,
               state: state || null,
               guardianConsent: !!guardianConsent,
@@ -258,17 +325,20 @@ export async function POST(req: NextRequest) {
         email,
         name,
         role: role as UserRoleType,
-        status: UserAccountStatus.ACTIVE,
+        status:
+          role === "STUDENT"
+            ? UserAccountStatus.ACTIVE
+            : UserAccountStatus.PENDING_VERIFICATION,
         isMinor,
         studentProfile:
           role === "STUDENT"
             ? {
                 id: fallbackProfId,
                 educationStage: stage as EducationStage,
-                currentStream: EducationalStream.UNDECIDED,
+                currentStream: (currentStream as EducationalStream) || EducationalStream.UNDECIDED,
                 onboardingCompleted: false,
                 careerReadinessIndex: 0,
-                institutionName: null,
+                institutionName: institutionName || null,
               }
             : null,
         organizations:
@@ -292,7 +362,7 @@ export async function POST(req: NextRequest) {
           id: fallbackProfId,
           userId: fallbackId,
           educationStage: stage,
-          currentStream: "UNDECIDED",
+          currentStream: currentStream || "UNDECIDED",
           onboardingCompleted: false,
           careerReadinessIndex: 0,
           user: { name, email },
@@ -301,6 +371,31 @@ export async function POST(req: NextRequest) {
           userSkills: [],
           roadmaps: [],
           dailyMissions: [],
+        });
+      } else if (role === "INSTITUTION_ADMIN") {
+        const orgId = createdUser.organizations[0]?.id || "fallback-inst-" + Date.now();
+        devStore.saveInstitution({
+          id: orgId,
+          name: organizationName || name,
+          slug: (organizationName || name).toLowerCase().replace(/[^a-z0-9]/g, "-"),
+          type: orgType || "COLLEGE_UNIVERSITY",
+          city: city || "New Delhi",
+          state: state || "Delhi",
+          officialEmail: email,
+          verificationStatus: "PENDING_REVIEW",
+          isVerified: false,
+        });
+      } else if (role === "EMPLOYER_ADMIN") {
+        const orgId = createdUser.organizations[0]?.id || "fallback-emp-" + Date.now();
+        devStore.saveEmployerOrganization({
+          id: orgId,
+          name: organizationName || name,
+          slug: (organizationName || name).toLowerCase().replace(/[^a-z0-9]/g, "-"),
+          industry: industry || orgType || "Corporate",
+          officialEmail: email,
+          city: city || "New Delhi",
+          state: state || "Delhi",
+          isVerified: false,
         });
       }
     }

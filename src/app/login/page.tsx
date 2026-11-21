@@ -16,53 +16,57 @@ import {
   EyeOff,
   AlertCircle,
   Loader2,
-  CheckCircle2,
   Award,
   Compass,
   ArrowLeft,
-  KeyRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { KaabilLogo } from "@/components/shared/KaabilLogo";
 
 export default function LoginPage() {
   const router = useRouter();
   const [selectedRole, setSelectedRole] = useState<"STUDENT" | "INSTITUTION" | "EMPLOYER" | "ADMIN">("STUDENT");
-  const [email, setEmail] = useState("demo.student@kaabil.in");
-  const [password, setPassword] = useState("Kaabil@2026");
+  // Clean default: inputs are strictly EMPTY by default. No demo or hardcoded credentials.
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // Switch role context without overwriting user input
   const handleRoleSelect = (role: "STUDENT" | "INSTITUTION" | "EMPLOYER" | "ADMIN") => {
     setSelectedRole(role);
-    if (role === "STUDENT") {
-      setEmail("demo.student@kaabil.in");
-      setPassword("Kaabil@2026");
-    } else if (role === "INSTITUTION") {
-      setEmail("institution@kaabil.in");
-      setPassword("Kaabil@2026");
-    } else if (role === "EMPLOYER") {
-      setEmail("employer@kaabil.in");
-      setPassword("Kaabil@2026");
-    } else if (role === "ADMIN") {
-      setEmail("admin@kaabil.in");
-      setPassword("Kaabil@2026");
-    }
+    setErrorMessage(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     setErrorMessage(null);
+
+    // Client-side validation
+    const trimmedEmail = email.trim().toLowerCase();
+    if (!trimmedEmail) {
+      setErrorMessage("Please enter your registered email address.");
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      setErrorMessage("Please enter a valid email address (e.g., name@example.com).");
+      return;
+    }
+    if (!password) {
+      setErrorMessage("Please enter your password.");
+      return;
+    }
+
+    setIsLoading(true);
 
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, rememberMe }),
+        body: JSON.stringify({ email: trimmedEmail, password, rememberMe }),
       });
 
       const data = await res.json();
@@ -173,14 +177,14 @@ export default function LoginPage() {
         <div className="relative z-10 pt-6 border-t border-white/10 flex items-center justify-between text-xs text-slate-400">
           <span>Supported across all 13 educational streams</span>
           <span className="flex items-center gap-1 text-slate-300 font-medium">
-            <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" /> Safe & Verified
+            <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" /> Safe &amp; Verified
           </span>
         </div>
       </div>
 
       {/* RIGHT PANEL: Clean Authentication & Role Selector (7 cols on lg) */}
       <div className="lg:col-span-7 flex flex-col justify-center px-6 sm:px-12 xl:px-20 py-12">
-        <div className="max-w-md w-full mx-auto space-y-8">
+        <div className="max-w-md w-full mx-auto space-y-6">
           {/* Mobile Top Header */}
           <div className="flex items-center justify-between lg:hidden pb-4 border-b border-border">
             <Link href="/" className="inline-flex items-center gap-2">
@@ -194,50 +198,57 @@ export default function LoginPage() {
             </Link>
           </div>
 
-          <div className="space-y-2">
+          {/* Auth Switcher: Toggle between Sign In and Create Account */}
+          <div className="flex rounded-2xl bg-slate-100 p-1.5 border border-slate-200/80">
+            <div className="flex-1 py-2.5 text-xs font-bold rounded-xl flex items-center justify-center gap-2 bg-white text-primary shadow-soft-sm border border-slate-200">
+              <Lock className="h-3.5 w-3.5" />
+              <span>Sign In</span>
+            </div>
+            <Link
+              href="/register"
+              className="flex-1 py-2.5 text-xs font-bold rounded-xl flex items-center justify-center gap-2 text-text-secondary hover:text-text-primary transition-all hover:bg-white/60"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              <span>Create Account</span>
+            </Link>
+          </div>
+
+          <div className="space-y-1.5">
             <h1 className="font-heading text-3xl font-extrabold text-text-primary tracking-tight">
               Sign In to Your Portal
             </h1>
-            <p className="text-sm text-text-secondary">
-              Select your persona or use one of the one-click demo credentials below.
+            <p className="text-xs text-text-secondary">
+              Select your persona and enter your account credentials to access your workspace.
             </p>
           </div>
 
           {/* Role Tabs */}
-          <div className="grid grid-cols-4 gap-1.5 p-1.5 bg-slate-100 rounded-2xl border border-slate-200/80">
-            {[
-              { id: "STUDENT", label: "Student", icon: <GraduationCap className="h-3.5 w-3.5" /> },
-              { id: "INSTITUTION", label: "College", icon: <Building2 className="h-3.5 w-3.5" /> },
-              { id: "EMPLOYER", label: "Employer", icon: <Briefcase className="h-3.5 w-3.5" /> },
-              { id: "ADMIN", label: "Admin", icon: <Lock className="h-3.5 w-3.5" /> },
-            ].map((role) => (
-              <button
-                key={role.id}
-                type="button"
-                onClick={() => handleRoleSelect(role.id as any)}
-                className={`flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-xs font-bold transition-all ${
-                  selectedRole === role.id
-                    ? "bg-white text-primary shadow-soft-sm border border-slate-200"
-                    : "text-text-secondary hover:text-text-primary hover:bg-white/50"
-                }`}
-              >
-                {role.icon}
-                <span>{role.label}</span>
-              </button>
-            ))}
-          </div>
-
-          {/* Quick Demo Credentials Notice */}
-          <div className="p-3.5 rounded-2xl bg-primary/5 border border-primary/15 flex items-center justify-between text-xs text-text-secondary">
-            <div className="flex items-center gap-2">
-              <KeyRound className="h-4 w-4 text-primary shrink-0" />
-              <span>
-                Demo active: <strong>{selectedRole}</strong> ({email})
-              </span>
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+              Portal Persona
+            </label>
+            <div className="grid grid-cols-4 gap-1.5 p-1.5 bg-slate-100 rounded-2xl border border-slate-200/80">
+              {[
+                { id: "STUDENT", label: "Student", icon: <GraduationCap className="h-3.5 w-3.5" /> },
+                { id: "INSTITUTION", label: "College", icon: <Building2 className="h-3.5 w-3.5" /> },
+                { id: "EMPLOYER", label: "Employer", icon: <Briefcase className="h-3.5 w-3.5" /> },
+                { id: "ADMIN", label: "Admin", icon: <Lock className="h-3.5 w-3.5" /> },
+              ].map((role) => (
+                <button
+                  key={role.id}
+                  type="button"
+                  onClick={() => handleRoleSelect(role.id as any)}
+                  className={`flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-xs font-bold transition-all ${
+                    selectedRole === role.id
+                      ? "bg-white text-primary shadow-soft-sm border border-slate-200"
+                      : "text-text-secondary hover:text-text-primary hover:bg-white/50"
+                  }`}
+                >
+                  {role.icon}
+                  <span>{role.label}</span>
+                </button>
+              ))}
             </div>
-            <span className="text-[11px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
-              Password: Kaabil@2026
-            </span>
           </div>
 
           {/* Error Alert */}
@@ -249,19 +260,28 @@ export default function LoginPage() {
           )}
 
           {/* Login Form */}
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-text-primary block">
                 Official or Registered Email
               </label>
               <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
                 <Input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@example.com"
+                  placeholder={
+                    selectedRole === "STUDENT"
+                      ? "name@example.com"
+                      : selectedRole === "INSTITUTION"
+                      ? "dean@university.edu.in"
+                      : selectedRole === "EMPLOYER"
+                      ? "talent@company.com"
+                      : "admin@kaabil.in"
+                  }
                   required
+                  autoComplete="email"
                   className="pl-10 h-11 rounded-xl border-border focus:border-primary text-sm"
                 />
               </div>
@@ -280,26 +300,28 @@ export default function LoginPage() {
                 </Link>
               </div>
               <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
                 <Input
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
                   required
+                  autoComplete="current-password"
                   className="pl-10 pr-10 h-11 rounded-xl border-border focus:border-primary text-sm"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-1">
+            <div className="flex items-center justify-between pt-0.5">
               <label className="flex items-center gap-2 cursor-pointer text-xs text-text-secondary select-none">
                 <input
                   type="checkbox"
@@ -324,19 +346,21 @@ export default function LoginPage() {
                 </>
               ) : (
                 <>
-                  <span>Sign In as {selectedRole.charAt(0) + selectedRole.slice(1).toLowerCase()}</span>
+                  <span>
+                    Sign In to {selectedRole === "STUDENT" ? "Student" : selectedRole === "INSTITUTION" ? "College" : selectedRole === "EMPLOYER" ? "Employer" : "Admin"} Portal
+                  </span>
                   <ArrowRight className="h-4 w-4" />
                 </>
               )}
             </Button>
           </form>
 
-          {/* Registration link */}
-          <div className="pt-4 text-center border-t border-border space-y-3">
+          {/* Direct Link to Registration */}
+          <div className="pt-2 text-center border-t border-border space-y-2">
             <p className="text-xs text-text-secondary">
               Don&apos;t have an account yet?{" "}
               <Link href="/register" className="font-bold text-primary hover:underline">
-                Register Free Today
+                Create a Free Account &rarr;
               </Link>
             </p>
             <p className="text-[11px] text-slate-400 leading-normal">

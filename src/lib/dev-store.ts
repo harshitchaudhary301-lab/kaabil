@@ -71,6 +71,7 @@ export interface DevStoreData {
   studentResumes?: Record<string, any>; // profileId -> StudentResumeData
   mockInterviewSessions?: Record<string, any[]>; // profileId -> MockInterviewSessionRecord[]
   systemNotifications?: any[];
+  resetTokens?: Record<string, { email: string; expiresAt: string }>;
 }
 
 function getInitialStore(): DevStoreData {
@@ -978,6 +979,39 @@ class DevStore {
     const store = this.loadStore();
     store.users[user.email.toLowerCase().trim()] = user;
     this.saveStore();
+  }
+
+  updateUserPassword(email: string, passwordHash: string): boolean {
+    const store = this.loadStore();
+    const key = email.toLowerCase().trim();
+    if (store.users[key]) {
+      store.users[key].passwordHash = passwordHash;
+      this.saveStore();
+      return true;
+    }
+    return false;
+  }
+
+  // Password Reset Tokens
+  saveResetToken(token: string, email: string, expiresAt: Date) {
+    const store = this.loadStore();
+    if (!store.resetTokens) store.resetTokens = {};
+    store.resetTokens[token] = { email: email.toLowerCase().trim(), expiresAt: expiresAt.toISOString() };
+    this.saveStore();
+  }
+
+  getResetToken(token: string): { email: string; expiresAt: string } | null {
+    const store = this.loadStore();
+    if (!store.resetTokens) return null;
+    return store.resetTokens[token] || null;
+  }
+
+  deleteResetToken(token: string) {
+    const store = this.loadStore();
+    if (store.resetTokens && store.resetTokens[token]) {
+      delete store.resetTokens[token];
+      this.saveStore();
+    }
   }
 
   // Sessions
