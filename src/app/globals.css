@@ -1,0 +1,153 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-plus-jakarta: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+    --font-inter: "Inter", system-ui, -apple-system, sans-serif;
+    --background: 210 40% 98%; /* #F8FAFC */
+    --foreground: 222 47% 11%; /* #172033 */
+    --card: 0 0% 100%;        /* #FFFFFF */
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 225 73% 57%;   /* #4169E1 */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 257 63% 58%; /* #7952D9 */
+    --secondary-foreground: 0 0% 100%;
+    --muted: 215 16% 47%;     /* #64748B */
+    --muted-foreground: 215 16% 47%;
+    --accent: 199 95% 74%;    /* #38BDF8 */
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 27% 93%;    /* #E8ECF4 */
+    --input: 220 27% 93%;
+    --ring: 225 73% 57%;
+    --radius: 1rem;
+  }
+
+  * {
+    border-color: #E8ECF4;
+  }
+
+  body {
+    background-color: #F8FAFC;
+    color: #172033;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    overflow-x: hidden;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Glassmorphism Utilities */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(232, 236, 244, 0.8);
+}
+
+.glass-header {
+  background: rgba(248, 250, 252, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(232, 236, 244, 0.9);
+}
+
+/* Gradients */
+.gradient-primary {
+  background: linear-gradient(135deg, #4169E1 0%, #7952D9 100%);
+}
+
+.gradient-hero-text {
+  background: linear-gradient(135deg, #4169E1 0%, #7952D9 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: #4169E1; /* Fallback if background-clip is not supported */
+  display: inline-block;
+}
+
+.bg-gradient-primary {
+  background: linear-gradient(135deg, #4169E1 0%, #7952D9 100%);
+  color: #FFFFFF;
+}
+
+.gradient-subtle {
+  background: linear-gradient(180deg, rgba(238, 242, 255, 0.6) 0%, rgba(248, 250, 252, 0) 100%);
+}
+
+/* Modern Bento Card Primitives */
+.bento-card {
+  background: #FFFFFF;
+  border: 1px solid #E8ECF4;
+  border-radius: 1.25rem;
+  box-shadow: 0 4px 16px -2px rgba(16, 24, 40, 0.04), 0 2px 4px -2px rgba(16, 24, 40, 0.02);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bento-card:hover {
+  box-shadow: 0 12px 24px -4px rgba(65, 105, 225, 0.08), 0 4px 8px -2px rgba(16, 24, 40, 0.04);
+  border-color: rgba(65, 105, 225, 0.25);
+  transform: translateY(-2px);
+}
+
+.bento-card-interactive {
+  background: #FFFFFF;
+  border: 1px solid #E8ECF4;
+  border-radius: 1.25rem;
+  transition: all 0.25s ease;
+  cursor: pointer;
+}
+
+.bento-card-interactive:hover {
+  border-color: #4169E1;
+  box-shadow: 0 8px 24px -4px rgba(65, 105, 225, 0.12);
+  transform: translateY(-2px);
+}
+
+/* Skeleton Loading Shimmer */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, #F1F5F9 25%, #E2E8F0 50%, #F1F5F9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Soft Lavender & Soft Mint Badges */
+.badge-lavender {
+  background-color: #F0EBFF;
+  color: #7952D9;
+  border: 1px solid rgba(121, 82, 217, 0.2);
+}
+
+.badge-mint {
+  background-color: #D1FAE5;
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+/* Accessible focus outline */
+:focus-visible {
+  outline: 2px solid #4169E1;
+  outline-offset: 2px;
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

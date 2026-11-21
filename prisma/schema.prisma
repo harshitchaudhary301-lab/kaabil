@@ -1,0 +1,1441 @@
+// ==============================================================================
+// KAABIL (काबिल) — Production-Oriented Relational Database Schema (Prisma ORM)
+// Universal Career, Education, Skill Development & Employment Ecosystem
+// Compliant with DPDP Act 2023, Multi-Stream Architecture & Explainable Matching
+// ==============================================================================
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ---------------------------------------------------------
+// ENUMS
+// ---------------------------------------------------------
+
+enum UserRoleType {
+  STUDENT
+  INSTITUTION_ADMIN
+  FACULTY
+  EMPLOYER_ADMIN
+  RECRUITER
+  SUPER_ADMIN
+  CONTENT_ADMIN
+}
+
+enum UserAccountStatus {
+  PENDING_VERIFICATION
+  ACTIVE
+  SUSPENDED
+  RESTRICTED
+  DEACTIVATED
+}
+
+enum EducationStage {
+  CLASS_8
+  CLASS_9
+  CLASS_10
+  CLASS_11
+  CLASS_12
+  DIPLOMA
+  ITI
+  UNDERGRADUATE
+  POSTGRADUATE
+  WORKING_PROFESSIONAL
+  OTHER
+}
+
+enum EducationalStream {
+  MEDICAL_PCB
+  NON_MEDICAL_PCM
+  COMMERCE
+  ARTS_HUMANITIES
+  LAW
+  MANAGEMENT
+  CREATIVE_DESIGN
+  AGRICULTURE
+  VOCATIONAL_TRADES
+  SPORTS_PHYSICAL_ED
+  HOSPITALITY_TOURISM
+  INTERDISCIPLINARY
+  UNDECIDED
+}
+
+enum OrgType {
+  SCHOOL
+  COLLEGE_UNIVERSITY
+  VOCATIONAL_INSTITUTE
+  CORPORATE_EMPLOYER
+  HEALTHCARE_ORG
+  LEGAL_FIRM
+  GOVERNMENT_PSU
+  NON_PROFIT
+}
+
+enum VerificationStatus {
+  UNVERIFIED
+  PENDING_REVIEW
+  VERIFIED
+  REJECTED
+  SUSPENDED
+}
+
+enum SkillProficiencyLevel {
+  NOVICE       // Level 1
+  BEGINNER     // Level 2
+  INTERMEDIATE // Level 3
+  PROFICIENT   // Level 4
+  EXPERT       // Level 5
+}
+
+enum AssessmentType {
+  PSYCHOMETRIC_RIASEC
+  APTITUDE_DIAGNOSTIC
+  STREAM_READINESS
+  SKILL_CHECKPOINT
+  PROJECT_EVALUATION
+  MOCK_INTERVIEW
+}
+
+enum ApplicationStatus {
+  APPLIED
+  REVIEWING
+  SKILL_VERIFIED
+  CHALLENGE_INVITED
+  INTERVIEW_SCHEDULED
+  OFFERED
+  HIRED
+  REJECTED
+  WITHDRAWN
+}
+
+// ---------------------------------------------------------
+// 1. IDENTITY, ACCESS & SECURITY
+// ---------------------------------------------------------
+
+model User {
+  id                  String            @id @default(cuid())
+  email               String            @unique
+  passwordHash        String?
+  name                String
+  image               String?
+  phoneNumber         String?
+  dateOfBirth         DateTime?
+  isMinor             Boolean           @default(false)
+  role                UserRoleType      @default(STUDENT)
+  status              UserAccountStatus @default(ACTIVE)
+  failedLoginAttempts Int               @default(0)
+  lockedUntil         DateTime?
+  lastLoginAt         DateTime?
+  emailVerified       DateTime?
+  isActive            Boolean           @default(true)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  accounts           Account[]
+  sessions           Session[]
+  studentProfile     StudentProfile?
+  orgMemberships     OrganizationMember[]
+  auditLogs          AuditLog[]
+  aiInteractions     AiInteractionLog[]
+  assessmentAttempts UserAssessmentAttempt[]
+  notifications      Notification[]
+  consentRecords     ConsentRecord[]
+
+  @@index([email])
+  @@index([role])
+  @@index([status])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model ConsentRecord {
+  id          String    @id @default(cuid())
+  userId      String
+  consentType String    // e.g., "TERMS_OF_SERVICE", "DPDP_DATA_PROCESSING", "PARENTAL_GUARDIAN_CONSENT"
+  isGranted   Boolean   @default(true)
+  grantedAt   DateTime  @default(now())
+  withdrawnAt DateTime?
+  ipAddress   String?
+  userAgent   String?
+  metadata    Json?
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, consentType])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email])
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email])
+}
+
+// ---------------------------------------------------------
+// 2. ORGANIZATIONS (INSTITUTIONS & EMPLOYERS)
+// ---------------------------------------------------------
+
+model Organization {
+  id                 String             @id @default(cuid())
+  name               String
+  slug               String             @unique
+  orgType            OrgType
+  verificationStatus VerificationStatus @default(PENDING_REVIEW)
+  officialEmail      String
+  officialWebsite    String?
+  registrationNumber String?            // CIN, GSTIN, AISHE code
+  logoUrl            String?
+  city               String
+  state              String
+  country            String             @default("India")
+  bio                String?            @db.Text
+  isVerified         Boolean            @default(false)
+  verifiedAt         DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  members            OrganizationMember[]
+  departments        Department[]
+  cohorts            Cohort[]
+  jobPostings        JobPosting[]
+  industryChallenges IndustryChallenge[]
+  trainingPrograms   TrainingProgram[]
+  placementRecords   PlacementRecord[]
+  auditLogs          AuditLog[]
+
+  @@index([orgType])
+  @@index([verificationStatus])
+}
+
+model OrganizationMember {
+  id             String       @id @default(cuid())
+  organizationId String
+  userId         String
+  roleInOrg      UserRoleType
+  title          String?
+  isLead         Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([organizationId])
+  @@index([userId])
+}
+
+model Department {
+  id             String       @id @default(cuid())
+  organizationId String
+  name           String
+  code           String?
+  description    String?
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  cohorts        Cohort[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+}
+
+// ---------------------------------------------------------
+// 3. TAXONOMY & UNIVERSAL CAREER ARCHITECTURE
+// ---------------------------------------------------------
+
+model Domain {
+  id          String            @id @default(cuid())
+  stream      EducationalStream
+  name        String            @unique
+  code        String            @unique // e.g. "DOM_MED_PCB"
+  description String            @db.Text
+  iconName    String?
+  badgeColor  String?
+  orderIndex  Int               @default(0)
+  isActive    Boolean           @default(true)
+
+  subDomains  SubDomain[]
+
+  @@index([stream])
+}
+
+model SubDomain {
+  id          String       @id @default(cuid())
+  domainId    String
+  name        String
+  code        String       @unique
+  description String?      @db.Text
+
+  domain      Domain       @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  careerPaths CareerPath[]
+
+  @@index([domainId])
+}
+
+model CareerPath {
+  id                  String             @id @default(cuid())
+  subDomainId         String
+  title               String
+  slug                String             @unique
+  tagline             String?
+  overview            String             @db.Text
+  dailyRoutine        String?            @db.Text
+  minEducationStage   EducationStage
+  typicalDuration     String?            // e.g. "5.5 Years MBBS + 1 Yr Internship"
+  avgStartingSalaryInr Int?              // Annual INR
+  avgMidCareerSalaryInr Int?             // Annual INR
+  growthOutlook       String?            // "Very High", "High"
+  automationRisk      String?            // "LOW", "MEDIUM", "HIGH"
+  regulatoryBody      String?            // e.g. "NMC", "BCI", "ICAI", "AICTE", "ICAR"
+  isRegulated         Boolean            @default(false)
+  isDemoData          Boolean            @default(false)
+  verificationStatus  VerificationStatus @default(VERIFIED)
+  lastReviewedAt      DateTime           @default(now())
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  subDomain           SubDomain          @relation(fields: [subDomainId], references: [id], onDelete: Cascade)
+  streams             CareerPathStream[]
+  qualifications      CareerQualification[]
+  entranceExams       CareerPathExam[]
+  skillRequirements   CareerSkillRequirement[]
+  eligibilityRules    EligibilityRule[]
+  roadmapTemplates    RoadmapTemplate[]
+  sources             CareerInformationSource[]
+  jobPostings         JobPosting[]
+  careerGoals         CareerGoal[]
+  savedByStudents     SavedCareer[]
+
+  @@index([subDomainId])
+  @@index([slug])
+  @@index([verificationStatus])
+}
+
+model CareerPathStream {
+  id           String            @id @default(cuid())
+  careerPathId String
+  stream       EducationalStream
+  isDirectFit  Boolean           @default(true) // Direct traditional pathway vs bridge pathway
+  relevance    String            @default("PRIMARY") // "PRIMARY", "SECONDARY", "ACCESSIBLE"
+  bridgeNotes  String?           // e.g., "Non-medical & commerce students can enter via CUET-UG"
+
+  careerPath   CareerPath        @relation(fields: [careerPathId], references: [id], onDelete: Cascade)
+
+  @@unique([careerPathId, stream])
+  @@index([careerPathId])
+  @@index([stream])
+}
+
+model CareerQualification {
+  id           String         @id @default(cuid())
+  careerPathId String
+  degreeName   String         // e.g. "MBBS", "B.Tech Computer Science", "B.Com / CA"
+  level        EducationStage
+  isMandatory  Boolean        @default(true)
+  awardingBody String?        // e.g. "NMC-recognized Medical College", "ICAI", "Bar Council of India"
+
+  careerPath   CareerPath     @relation(fields: [careerPathId], references: [id], onDelete: Cascade)
+
+  @@index([careerPathId])
+}
+
+model EntranceExam {
+  id              String           @id @default(cuid())
+  name            String           // e.g. "NEET-UG", "JEE Main", "CLAT", "CUET-UG"
+  shortCode       String           @unique // e.g. "NEET_UG", "JEE_MAIN"
+  conductingBody  String           // e.g. "National Testing Agency (NTA)", "Consortium of NLUs"
+  frequency       String           // e.g. "Annual", "Bi-Annual"
+  officialWebsite String?
+  syllabusSummary String?          @db.Text
+  description     String?          @db.Text
+  isNationalLevel Boolean          @default(true)
+
+  careerPaths     CareerPathExam[]
+
+  @@index([shortCode])
+}
+
+model CareerPathExam {
+  id           String       @id @default(cuid())
+  careerPathId String
+  examId       String
+  isMandatory  Boolean      @default(false)
+  notes        String?
+
+  careerPath   CareerPath   @relation(fields: [careerPathId], references: [id], onDelete: Cascade)
+  exam         EntranceExam @relation(fields: [examId], references: [id], onDelete: Cascade)
+
+  @@unique([careerPathId, examId])
+  @@index([careerPathId])
+  @@index([examId])
+}
+
+model CareerInformationSource {
+  id                 String             @id @default(cuid())
+  careerPathId       String
+  sourceName         String             // e.g. "Ministry of Labour NCO-2015", "NMC Guidelines"
+  sourceUrl          String?
+  publicationYear    Int?
+  verificationStatus VerificationStatus @default(VERIFIED)
+  lastReviewedAt     DateTime           @default(now())
+  verifiedBy         String?
+
+  careerPath         CareerPath         @relation(fields: [careerPathId], references: [id], onDelete: Cascade)
+
+  @@index([careerPathId])
+}
+
+// ---------------------------------------------------------
+// 4. SKILLS & COMPETENCY GRAPH
+// ---------------------------------------------------------
+
+model SkillCategory {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  skills      Skill[]
+}
+
+model Skill {
+  id              String                @id @default(cuid())
+  categoryId      String
+  name            String                @unique
+  canonicalSlug   String                @unique
+  description     String?               @db.Text
+  isTechnical     Boolean               @default(true)
+
+  category        SkillCategory         @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  careerReqs      CareerSkillRequirement[]
+  userSkills      UserSkill[]
+  jobRequirements JobRequirement[]
+
+  @@index([canonicalSlug])
+}
+
+model CareerSkillRequirement {
+  id            String                @id @default(cuid())
+  careerPathId  String
+  skillId       String
+  requiredLevel SkillProficiencyLevel @default(INTERMEDIATE)
+  weight        Float                 @default(1.0)
+  isMandatory   Boolean               @default(true)
+
+  careerPath    CareerPath            @relation(fields: [careerPathId], references: [id], onDelete: Cascade)
+  skill         Skill                 @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([careerPathId, skillId])
+  @@index([careerPathId])
+}
+
+model EligibilityRule {
+  id           String         @id @default(cuid())
+  careerPathId String
+  criterion    String
+  minimumAge   Int?
+  maximumAge   Int?
+  minPercent   Float?
+
+  careerPath   CareerPath     @relation(fields: [careerPathId], references: [id], onDelete: Cascade)
+
+  @@index([careerPathId])
+}
+
+// ---------------------------------------------------------
+// 5. STUDENT PROFILES, PASSION & PRIVACY
+// ---------------------------------------------------------
+
+model StudentProfile {
+  id                  String             @id @default(cuid())
+  userId              String             @unique
+  educationStage      EducationStage     @default(CLASS_10)
+  currentStream       EducationalStream  @default(UNDECIDED)
+  targetCareerPathId  String?
+  institutionName     String?
+  graduationYear      Int?
+  city                String?
+  state               String?
+  languagePreference  String             @default("en")
+  guardianConsent     Boolean            @default(false)
+  careerReadinessIndex Int               @default(0) // 0-100 deterministic CRI score
+  digitalPassportHash String?            @unique
+  onboardingCompleted Boolean            @default(false)
+  selectedStreams     EducationalStream[]
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  user                User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  onboardingProgress  OnboardingProgress?
+  educationalHistory  EducationalBackground[]
+  interests           StudentInterest[]
+  careerGoals         CareerGoal[]
+  userSkills          UserSkill[]
+  learningPreference  LearningPreference?
+  privacyPreference   PrivacyPreference?
+  criSnapshots        CareerReadinessSnapshot[]
+  roadmaps            UserRoadmap[]
+  dailyMissions       DailyMission[]
+  digitalTwin         CareerDigitalTwin?
+  jobApplications     JobApplication[]
+  candidateMatches    CandidateMatch[]
+  institutionEnrollments InstitutionStudent[]
+  savedCareers        SavedCareer[]
+  savedComparisons    SavedComparison[]
+  recommendationFeedbacks RecommendationFeedback[]
+  streamDiscoveryResults  StreamDiscoveryResult[]
+  mentorConversations MentorConversation[]
+  assessmentAttempts  AssessmentAttempt[]
+  assessmentResults   AssessmentResult[]
+  skillEvidences      SkillEvidence[]
+
+  @@index([educationStage])
+  @@index([currentStream])
+}
+
+model OnboardingProgress {
+  id               String         @id @default(cuid())
+  studentProfileId String         @unique
+  currentStep      Int            @default(1)
+  stepDataJson     Json?
+  isCompleted      Boolean        @default(false)
+  updatedAt        DateTime       @updatedAt
+
+  studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+}
+
+model EducationalBackground {
+  id                String         @id @default(cuid())
+  studentProfileId  String
+  stage             EducationStage
+  institutionName   String
+  boardOrUniversity String?        // CBSE, CISCE, State Board, etc.
+  specialization    String?        // Science, Commerce, PCMB, Arts, etc.
+  startYear         Int
+  endYear           Int?
+  isCurrent         Boolean        @default(false)
+  gradeOrPercentage Float?
+
+  studentProfile    StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+
+  @@index([studentProfileId])
+}
+
+model StudentInterest {
+  id               String         @id @default(cuid())
+  studentProfileId String
+  interestName     String
+  category         String?        // RIASEC: Realistic, Investigative, Artistic, Social, Enterprising, Conventional
+  weight           Float          @default(1.0)
+
+  studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([studentProfileId, interestName])
+  @@index([studentProfileId])
+}
+
+model CareerGoal {
+  id               String         @id @default(cuid())
+  studentProfileId String
+  careerPathId     String
+  priorityRank     Int            @default(1) // 1 = Primary, 2 = Secondary
+  targetYear       Int?
+  notes            String?        @db.Text
+  createdAt        DateTime       @default(now())
+
+  studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  careerPath       CareerPath     @relation(fields: [careerPathId], references: [id], onDelete: Cascade)
+
+  @@unique([studentProfileId, careerPathId])
+  @@index([studentProfileId])
+}
+
+model UserSkill {
+  id               String                @id @default(cuid())
+  studentProfileId String
+  skillId          String
+  proficiencyLevel SkillProficiencyLevel @default(NOVICE)
+  scorePercentage  Float                 @default(0.0)
+  isVerified       Boolean               @default(false)
+  verifiedAt       DateTime?
+
+  studentProfile   StudentProfile        @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  skill            Skill                 @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  evidences        SkillEvidence[]
+
+  @@unique([studentProfileId, skillId])
+  @@index([studentProfileId])
+  @@index([skillId])
+}
+
+model SkillEvidence {
+  id                 String             @id @default(cuid())
+  studentProfileId   String
+  userSkillId        String?
+  skillName          String
+  title              String?
+  evidenceType       String             // "AUTOMATED_ASSESSMENT", "PORTFOLIO_REVIEW", "EXTERNAL_CREDENTIAL", "PROJECT_REPO", "CERTIFICATE"
+  verificationStatus VerificationStatus @default(VERIFIED)
+  scorePercentage    Float              @default(0.0)
+  evidenceSummary    String?            @db.Text
+  artifactUrl        String?
+  verificationHash   String?            // Cryptographic hash for tamper-evident credentials
+  issuerOrVerifier   String?
+  evidenceMetadata   Json?
+  isVerified         Boolean            @default(true)
+  verifiedBy         String?
+  verifiedAt         DateTime?          @default(now())
+  createdAt          DateTime           @default(now())
+
+  studentProfile     StudentProfile     @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  userSkill          UserSkill?         @relation(fields: [userSkillId], references: [id], onDelete: Cascade)
+  results            AssessmentResult[]
+
+  @@index([studentProfileId])
+  @@index([userSkillId])
+  @@index([skillName])
+}
+
+model LearningPreference {
+  id                   String         @id @default(cuid())
+  studentProfileId     String         @unique
+  preferredPace        String         @default("SELF_PACED") // INTENSIVE, BALANCED, SELF_PACED
+  preferredStyle       String         @default("PRACTICAL")   // VISUAL, PRACTICAL, THEORETICAL
+  weeklyHoursAvailable Int            @default(10)
+  primaryLanguage      String         @default("en")         // en, hi, hinglish
+  allowAiMentoring     Boolean        @default(true)
+
+  studentProfile       StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+}
+
+model PrivacyPreference {
+  id                 String         @id @default(cuid())
+  studentProfileId   String         @unique
+  isProfilePublic    Boolean        @default(false) // Strictly false by default per DPDP Act
+  allowRecruiterView Boolean        @default(false) // Must remain false for minors (<18)
+  allowLeaderboard   Boolean        @default(false)
+  allowAnalytics     Boolean        @default(true)
+  updatedAt          DateTime       @updatedAt
+
+  studentProfile     StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+}
+
+model CareerReadinessSnapshot {
+  id                 String         @id @default(cuid())
+  studentProfileId   String
+  careerSlug         String?
+  criScore           Int            // 0-100 deterministic CRI score
+  readinessStatus    String         @default("DEVELOPING") // UNASSESSED, INSUFFICIENT_EVIDENCE, DEVELOPING, COMPETENT, ADVANCED
+  weightedCoverage   Float          @default(0.0)
+  practicalRatio     Float          @default(0.0)
+  academicRatio      Float          @default(0.0)
+  verifiedRatio      Float          @default(0.0)
+  dimensionBreakdown Json?          // Career Knowledge, Academic Prep, Skill Development, Practical, Milestones
+  algorithmVersion   String         @default("v1.0")
+  snapshotDate       DateTime       @default(now())
+
+  studentProfile     StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+
+  @@index([studentProfileId, snapshotDate])
+}
+
+model CareerDigitalTwin {
+  id                       String         @id @default(cuid())
+  studentProfileId         String         @unique
+  summaryHeadline          String?
+  currentStageLabel        String         @default("Class 10")
+  primaryStreamLabel       String         @default("Undecided")
+  targetCareerTitles       Json?          // Array of string titles
+  topStrengths             Json?          // Array of strength badges
+  verifiedSkillCount       Int            @default(0)
+  selfReportedSkillCount   Int            @default(0)
+  developmentAreas         Json?          // Key gaps / priorities
+  milestonesCompletedCount Int            @default(0)
+  learningVelocityScore    Float          @default(0.0)
+  readinessStatus          String         @default("DEVELOPING") // UNASSESSED, INSUFFICIENT_EVIDENCE, DEVELOPING, COMPETENT, ADVANCED
+  lastCalibratedAt         DateTime       @default(now())
+  algorithmVersion         String         @default("v1.0")
+  twinJson                 Json?          // Full serializable Digital Twin snapshot
+  createdAt                DateTime       @default(now())
+  updatedAt                DateTime       @updatedAt
+
+  studentProfile           StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+}
+
+model UserRoadmap {
+  id               String                 @id @default(cuid())
+  studentProfileId String
+  targetCareerId   String
+  careerSlug       String?
+  title            String
+  overview         String?                @db.Text
+  totalWeeks       Int                    @default(12)
+  durationMonths   Int                    @default(6)
+  currentWeekIndex Int                    @default(1)
+  status           String                 @default("ACTIVE") // ACTIVE, PAUSED, COMPLETED, ARCHIVED
+  version          Int                    @default(1)
+  isCompleted      Boolean                @default(false)
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+
+  studentProfile   StudentProfile         @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  milestones       WeeklyMilestone[]
+  versionHistories RoadmapVersionHistory[]
+
+  @@index([studentProfileId])
+  @@index([careerSlug])
+}
+
+model WeeklyMilestone {
+  id            String      @id @default(cuid())
+  roadmapId     String
+  weekNumber    Int
+  stage         String      @default("FOUNDATION") // SHORT_TERM, MEDIUM_TERM, LONG_TERM
+  timeframe     String?     // e.g. "Weeks 1-2", "Month 1"
+  title         String
+  description   String      @db.Text
+  activities    Json?       // Array of specific tasks: { id, title, type, estimatedMinutes, isCompleted, completedAt }
+  estimatedMinutes Int      @default(120)
+  isRemediation Boolean     @default(false)
+  isCompleted   Boolean     @default(false)
+  quizPassed    Boolean     @default(false)
+  quizScorePct  Float?
+  completedAt   DateTime?
+
+  roadmap       UserRoadmap @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+
+  @@index([roadmapId])
+}
+
+model RoadmapVersionHistory {
+  id           String      @id @default(cuid())
+  roadmapId    String
+  version      Int
+  changeReason String?
+  snapshotJson Json
+  createdAt    DateTime    @default(now())
+
+  roadmap      UserRoadmap @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+
+  @@index([roadmapId, version])
+}
+
+model DailyMission {
+  id               String         @id @default(cuid())
+  studentProfileId String
+  title            String         @default("Daily Career Mission")
+  objective        String?        @db.Text
+  instructions     String?        @db.Text
+  estimatedMinutes Int            @default(15)
+  missionType      String         @default("EXPLORATION") // KNOWLEDGE_CHECK, SKILL_EXERCISE, CAREER_EXPLORATION, REFLECTION
+  careerSlug       String?
+  stream           String?
+  status           String         @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, SKIPPED, RESCHEDULED
+  reflectionText   String?        @db.Text
+  feedbackRating   Int?
+  scheduledDate    DateTime       @default(now())
+  completedAt      DateTime?
+  dateAssigned     DateTime       @default(now())
+  questionText     String?        @db.Text
+  options          Json?
+  correctOption    Int?
+  explanation      String?        @db.Text
+  isAnswered       Boolean        @default(false)
+  isCorrect        Boolean        @default(false)
+
+  studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+
+  @@index([studentProfileId, dateAssigned])
+  @@index([studentProfileId, status])
+}
+
+// ---------------------------------------------------------
+// 6. LEARNING RESOURCES & TEMPLATES
+// ---------------------------------------------------------
+
+model LearningResource {
+  id            String             @id @default(cuid())
+  title         String
+  provider      String             // e.g. "NPTEL / IIT Madras", "SWAYAM", "NCERT", "Coursera Open"
+  url           String
+  costType      String             @default("FREE") // "FREE", "AUDIT_FREE", "PAID"
+  stream        EducationalStream?
+  language      String             @default("en")
+  durationWeeks Int?
+  description   String?            @db.Text
+  createdAt     DateTime           @default(now())
+
+  roadmapSteps  RoadmapStepResource[]
+
+  @@index([provider])
+  @@index([costType])
+}
+
+model RoadmapTemplate {
+  id            String                @id @default(cuid())
+  careerPathId  String
+  title         String
+  durationWeeks Int                   @default(12)
+  targetStage   EducationStage
+  overview      String?               @db.Text
+
+  careerPath    CareerPath            @relation(fields: [careerPathId], references: [id], onDelete: Cascade)
+  steps         RoadmapTemplateStep[]
+
+  @@index([careerPathId])
+}
+
+model RoadmapTemplateStep {
+  id                 String                @id @default(cuid())
+  templateId         String
+  weekNumber         Int
+  title              String
+  focusTopic         String
+  learningObjectives String                @db.Text
+  suggestedHours     Int                   @default(6)
+
+  template           RoadmapTemplate       @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  resources          RoadmapStepResource[]
+
+  @@unique([templateId, weekNumber])
+  @@index([templateId])
+}
+
+model RoadmapStepResource {
+  id         String              @id @default(cuid())
+  stepId     String
+  resourceId String
+
+  step       RoadmapTemplateStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  resource   LearningResource    @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@unique([stepId, resourceId])
+  @@index([stepId])
+  @@index([resourceId])
+}
+
+// ---------------------------------------------------------
+// 7. INSTITUTION & COHORT RELATIONS
+// ---------------------------------------------------------
+
+model Cohort {
+  id             String               @id @default(cuid())
+  organizationId String
+  departmentId   String?
+  name           String
+  academicYear   String
+  stream         EducationalStream
+
+  organization   Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  department     Department?          @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  students       InstitutionStudent[]
+
+  @@index([organizationId])
+}
+
+model InstitutionStudent {
+  id               String         @id @default(cuid())
+  cohortId         String
+  studentProfileId String
+  rollNumber       String?
+  isAtRisk         Boolean        @default(false)
+  riskReason       String?
+  enrolledAt       DateTime       @default(now())
+
+  cohort           Cohort         @relation(fields: [cohortId], references: [id], onDelete: Cascade)
+  studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([cohortId, studentProfileId])
+  @@index([cohortId])
+}
+
+model TrainingProgram {
+  id             String            @id @default(cuid())
+  organizationId String
+  title          String
+  stream         EducationalStream
+  description    String?           @db.Text
+  durationWeeks  Int
+  totalEnrolled  Int               @default(0)
+  startDate      DateTime?
+  endDate        DateTime?
+
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+}
+
+model PlacementRecord {
+  id             String            @id @default(cuid())
+  organizationId String
+  academicYear   String            // e.g. "2025-2026"
+  stream         EducationalStream
+  totalEligible  Int
+  totalPlaced    Int
+  avgPackageInr  Int?
+  highestPkgInr  Int?
+  topSectorsJson Json?             // e.g. ["Healthcare", "Pharma", "Biotech"]
+  isAudited      Boolean           @default(false)
+  createdAt      DateTime          @default(now())
+
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, academicYear])
+}
+
+// ---------------------------------------------------------
+// 8. EMPLOYER JOBS & APPLICATIONS
+// ---------------------------------------------------------
+
+model JobPosting {
+  id                String            @id @default(cuid())
+  organizationId    String
+  careerPathId      String?
+  title             String
+  slug              String            @unique
+  employmentType    String
+  locationType      String
+  city              String?
+  salaryMinInr      Int?
+  salaryMaxInr      Int?
+  description       String            @db.Text
+  status            String            @default("PUBLISHED")
+  minEducationStage EducationStage    @default(UNDERGRADUATE)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  organization      Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  careerPath        CareerPath?       @relation(fields: [careerPathId], references: [id], onDelete: SetNull)
+  requirements      JobRequirement[]
+  applications      JobApplication[]
+  matches           CandidateMatch[]
+
+  @@index([organizationId])
+  @@index([status])
+}
+
+model JobRequirement {
+  id            String                @id @default(cuid())
+  jobPostingId  String
+  skillId       String
+  requiredLevel SkillProficiencyLevel @default(INTERMEDIATE)
+  isMustHave    Boolean               @default(true)
+  weight        Float                 @default(1.0)
+
+  jobPosting    JobPosting            @relation(fields: [jobPostingId], references: [id], onDelete: Cascade)
+  skill         Skill                 @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([jobPostingId, skillId])
+  @@index([jobPostingId])
+}
+
+model IndustryChallenge {
+  id             String       @id @default(cuid())
+  organizationId String
+  title          String
+  briefMarkdown  String       @db.Text
+  rubricJson     Json
+  isActive       Boolean      @default(true)
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+}
+
+model JobApplication {
+  id               String             @id @default(cuid())
+  jobPostingId     String
+  studentProfileId String
+  status           ApplicationStatus  @default(APPLIED)
+  matchScorePct    Float              @default(0.0)
+  matchBreakdown   Json?
+  recruiterNotes   String?            @db.Text
+  appliedAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  jobPosting       JobPosting         @relation(fields: [jobPostingId], references: [id], onDelete: Cascade)
+  studentProfile   StudentProfile     @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  interview        InterviewSchedule?
+  feedback         HiringFeedback?
+
+  @@unique([jobPostingId, studentProfileId])
+  @@index([jobPostingId])
+  @@index([studentProfileId])
+}
+
+model CandidateMatch {
+  id               String         @id @default(cuid())
+  jobPostingId     String
+  studentProfileId String
+  overallMatchPct  Float
+  skillScorePct    Float
+  experienceScore  Float
+  isExplainable    Boolean        @default(true)
+  breakdownJson    Json           // Transparent scoring breakdown
+  calculatedAt     DateTime       @default(now())
+
+  jobPosting       JobPosting     @relation(fields: [jobPostingId], references: [id], onDelete: Cascade)
+  studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([jobPostingId, studentProfileId])
+  @@index([jobPostingId])
+  @@index([studentProfileId])
+}
+
+model InterviewSchedule {
+  id              String         @id @default(cuid())
+  applicationId   String         @unique
+  scheduledAt     DateTime
+  meetingLink     String?
+  interviewType   String         @default("TECHNICAL") // "HR", "TECHNICAL", "PRACTICAL_CASE"
+  status          String         @default("SCHEDULED") // "SCHEDULED", "COMPLETED", "CANCELLED"
+  interviewerName String?
+
+  application     JobApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+}
+
+model HiringFeedback {
+  id             String         @id @default(cuid())
+  applicationId  String         @unique
+  technicalRating Int           // 1-5
+  problemSolving Int           // 1-5
+  communication  Int           // 1-5
+  recommendation String         // "STRONG_HIRE", "HIRE", "NEUTRAL", "REJECT"
+  comments       String?        @db.Text
+  submittedAt    DateTime       @default(now())
+
+  application    JobApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+}
+
+// ---------------------------------------------------------
+// 9. ASSESSMENTS & EVALUATION BANK
+// ---------------------------------------------------------
+
+model AssessmentBank {
+  id          String                   @id @default(cuid())
+  type        AssessmentType
+  title       String
+  description String?                  @db.Text
+  questions   AssessmentBankQuestion[]
+  attempts    UserAssessmentAttempt[]
+}
+
+model AssessmentBankQuestion {
+  id               String             @id @default(cuid())
+  assessmentBankId String
+  questionText     String             @db.Text
+  options          Json
+  correctOption    Int
+  explanation      String?            @db.Text
+  difficulty       String             @default("MEDIUM") // EASY, MEDIUM, HARD
+  competencyTag    String?
+
+  assessmentBank   AssessmentBank     @relation(fields: [assessmentBankId], references: [id], onDelete: Cascade)
+  answers          AssessmentAnswer[]
+
+  @@index([assessmentBankId])
+}
+
+model UserAssessmentAttempt {
+  id               String             @id @default(cuid())
+  userId           String
+  assessmentBankId String
+  scorePercentage  Float
+  answersJson      Json
+  completedAt      DateTime           @default(now())
+
+  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assessmentBank   AssessmentBank     @relation(fields: [assessmentBankId], references: [id], onDelete: Cascade)
+  detailedAnswers  AssessmentAnswer[]
+
+  @@index([userId])
+}
+
+model AssessmentAnswer {
+  id           String                 @id @default(cuid())
+  attemptId    String
+  questionId   String
+  chosenOption Int
+  isCorrect    Boolean
+  timeSpentSec Int                    @default(0)
+
+  attempt      UserAssessmentAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question     AssessmentBankQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([attemptId])
+  @@index([questionId])
+}
+
+// ---------------------------------------------------------
+// 10. GOVERNANCE, AUDIT & PLATFORM MANAGEMENT
+// ---------------------------------------------------------
+
+model AuditLog {
+  id             String        @id @default(cuid())
+  userId         String?
+  organizationId String?
+  action         String
+  details        Json?
+  createdAt      DateTime      @default(now())
+
+  user           User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([organizationId])
+}
+
+model AiInteractionLog {
+  id             String   @id @default(cuid())
+  userId         String?
+  agentModule    String
+  promptTokens   Int      @default(0)
+  responseTokens Int      @default(0)
+  latencyMs      Int      @default(0)
+  language       String   @default("en")
+  createdAt      DateTime @default(now())
+
+  user           User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([agentModule])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  body      String
+  linkUrl   String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+}
+
+model SupportTicket {
+  id           String          @id @default(cuid())
+  userId       String?
+  subject      String
+  category     String          // "TECHNICAL", "ACCOUNT", "DPDP_GRIEVANCE", "CAREER_CONTENT"
+  priority     String          @default("MEDIUM") // "LOW", "MEDIUM", "HIGH", "URGENT"
+  status       String          @default("OPEN")   // "OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED"
+  contactEmail String
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  messages     TicketMessage[]
+
+  @@index([status])
+  @@index([category])
+}
+
+model TicketMessage {
+  id         String        @id @default(cuid())
+  ticketId   String
+  senderRole UserRoleType
+  message    String        @db.Text
+  createdAt  DateTime      @default(now())
+
+  ticket     SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+}
+
+model ContentModerationRecord {
+  id            String    @id @default(cuid())
+  contentType   String    // "CAREER_PATH", "JOB_POSTING", "CHALLENGE"
+  contentId     String
+  flagReason    String
+  flaggedBy     String?
+  reviewStatus  String    @default("PENDING") // "PENDING", "APPROVED", "REJECTED"
+  reviewerNotes String?   @db.Text
+  reviewedAt    DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@index([contentType, contentId])
+  @@index([reviewStatus])
+}
+
+model SystemConfig {
+  id          String   @id @default(cuid())
+  configKey   String   @unique
+  configValue String   @db.Text
+  description String?
+  isEncrypted Boolean  @default(false)
+  updatedAt   DateTime @updatedAt
+
+  @@index([configKey])
+}
+
+// ---------------------------------------------------------
+// 14. PART B: UNIVERSAL CAREER INTELLIGENCE & AI MODELS
+// ---------------------------------------------------------
+
+model SavedCareer {
+  id               String         @id @default(cuid())
+  studentProfileId String
+  careerPathId     String
+  notes            String?        @db.Text
+  createdAt        DateTime       @default(now())
+
+  studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  careerPath       CareerPath     @relation(fields: [careerPathId], references: [id], onDelete: Cascade)
+
+  @@unique([studentProfileId, careerPathId])
+  @@index([studentProfileId])
+  @@index([careerPathId])
+}
+
+model SavedComparison {
+  id               String         @id @default(cuid())
+  studentProfileId String
+  title            String
+  careerSlugs      String[]       // Array of up to 4 compared career slugs
+  createdAt        DateTime       @default(now())
+
+  studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+
+  @@index([studentProfileId])
+}
+
+model RecommendationFeedback {
+  id               String         @id @default(cuid())
+  studentProfileId String
+  careerSlug       String
+  isHelpful        Boolean
+  rating           Int?           // 1 to 5 stars
+  feedbackText     String?        @db.Text
+  dismissed        Boolean        @default(false)
+  createdAt        DateTime       @default(now())
+
+  studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+
+  @@index([studentProfileId])
+  @@index([careerSlug])
+}
+
+model StreamDiscoveryResult {
+  id                 String              @id @default(cuid())
+  studentProfileId   String
+  recommendedStreams EducationalStream[]
+  answersJson        Json
+  summaryNotes       String?             @db.Text
+  createdAt          DateTime            @default(now())
+
+  studentProfile     StudentProfile      @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+
+  @@index([studentProfileId])
+}
+
+model AiUsageLog {
+  id               String    @id @default(cuid())
+  userId           String?
+  featureName      String    // "CAREER_DISCOVERY", "STREAM_SELECTION", "AI_MENTOR"
+  modelUsed        String    // e.g. "gemini-2.0-flash", "deterministic-fallback"
+  promptTokens     Int       @default(0)
+  completionTokens Int       @default(0)
+  latencyMs        Int       @default(0)
+  status           String    @default("SUCCESS") // "SUCCESS", "FALLBACK", "ERROR"
+  errorMessage     String?   @db.Text
+  createdAt        DateTime  @default(now())
+
+  @@index([featureName])
+  @@index([createdAt])
+}
+
+// ==============================================================================
+// PART D1: AI CAREER MENTOR & INTELLIGENT SKILL ASSESSMENT MODELS
+// ==============================================================================
+
+model MentorConversation {
+  id               String         @id @default(cuid())
+  studentProfileId String
+  title            String         @default("Career Guidance Session")
+  language         String         @default("en") // "en", "hi", "hinglish"
+  careerSlug       String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  messages         MentorMessage[]
+
+  @@index([studentProfileId])
+}
+
+model MentorMessage {
+  id               String             @id @default(cuid())
+  conversationId   String
+  role             String             // "user", "assistant", "system"
+  content          String             @db.Text
+  actionProposals  Json?              // Optional array of actionable recommendations/roadmap items
+  tokensUsed       Int?
+  createdAt        DateTime           @default(now())
+
+  conversation     MentorConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+}
+
+model Assessment {
+  id                 String             @id @default(cuid())
+  title              String
+  slug               String             @unique
+  description        String             @db.Text
+  stream             EducationalStream
+  category           String             // "FOUNDATION", "SUBJECT_SPECIFIC", "CAREER_AWARENESS", "LOGICAL_REASONING", "DOMAIN_COMPETENCY"
+  targetSkillName    String
+  difficultyLevel    String             // "BEGINNER", "INTERMEDIATE", "ADVANCED"
+  minEducationStage  EducationStage     @default(CLASS_10)
+  durationMinutes    Int                @default(20)
+  passingPercentage  Int                @default(65)
+  rubricCriteria     Json?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  questions          AssessmentQuestion[]
+  attempts           AssessmentAttempt[]
+
+  @@index([stream])
+  @@index([targetSkillName])
+}
+
+model AssessmentQuestion {
+  id             String           @id @default(cuid())
+  assessmentId   String
+  questionOrder  Int              @default(1)
+  questionType   String           @default("MULTIPLE_CHOICE") // "MULTIPLE_CHOICE", "SCENARIO_ANALYSIS"
+  questionText   String           @db.Text
+  explanation    String?          @db.Text
+  rubricGuide    String?          @db.Text
+  points         Int              @default(10)
+
+  assessment     Assessment       @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  options        QuestionOption[]
+  answers        AttemptAnswer[]
+
+  @@index([assessmentId])
+}
+
+model QuestionOption {
+  id         String             @id @default(cuid())
+  questionId String
+  optionKey  String             // "A", "B", "C", "D"
+  optionText String
+  isCorrect  Boolean            @default(false)
+
+  question   AssessmentQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([questionId])
+}
+
+model AssessmentAttempt {
+  id               String            @id @default(cuid())
+  assessmentId     String
+  studentProfileId String
+  status           String            @default("IN_PROGRESS") // "IN_PROGRESS", "SUBMITTED", "EVALUATED"
+  startedAt        DateTime          @default(now())
+  completedAt      DateTime?
+  scorePercentage  Float?
+  passed           Boolean?
+  feedbackSummary  String?           @db.Text
+
+  assessment       Assessment        @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  studentProfile   StudentProfile    @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  answers          AttemptAnswer[]
+  result           AssessmentResult?
+
+  @@index([assessmentId])
+  @@index([studentProfileId])
+}
+
+model AttemptAnswer {
+  id                 String             @id @default(cuid())
+  attemptId          String
+  questionId         String
+  selectedOptionKey  String?
+  textResponse       String?            @db.Text
+  isCorrect          Boolean?
+  pointsAwarded      Float?
+
+  attempt            AssessmentAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question           AssessmentQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([attemptId])
+  @@index([questionId])
+}
+
+model AssessmentResult {
+  id               String            @id @default(cuid())
+  attemptId        String            @unique
+  studentProfileId String
+  totalScore       Float
+  maxScore         Float
+  percentage       Float
+  passed           Boolean
+  skillEvidenceId  String?
+  strengths        String[]
+  improvements     String[]
+  createdAt        DateTime          @default(now())
+
+  attempt          AssessmentAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  studentProfile   StudentProfile    @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  evidence         SkillEvidence?    @relation(fields: [skillEvidenceId], references: [id])
+
+  @@index([studentProfileId])
+}
+
+

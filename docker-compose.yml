@@ -1,0 +1,71 @@
+# ==============================================================================
+# KAABIL (काबिल) — Production Docker Compose Orchestration
+# Services: Next.js SaaS Web Application + PostgreSQL 16 Alpine Database
+# ==============================================================================
+
+version: "3.8"
+
+services:
+  # ----------------------------------------------------------------------------
+  # PostgreSQL Database Service
+  # ----------------------------------------------------------------------------
+  db:
+    image: postgres:16-alpine
+    container_name: kaabil-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-kaabil_secure_dev_2026}
+      POSTGRES_DB: ${POSTGRES_DB:-kaabil_prod}
+    volumes:
+      - kaabil-pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-kaabil_prod}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - kaabil-network
+
+  # ----------------------------------------------------------------------------
+  # KAABIL Application Server
+  # ----------------------------------------------------------------------------
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kaabil-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-kaabil_secure_dev_2026}@db:5432/${POSTGRES_DB:-kaabil_prod}?schema=public
+      AUTH_SECRET: ${AUTH_SECRET:-kaabil_prod_secret_min_32_chars_random_string_2026}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      CREDENTIAL_SIGNING_SECRET: ${CREDENTIAL_SIGNING_SECRET:-kaabil_signing_secret_min_32_chars_2026}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.0-flash}
+      NEXT_PUBLIC_APP_ENV: production
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      NEXT_PUBLIC_DEMO_MODE: "false"
+    volumes:
+      - kaabil-devstore:/app/.dev-store
+    networks:
+      - kaabil-network
+
+volumes:
+  kaabil-pgdata:
+    name: kaabil-pgdata
+  kaabil-devstore:
+    name: kaabil-devstore
+
+networks:
+  kaabil-network:
+    name: kaabil-network
+    driver: bridge
