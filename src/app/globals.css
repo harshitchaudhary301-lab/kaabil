@@ -1,6 +1,12 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;0,800;1,600;1,700&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.font-cinematic {
+  font-family: "Playfair Display", "Cormorant Garamond", Georgia, serif;
+}
 
 @layer base {
   :root {
@@ -215,6 +221,81 @@
 
 .animate-leaf-3 {
   animation: leaf-drift-3 10.5s cubic-bezier(0.4, 0, 0.2, 1) infinite 5s;
+}
+
+@keyframes leaf-drift-4 {
+  0% {
+    transform: translate(0, -10px) rotate(45deg);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.75;
+  }
+  80% {
+    opacity: 0.75;
+  }
+  100% {
+    transform: translate(60px, 240px) rotate(190deg);
+    opacity: 0;
+  }
+}
+
+@keyframes leaf-drift-5 {
+  0% {
+    transform: translate(0, -10px) rotate(-20deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.8;
+  }
+  85% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(25px, 270px) rotate(135deg);
+    opacity: 0;
+  }
+}
+
+.animate-leaf-4 {
+  animation: leaf-drift-4 11s cubic-bezier(0.4, 0, 0.2, 1) infinite 1.2s;
+}
+
+.animate-leaf-5 {
+  animation: leaf-drift-5 13s cubic-bezier(0.4, 0, 0.2, 1) infinite 6.8s;
+}
+
+/* Subtle Clouds Drift Animation (35-60s) */
+@keyframes cloud-drift-subtle {
+  0% {
+    transform: translateX(0px);
+  }
+  50% {
+    transform: translateX(-35px);
+  }
+  100% {
+    transform: translateX(0px);
+  }
+}
+
+.animate-cloud-subtle {
+  animation: cloud-drift-subtle 48s ease-in-out infinite;
+}
+
+/* Sunset Amber Warm Lighting Pulse */
+@keyframes sunset-warm-pulse {
+  0%, 100% {
+    opacity: 0.22;
+    transform: translate(-50%, 0) scale(1);
+  }
+  50% {
+    opacity: 0.38;
+    transform: translate(-50%, 0) scale(1.08);
+  }
+}
+
+.animate-sunset-pulse {
+  animation: sunset-warm-pulse 8s ease-in-out infinite;
 }
 
 /* Soft Lavender & Soft Mint Badges */

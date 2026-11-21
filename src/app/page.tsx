@@ -10,7 +10,7 @@ import { IntelligenceLoopSection } from "@/components/landing/IntelligenceLoopSe
 import { ProductShowcaseSection } from "@/components/landing/ProductShowcaseSection";
 import { CareerDiscoverySection } from "@/components/landing/CareerDiscoverySection";
 import { FaqSection } from "@/components/landing/FaqSection";
-import { CtaSection } from "@/components/landing/CtaSection";
+import { CinematicEndingSection } from "@/components/landing/CinematicEndingSection";
 
 export default function LandingPage() {
   return (
@@ -46,11 +46,11 @@ export default function LandingPage() {
         {/* 10. Frequently Asked Questions with Transparent Guidance */}
         <FaqSection />
 
-        {/* 11. Final High-Impact Call-to-Action */}
-        <CtaSection />
+        {/* 11. Final Cinematic Ending Page Section with Approved Sunset Art */}
+        <CinematicEndingSection />
       </main>
 
-      {/* 12. Multi-Column Professional Footer with DPDP Compliance Safeguards */}
+      {/* 12. Deep-Plum Premium Footer with DPDP Compliance Safeguards */}
       <Footer />
     </div>
   );
