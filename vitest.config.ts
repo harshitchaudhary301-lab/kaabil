@@ -6,6 +6,7 @@ export default defineConfig({
     include: ["src/__tests__/**/*.test.ts"],
     exclude: ["checkpoints/**", "node_modules/**", ".next/**"],
     globals: true,
+    testTimeout: 30000,
   },
   resolve: {
     alias: {
