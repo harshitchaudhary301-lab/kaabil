@@ -100,6 +100,29 @@ export default function LoginPage() {
     }
   };
 
+  // Dedicated demo persona access (strictly isolated from real user form inputs)
+  const handleDemoQuickLogin = async (demoEmail: string, destination: string) => {
+    setIsLoading(true);
+    setErrorMessage(null);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: demoEmail, password: "Kaabil@2026", rememberMe: true }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Demo authentication failed.");
+      }
+      router.push(destination);
+    } catch (err: unknown) {
+      const error = err as Error;
+      setErrorMessage(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen grid grid-cols-1 lg:grid-cols-12 bg-[#F8FAFC]">
       {/* LEFT PANEL: Premium Illustrated Brand & Feature Showcase (5 cols on lg) */}
@@ -260,7 +283,7 @@ export default function LoginPage() {
           )}
 
           {/* Login Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-text-primary block">
                 Official or Registered Email
@@ -281,7 +304,7 @@ export default function LoginPage() {
                       : "admin@kaabil.in"
                   }
                   required
-                  autoComplete="email"
+                  autoComplete="off"
                   className="pl-10 h-11 rounded-xl border-border focus:border-primary text-sm"
                 />
               </div>
@@ -307,7 +330,7 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
                   required
-                  autoComplete="current-password"
+                  autoComplete="new-password"
                   className="pl-10 pr-10 h-11 rounded-xl border-border focus:border-primary text-sm"
                 />
                 <button
@@ -366,6 +389,56 @@ export default function LoginPage() {
             <p className="text-[11px] text-slate-400 leading-normal">
               100% Free Core for Students • Secondary Minor Protection (DPDP Act 2023)
             </p>
+          </div>
+
+          {/* Separate Demo Persona Access (Isolated from Form Inputs) */}
+          <div className="pt-4 border-t border-slate-200/80 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                Demo Persona Quick Access
+              </span>
+              <span className="text-[10px] text-purple-700 bg-purple-50 px-2 py-0.5 rounded font-semibold border border-purple-200">
+                Testing Sandbox
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => handleDemoQuickLogin("demo.student@kaabil.in", "/student/dashboard")}
+                disabled={isLoading}
+                className="p-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-purple-50 hover:border-purple-200 text-xs font-semibold text-slate-700 hover:text-purple-900 transition-all flex items-center justify-center gap-1.5"
+              >
+                <GraduationCap className="h-3.5 w-3.5 text-purple-600" />
+                <span>Student Demo</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDemoQuickLogin("institution@kaabil.in", "/institution/dashboard")}
+                disabled={isLoading}
+                className="p-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-200 text-xs font-semibold text-slate-700 hover:text-indigo-900 transition-all flex items-center justify-center gap-1.5"
+              >
+                <Building2 className="h-3.5 w-3.5 text-indigo-600" />
+                <span>College Demo</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDemoQuickLogin("employer@kaabil.in", "/employer/dashboard")}
+                disabled={isLoading}
+                className="p-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-sky-50 hover:border-sky-200 text-xs font-semibold text-slate-700 hover:text-sky-900 transition-all flex items-center justify-center gap-1.5"
+              >
+                <Briefcase className="h-3.5 w-3.5 text-sky-600" />
+                <span>Employer Demo</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDemoQuickLogin("admin@kaabil.in", "/admin/dashboard")}
+                disabled={isLoading}
+                className="p-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-slate-300 text-xs font-semibold text-slate-700 hover:text-slate-900 transition-all flex items-center justify-center gap-1.5"
+              >
+                <Lock className="h-3.5 w-3.5 text-slate-600" />
+                <span>Admin Demo</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>

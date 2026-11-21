@@ -187,7 +187,9 @@ export async function POST(req: NextRequest) {
       ].includes(email.toLowerCase());
 
       let passwordMatches = false;
-      if (storedOffline.passwordHash) {
+      if (isDemoAccount && (password === DEMO_DEFAULT_PASSWORD || password === "Kaabil@2026" || password === "Kaabil@123")) {
+        passwordMatches = true;
+      } else if (storedOffline.passwordHash && !storedOffline.passwordHash.startsWith("$2b$10$DEMO_HASH")) {
         passwordMatches = await verifyPassword(password, storedOffline.passwordHash);
       } else if (isDemoAccount) {
         passwordMatches = password === DEMO_DEFAULT_PASSWORD;

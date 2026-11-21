@@ -21,6 +21,8 @@ import {
   ExternalLink,
   Search,
   Bell,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -52,10 +54,12 @@ export function PortalLayout({
   const pathname = usePathname();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const isStudent = portalRole === "STUDENT";
 
   const toggleCategory = (cat: string) => {
     setCollapsedCategories((prev) => ({ ...prev, [cat]: !prev[cat] }));
@@ -204,10 +208,38 @@ export function PortalLayout({
 
       <div className="flex flex-1 overflow-hidden">
         {/* Desktop Sidebar */}
-        <aside className="hidden lg:flex flex-col w-64 border-r border-slate-200/80 bg-white select-none shrink-0">
+        <aside
+          className={`hidden lg:flex flex-col border-r select-none shrink-0 transition-all duration-300 ${
+            isStudent
+              ? "bg-[#150E22] border-[#251838] text-purple-100"
+              : "bg-white border-slate-200/80 text-slate-800"
+          } ${sidebarCollapsed ? "w-20" : "w-64"}`}
+        >
           {/* Brand header */}
-          <div className="p-4 px-5 border-b border-slate-100">
-            <KaabilLogo variant="sidebar" href="/" />
+          <div className="p-4 px-4 border-b border-inherit flex items-center justify-between gap-2">
+            {!sidebarCollapsed ? (
+              <KaabilLogo variant={isStudent ? "sidebar-dark" : "sidebar"} href="/" />
+            ) : (
+              <div className="mx-auto">
+                <KaabilLogo variant="icon" size="sm" href="/" />
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              className={`p-1.5 rounded-xl transition-colors ${
+                isStudent
+                  ? "text-purple-300 hover:text-white hover:bg-white/10"
+                  : "text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+              }`}
+              title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              {sidebarCollapsed ? (
+                <PanelLeftOpen className="h-4 w-4" />
+              ) : (
+                <PanelLeftClose className="h-4 w-4" />
+              )}
+            </button>
           </div>
 
           {/* Navigation Links */}
@@ -219,7 +251,7 @@ export function PortalLayout({
 
               return (
                 <div key={gIdx} className="space-y-1">
-                  {group.category && portalRole !== "STUDENT" ? (
+                  {group.category && portalRole !== "STUDENT" && !sidebarCollapsed ? (
                     <button
                       type="button"
                       onClick={() => toggleCategory(group.category)}
@@ -244,23 +276,42 @@ export function PortalLayout({
                           <Link
                             key={idx}
                             href={item.href}
-                            className={`flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs transition-all ${
+                            title={sidebarCollapsed ? item.title : undefined}
+                            className={`flex items-center ${
+                              sidebarCollapsed ? "justify-center px-2 py-3" : "justify-between px-3.5 py-2.5"
+                            } rounded-2xl text-xs transition-all ${
                               isActive
-                                ? "bg-[#4F46E5] text-white font-semibold shadow-md shadow-indigo-100"
+                                ? isStudent
+                                  ? "bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 text-white font-bold shadow-lg shadow-purple-950/40 border border-purple-400/20"
+                                  : "bg-[#4F46E5] text-white font-semibold shadow-md shadow-indigo-100"
+                                : isStudent
+                                ? "text-purple-200/75 hover:text-white hover:bg-white/[0.08] font-medium"
                                 : "text-slate-700 hover:text-slate-900 hover:bg-slate-50 font-medium"
                             }`}
                           >
                             <div className="flex items-center gap-3 min-w-0">
-                              <span className={isActive ? "text-white shrink-0" : "text-slate-500 shrink-0"}>
+                              <span
+                                className={
+                                  isActive
+                                    ? "text-white shrink-0"
+                                    : isStudent
+                                    ? "text-purple-300/80 shrink-0"
+                                    : "text-slate-500 shrink-0"
+                                }
+                              >
                                 {item.icon}
                               </span>
-                              <span className="truncate">{item.title}</span>
+                              {!sidebarCollapsed && (
+                                <span className="truncate">{item.title}</span>
+                              )}
                             </div>
-                            {item.badge && (
+                            {!sidebarCollapsed && item.badge && (
                               <span
                                 className={`text-[9px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider shrink-0 ${
                                   isActive
                                     ? "bg-white/20 text-white"
+                                    : isStudent
+                                    ? "bg-purple-900/60 text-purple-200 border border-purple-700/50"
                                     : "bg-slate-100 text-slate-600 border border-border"
                                 }`}
                               >
@@ -279,26 +330,42 @@ export function PortalLayout({
 
           {/* KAABIL Pro Card */}
           <div className="p-3">
-            <div className="p-4 rounded-2xl bg-gradient-to-b from-[#FAF5FF] to-[#F3E8FF]/60 border border-purple-100">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-purple-900">
-                <span className="text-amber-500">👑</span> KAABIL Pro
+            {!sidebarCollapsed ? (
+              <div
+                className={`p-4 rounded-2xl ${
+                  isStudent
+                    ? "bg-gradient-to-b from-[#221638] to-[#1A102C] border border-purple-800/40 text-purple-100"
+                    : "bg-gradient-to-b from-[#FAF5FF] to-[#F3E8FF]/60 border border-purple-100"
+                }`}
+              >
+                <div className="flex items-center gap-1.5 text-xs font-bold text-amber-400">
+                  <span>👑</span> <span className={isStudent ? "text-purple-100" : "text-purple-900"}>KAABIL Pro</span>
+                </div>
+                <p className={`text-[11px] mt-1 leading-snug ${isStudent ? "text-purple-300/70" : "text-slate-500"}`}>
+                  Unlock advanced AI tools &amp; personalized guidance
+                </p>
+                <Link href="/student/mentor" className="block mt-3">
+                  <button className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-xs font-semibold shadow-xs transition-all flex items-center justify-center gap-1">
+                    Upgrade Now &rarr;
+                  </button>
+                </Link>
               </div>
-              <p className="text-[11px] text-slate-500 mt-1 leading-snug">
-                Unlock advanced AI tools & personalized guidance
-              </p>
-              <Link href="/student/mentor" className="block mt-3">
-                <button className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-xs font-semibold shadow-xs transition-all flex items-center justify-center gap-1">
-                  Upgrade Now &rarr;
-                </button>
+            ) : (
+              <Link href="/student/mentor" title="Upgrade to KAABIL Pro" className="flex justify-center p-2 rounded-xl hover:bg-white/10 text-amber-400">
+                <span>👑</span>
               </Link>
-            </div>
+            )}
           </div>
         </aside>
 
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col overflow-y-auto">
+        <div className={`flex-1 flex flex-col overflow-y-auto ${isStudent ? "bg-[#FAF8FD]" : "bg-[#F8FAFC]"}`}>
           {/* Top Header Bar */}
-          <header className="h-16 border-b border-slate-200/80 bg-white/95 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between sticky top-0 z-20">
+          <header className={`h-16 border-b px-4 sm:px-6 flex items-center justify-between sticky top-0 z-20 ${
+            isStudent
+              ? "bg-[#FAF8FD]/90 backdrop-blur-md border-purple-100/70"
+              : "bg-white/95 backdrop-blur-md border-slate-200/80"
+          }`}>
             {/* Left: Mobile Trigger & Search Input */}
             <div className="flex items-center gap-3 flex-1 max-w-xl">
               <button
@@ -473,24 +540,32 @@ export function PortalLayout({
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 lg:hidden flex">
           <div
-            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm"
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm"
             onClick={() => setSidebarOpen(false)}
           />
-          <div className="relative w-64 bg-white border-r border-border h-full flex flex-col z-50 p-4">
-            <div className="flex items-center justify-between pb-4 border-b border-border">
-              <KaabilLogo variant="sidebar" href="/" />
+          <div className={`relative w-72 border-r h-full flex flex-col z-50 p-4 ${
+            isStudent ? "bg-[#150E22] border-[#251838] text-purple-100" : "bg-white border-border"
+          }`}>
+            <div className={`flex items-center justify-between pb-4 border-b ${
+              isStudent ? "border-purple-900/50" : "border-border"
+            }`}>
+              <KaabilLogo variant={isStudent ? "sidebar-dark" : "sidebar"} href="/" />
               <button
                 onClick={() => setSidebarOpen(false)}
-                className="p-1.5 rounded-lg text-text-secondary hover:bg-slate-100"
+                className={`p-1.5 rounded-lg ${
+                  isStudent ? "text-purple-300 hover:text-white hover:bg-white/10" : "text-text-secondary hover:bg-slate-100"
+                }`}
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <nav className="flex-1 py-4 space-y-2 overflow-y-auto">
+            <nav className="flex-1 py-4 space-y-1.5 overflow-y-auto">
               {groupedNav.map((group, gIdx) => (
                 <div key={gIdx} className="space-y-1">
                   {group.category ? (
-                    <div className="px-3 pt-2 text-[10px] font-bold uppercase tracking-wider text-text-muted">
+                    <div className={`px-3 pt-2 text-[10px] font-bold uppercase tracking-wider ${
+                      isStudent ? "text-purple-400/70" : "text-text-muted"
+                    }`}>
                       {group.category}
                     </div>
                   ) : null}
@@ -501,14 +576,18 @@ export function PortalLayout({
                         key={idx}
                         href={item.href}
                         onClick={() => setSidebarOpen(false)}
-                        className={`flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-xl transition-all ${
+                        className={`flex items-center justify-between px-3.5 py-2.5 text-xs font-semibold rounded-2xl transition-all ${
                           isActive
-                            ? "bg-primary text-white font-bold"
+                            ? isStudent
+                              ? "bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 text-white font-bold shadow-md shadow-purple-950/40"
+                              : "bg-primary text-white font-bold"
+                            : isStudent
+                            ? "text-purple-200/80 hover:text-white hover:bg-white/[0.08]"
                             : "text-text-primary hover:bg-slate-50"
                         }`}
                       >
                         <div className="flex items-center gap-3 min-w-0">
-                          <span className={isActive ? "text-white shrink-0" : "text-text-muted shrink-0"}>
+                          <span className={isActive ? "text-white shrink-0" : isStudent ? "text-purple-300 shrink-0" : "text-text-muted shrink-0"}>
                             {item.icon}
                           </span>
                           <span className="truncate">{item.title}</span>
@@ -518,6 +597,8 @@ export function PortalLayout({
                             className={`text-[9px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider shrink-0 ${
                               isActive
                                 ? "bg-white/20 text-white"
+                                : isStudent
+                                ? "bg-purple-900/60 text-purple-200 border border-purple-700/50"
                                 : "bg-slate-100 text-slate-600 border border-border"
                             }`}
                           >
@@ -530,9 +611,11 @@ export function PortalLayout({
                 </div>
               ))}
             </nav>
-            <div className="pt-4 border-t border-border space-y-2">
+            <div className={`pt-4 border-t space-y-2 ${isStudent ? "border-purple-900/50" : "border-border"}`}>
               <Link href="/">
-                <Button variant="outline" size="sm" className="w-full rounded-xl">
+                <Button variant="outline" size="sm" className={`w-full rounded-xl ${
+                  isStudent ? "border-purple-800/60 bg-purple-950/40 text-purple-200 hover:bg-purple-900/40 hover:text-white" : ""
+                }`}>
                   Public Landing Page
                 </Button>
               </Link>
@@ -541,7 +624,7 @@ export function PortalLayout({
                   variant="outline"
                   size="sm"
                   onClick={handleLogout}
-                  className="w-full text-rose-600 border-rose-200 hover:bg-rose-50 rounded-xl"
+                  className="w-full text-rose-400 border-rose-900/40 bg-rose-950/20 hover:bg-rose-900/40 rounded-xl"
                 >
                   <LogOut className="h-3.5 w-3.5 mr-1" />
                   Sign Out

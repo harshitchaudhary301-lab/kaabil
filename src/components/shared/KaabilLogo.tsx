@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 
 export interface KaabilLogoProps {
-  variant?: "full" | "icon" | "compact" | "sidebar";
+  variant?: "full" | "icon" | "compact" | "sidebar" | "sidebar-dark";
   size?: "sm" | "md" | "lg";
   className?: string;
   href?: string;
@@ -30,7 +30,8 @@ export function KaabilLogo({
     lg: "text-2xl sm:text-3xl",
   }[size];
 
-  if (variant === "sidebar") {
+  if (variant === "sidebar" || variant === "sidebar-dark") {
+    const isDark = variant === "sidebar-dark";
     const sidebarContent = (
       <div className={`inline-flex items-center gap-2.5 group select-none ${className}`}>
         {/* Ribbon K Logo Mark */}
@@ -53,26 +54,26 @@ export function KaabilLogo({
             />
             <defs>
               <linearGradient id="sidebar-k-grad1" x1="10" y1="4" x2="17" y2="36" gradientUnits="userSpaceOnUse">
-                <stop stopColor="#3B82F6" />
-                <stop offset="1" stopColor="#4F46E5" />
+                <stop stopColor="#60A5FA" />
+                <stop offset="1" stopColor="#818CF8" />
               </linearGradient>
               <linearGradient id="sidebar-k-grad2" x1="17" y1="5" x2="33" y2="25" gradientUnits="userSpaceOnUse">
-                <stop stopColor="#6366F1" />
-                <stop offset="1" stopColor="#8B5CF6" />
+                <stop stopColor="#A78BFA" />
+                <stop offset="1" stopColor="#C084FC" />
               </linearGradient>
               <linearGradient id="sidebar-k-grad3" x1="15" y1="21" x2="31" y2="38" gradientUnits="userSpaceOnUse">
-                <stop stopColor="#7C3AED" />
-                <stop offset="1" stopColor="#38BDF8" />
+                <stop stopColor="#F59E0B" />
+                <stop offset="1" stopColor="#F43F5E" />
               </linearGradient>
             </defs>
           </svg>
         </div>
 
         <div className="flex flex-col leading-tight">
-          <span className="font-heading font-extrabold text-xl tracking-tight text-slate-900">
+          <span className={`font-heading font-extrabold text-xl tracking-tight ${isDark ? "text-white" : "text-slate-900"}`}>
             KAABIL
           </span>
-          <span className="text-[10px] font-semibold text-slate-400 tracking-tight">
+          <span className={`text-[10px] font-semibold tracking-tight ${isDark ? "text-purple-300/80" : "text-slate-400"}`}>
             Confusion &rarr; Clarity &rarr; Career
           </span>
         </div>
