@@ -223,10 +223,10 @@ export class SkillGapEngine {
       evidenceMap.set(ev.skillName.toLowerCase().trim(), ev);
     }
 
-    // Map of user skills from profile
+    // Map of user skills from profile (handles both Prisma userSkills relation and devStore skills array)
     const userSkillMap = new Map<string, any>();
-    for (const usk of profile.userSkills || []) {
-      const name = (usk.skill?.name || usk.name || "").toLowerCase().trim();
+    for (const usk of profile.userSkills || profile.skills || []) {
+      const name = (usk.skill?.name || usk.name || usk.skillName || "").toLowerCase().trim();
       if (name) userSkillMap.set(name, usk);
     }
 

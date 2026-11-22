@@ -124,7 +124,7 @@ describe("KAABIL Universal Signup Flow & Security Verification", () => {
     });
 
     it("prevents duplicate registration with an already registered email (409 Conflict)", async () => {
-      const dupEmail = "duplicate.test@kaabil.in";
+      const dupEmail = `duplicate.${Date.now()}.${Math.random().toString(36).substring(7)}@kaabil.in`;
 
       // First registration
       const req1 = createJsonPostRequest("http://localhost:3000/api/auth/register", {

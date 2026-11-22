@@ -307,6 +307,23 @@ export async function POST(req: NextRequest) {
             isVerified: m.organization.isVerified,
           })),
         };
+
+        // Mirror to devStore for local resilience and test compatibility
+        devStore.saveUser({ ...createdUser, passwordHash });
+        if (role === "STUDENT" && createdUser.studentProfile) {
+          devStore.saveProfile({
+            id: createdUser.studentProfile.id,
+            userId: createdUser.id,
+            educationStage: stage,
+            currentStream: currentStream || "UNDECIDED",
+            onboardingCompleted: false,
+            careerReadinessIndex: 0,
+            user: { name, email },
+            interests: [],
+            careerGoals: [],
+            skills: [],
+          });
+        }
       }
     } else {
       // Offline fallback: check devStore for existing user
