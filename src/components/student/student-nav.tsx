@@ -119,6 +119,14 @@ export const STUDENT_NAV_ITEMS: NavItem[] = [
     badge: "Verified",
     category: "Evidence",
   },
+  // 10b. Career Readiness Index (Deep-dive Scorecard)
+  {
+    title: "Career Readiness",
+    href: "/student/readiness",
+    icon: <TrendingUp className="h-4 w-4 text-emerald-500" />,
+    badge: "CRI",
+    category: "Evidence",
+  },
   // 11. Resume Builder
   {
     title: "Resume Builder",

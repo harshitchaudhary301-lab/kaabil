@@ -265,32 +265,50 @@ export class ProfileService {
   private static getProfileFromDevStore(
     userIdOrEmail: string
   ): StudentProfileViewData {
-    let user = devStore.getUserByEmail(userIdOrEmail);
+    let profile: any = devStore.getProfile(userIdOrEmail);
+    let user: any = null;
+
+    if (profile) {
+      if (profile.userId) {
+        user = devStore.getUser(profile.userId);
+      }
+      if (!user && profile.user) {
+        user = profile.user;
+      }
+      if (!user && profile.email) {
+        user = devStore.getUserByEmail(profile.email);
+      }
+    }
+
+    if (!user) {
+      user = devStore.getUserByEmail(userIdOrEmail);
+    }
     if (!user) {
       user = devStore.getUser(userIdOrEmail);
     }
     // Default to demo student if not found
-    if (!user) {
+    if (!user && !profile) {
       user = devStore.getUserByEmail("demo.student@kaabil.in");
     }
 
-    const email = user?.email || "demo.student@kaabil.in";
-    const name = user?.name || "Aryan Sharma";
-    const userId = user?.id || "demo-student-id";
+    const email = user?.email || profile?.user?.email || "demo.student@kaabil.in";
+    const name = user?.name || profile?.name || "Aryan Sharma";
+    const userId = user?.id || profile?.userId || "demo-student-id";
 
     // Locate profile in devStore: strictly check user.studentProfile.id first
-    let profile: any = null;
-    if (user?.studentProfile?.id) {
-      profile = devStore.getProfile(user.studentProfile.id);
-    }
     if (!profile) {
-      profile = devStore.getProfileByEmail(email);
-    }
-    if (!profile) {
-      profile = devStore.getProfile("demo-profile-id");
-    }
-    if (!profile) {
-      profile = devStore.getProfileByUserId(userId);
+      if (user?.studentProfile?.id) {
+        profile = devStore.getProfile(user.studentProfile.id);
+      }
+      if (!profile) {
+        profile = devStore.getProfileByEmail(email);
+      }
+      if (!profile) {
+        profile = devStore.getProfile("demo-profile-id");
+      }
+      if (!profile) {
+        profile = devStore.getProfileByUserId(userId);
+      }
     }
 
     const profileId = profile?.id || "demo-profile-id";
@@ -429,11 +447,17 @@ export class ProfileService {
     const targetGoal = profile?.careerGoals?.[0];
     let targetCareer: TargetCareerGoal | null = null;
     if (targetGoal) {
-      const slug = targetGoal.careerPath?.slug || "ai-systems-engineer";
+      const slug =
+        targetGoal.careerPath?.slug ||
+        targetGoal.targetRoleSlug ||
+        targetGoal.slug ||
+        "ai-systems-engineer";
       const meta = getCareerBySlug(slug);
       const title =
         meta?.title ||
         targetGoal.careerPath?.title ||
+        targetGoal.targetRoleTitle ||
+        targetGoal.title ||
         slug
           .split("-")
           .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
@@ -564,16 +588,32 @@ export class ProfileService {
     userIdOrEmail: string,
     input: UpdateStudentProfileInput
   ): StudentProfileViewData {
-    let user = devStore.getUserByEmail(userIdOrEmail) || devStore.getUser(userIdOrEmail);
+    let profile: any = devStore.getProfile(userIdOrEmail);
+    let user: any = null;
+
+    if (profile) {
+      if (profile.userId) {
+        user = devStore.getUser(profile.userId);
+      }
+      if (!user && profile.user) {
+        user = profile.user;
+      }
+    }
+
     if (!user) {
+      user = devStore.getUserByEmail(userIdOrEmail) || devStore.getUser(userIdOrEmail);
+    }
+    if (!user && !profile) {
       user = devStore.getUserByEmail("demo.student@kaabil.in");
     }
 
-    const email = user?.email || "demo.student@kaabil.in";
-    const profile =
-      (user?.studentProfile?.id ? devStore.getProfile(user.studentProfile.id) : null) ||
-      devStore.getProfileByEmail(email) ||
-      devStore.getProfile("demo-profile-id");
+    const email = user?.email || profile?.user?.email || "demo.student@kaabil.in";
+    if (!profile) {
+      profile =
+        (user?.studentProfile?.id ? devStore.getProfile(user.studentProfile.id) : null) ||
+        devStore.getProfileByEmail(email) ||
+        devStore.getProfile("demo-profile-id");
+    }
 
     const profileId = profile?.id || "demo-profile-id";
 

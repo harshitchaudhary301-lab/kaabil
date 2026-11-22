@@ -326,7 +326,7 @@ export class PassportService {
           projectId: projId,
           projectTitle: pTitle,
           stream: projMeta?.stream || profile.currentStream || "General Stream",
-          deliverableUrl: enr.submissionUrl || "",
+          deliverableUrl: enr.submissionUrl || enr.deliverableUrl || "",
           submittedAt: enr.submittedAt || enr.lastUpdatedAt || new Date().toISOString(),
           status: enr.status || "SUBMITTED",
           reflectionNotes: enr.selfAssessedReflection || enr.submissionNotes || undefined,
