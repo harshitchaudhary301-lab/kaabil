@@ -23,6 +23,7 @@
 - **3. Explainable 5-Dimension Career Readiness Index (`src/lib/readiness/cri-engine.ts`):**
   - Integrated 5 transparent dimensions: Career Knowledge (20%), Education & Statutory Preparation (25%), Skill Genome & Gap Coverage (25%), Practical Projects (15%), and Learning Sprints (15%).
   - Transparent formula: `Readiness = (Domain Knowledge × 20%) + (Education Preparation × 25%) + (Skill Genome × 25%) + (Practical Projects × 15%) + (Learning Sprints × 15%)`.
+  - **Hare-Niemeyer Integer Apportionment (Mathematical Invariant)**: Applied the largest remainder method to ensure the sum of rubric dimension points strictly equals `overallScore` (`sum(weightedPoints) === overallScore <= 100`). Eliminates rounding drift (e.g. 77/76 inconsistency resolved to exact 76 / 100 pts).
   - Deterministic Next Best Action recommendation with quantified readiness point impact.
   - Zero Fabrication & Insufficient Evidence Guard (Rule 10): Fresh unassessed students receive `overallScore: null` and *"Not enough information yet"* state instead of misleading fabricated scores.
   - Guidance Disclaimer: Clarifies that CRI is a formative learning indicator, not an employability guarantee or statutory licensure credential.
@@ -33,12 +34,12 @@
   - School students (Class 8–12 minors) have recruiter visibility and public link generation locked by default.
   - Adult students can generate tokenized 7-day expiring public verification links (`/verify/[token]`) with sanitized privacy settings.
 - **6. Elevated Pages & Trilingual UI:**
-  - `/student/passport`: Elevated UI with 3-tier filtering, interactive skill removal, project showcase, and share modal.
-  - `/student/readiness`: Dedicated deep-dive scorecard displaying benchmark status, 5-dimension rubric breakdown, transparent formula, and Next Best Action.
+  - `/student/passport`: Elevated UI with 3-tier filtering, interactive skill removal, project showcase, share modal, and exact `weightedPoints / weight` dimension progress badges.
+  - `/student/readiness`: Dedicated deep-dive scorecard displaying benchmark status, 5-dimension rubric breakdown (`pts / max pts`), header badge `Total: X / 100 Points`, transparent formula, and Next Best Action.
   - Interactive language switcher: English, हिन्दी (Hindi), and Hinglish.
 - **7. Validation & Automated Tests:**
-  - Created 11 automated tests in `src/__tests__/evidence-backed-skill-passport.test.ts`.
-  - All 56 test files and **326 tests passed** (`npx vitest run`).
+  - Created 13 automated tests in `src/__tests__/evidence-backed-skill-passport.test.ts` covering fresh, incomplete, and returning student profiles with exact point invariants.
+  - All 56 test files and **328 tests passed** (`npx vitest run`).
   - Strict TypeScript check: 0 errors (`npx tsc --noEmit`).
   - Next.js production build: 74/74 static/dynamic routes compiled successfully (`npm run build`).
   - Browser verification confirmed via live browser subagent on `http://localhost:3000/student/passport` and `/student/readiness`.
