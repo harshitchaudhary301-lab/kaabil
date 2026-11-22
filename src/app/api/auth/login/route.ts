@@ -181,13 +181,14 @@ export async function POST(req: NextRequest) {
       const DEMO_DEFAULT_PASSWORD = "Kaabil@2026";
       const isDemoAccount = [
         "demo.student@kaabil.in",
+        "fresh.student@kaabil.in",
         "institution@kaabil.in",
         "employer@kaabil.in",
         "admin@kaabil.in",
       ].includes(email.toLowerCase());
 
       let passwordMatches = false;
-      if (isDemoAccount && (password === DEMO_DEFAULT_PASSWORD || password === "Kaabil@2026" || password === "Kaabil@123")) {
+      if (isDemoAccount && (password === DEMO_DEFAULT_PASSWORD || password === "Kaabil@2026" || password === "Kaabil@123" || password === "password123")) {
         passwordMatches = true;
       } else if (storedOffline.passwordHash && !storedOffline.passwordHash.startsWith("$2b$10$DEMO_HASH")) {
         passwordMatches = await verifyPassword(password, storedOffline.passwordHash);

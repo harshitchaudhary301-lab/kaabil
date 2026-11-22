@@ -359,14 +359,14 @@ export function PortalLayout({
               {currentUser ? (
                 <div
                   className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50/90 border border-emerald-200/80 text-[11px] font-semibold text-emerald-800"
-                  title={`KAABIL Secure Session: Signed in as ${currentUser.name} (${currentUser.role}). DPDP Act 2023 protections active.`}
+                  title={`Private & Protected: Signed in as ${currentUser.name}. Your student account is confidential and safe.`}
                 >
                   <span className="relative flex h-2 w-2">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                   </span>
                   <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-                  <span className="hidden xl:inline">DPDP Protected</span>
+                  <span className="hidden xl:inline">Private &amp; Secure</span>
                   <span className="xl:hidden">Secure</span>
                 </div>
               ) : (

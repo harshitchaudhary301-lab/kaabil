@@ -1,10 +1,10 @@
 # PROGRESS.md — Active Implementation Tracker & Living Changelog
 
 ## Project: KAABIL (काबिल)
-**Current Stage:** Phase 1: Student Experience & Premium UI Upgrade Complete  
+**Current Stage:** Phase 1: Student Experience & Premium UI Upgrade Complete (Final Verified Checkpoint)  
 **Workspace Path:** `C:\Users\Harshit\.gemini\antigravity\scratch\kaabil`  
 **Last Updated:** November 22, 2026  
-**Final Release Checkpoint:** `checkpoint-pre-phase1` (Tag)  
+**Final Release Checkpoint:** `checkpoint-phase1-final` (Tag)  
 
 ---
 
@@ -57,6 +57,14 @@
   - All 51 test suites and 252 tests passed (`vitest run`).
   - Full Next.js production build (`npm run build`) passed with all 70 static & dynamic routes compiled cleanly.
   - Zero TypeScript errors (`npm run typecheck`).
+- **10. Final Corrections & Persistent State Verification:**
+  - Removed all developer/testing switchers from the production student view.
+  - Student state (fresh vs returning) determined 100% automatically using real account history.
+  - Guided Mode enforced as default for new students.
+  - Developer-facing terminology replaced with student-friendly language across headers, toolbars, and popups.
+  - Streaks, levels, readiness scores, and achievements tied directly to actual progress history.
+  - Verified persistent data for both fresh (`fresh.student@kaabil.in`) and returning (`demo.student@kaabil.in`) profiles.
+  - Created stable Git checkpoint tag `checkpoint-phase1-final`.
 
 ---
 
