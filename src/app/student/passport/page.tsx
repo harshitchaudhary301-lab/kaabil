@@ -441,7 +441,7 @@ export default function DigitalSkillPassportPage() {
                   </p>
                 </div>
                 <Badge className="bg-purple-100 text-purple-800 border-purple-200 text-xs">
-                  Zero Hallucination
+                  Curated Career Benchmarks
                 </Badge>
               </div>
 

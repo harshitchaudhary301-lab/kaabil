@@ -235,7 +235,13 @@ export function resolveOfficialSourceUrl(sourceText: string): { url: string; lab
   if (s.includes("JEE")) {
     return { url: OFFICIAL_SOURCES.JEE.officialUrl, label: "JEE Main Portal (NTA)" };
   }
-  if (s.includes("NTA") || s.includes("NATIONAL TESTING AGENCY")) {
+  if (
+    s.includes("NTA") ||
+    s.includes("NATIONAL TESTING AGENCY") ||
+    s.includes("CENTRAL TESTING AGENCY") ||
+    s.includes("EXAMINATION AUTHORITY") ||
+    s.includes("EXAM INFORMATION")
+  ) {
     return { url: OFFICIAL_SOURCES.NTA.officialUrl, label: "National Testing Agency (NTA)" };
   }
   if (s.includes("CLAT") || s.includes("NATIONAL LAW")) {
@@ -262,10 +268,25 @@ export function resolveOfficialSourceUrl(sourceText: string): { url: string; lab
   if (s.includes("NID") || s.includes("DESIGN")) {
     return { url: OFFICIAL_SOURCES.NID.officialUrl, label: "National Institute of Design (NID)" };
   }
-  if (s.includes("NSDC") || s.includes("SKILL DEVELOPMENT") || s.includes("ITI")) {
+  if (
+    s.includes("NSDC") ||
+    s.includes("SKILL DEVELOPMENT") ||
+    s.includes("ITI") ||
+    s.includes("COMPETENCY") ||
+    s.includes("PROJECTS FRAMEWORK") ||
+    s.includes("SKILL STANDARDS")
+  ) {
     return { url: OFFICIAL_SOURCES.NSDC.officialUrl, label: "National Skill Development Corporation (NSDC)" };
   }
-  if (s.includes("PAY COMMISSION") || s.includes("MOHFW") || s.includes("7TH PAY") || s.includes("CENTRAL PAY")) {
+  if (
+    s.includes("PAY COMMISSION") ||
+    s.includes("MOHFW") ||
+    s.includes("7TH PAY") ||
+    s.includes("CENTRAL PAY") ||
+    s.includes("PAY GAZETTE") ||
+    s.includes("PAY STANDARDS") ||
+    s.includes("GOVERNMENT PAY")
+  ) {
     return { url: OFFICIAL_SOURCES.PAY_COMMISSION.officialUrl, label: "7th Central Pay Commission Gazette" };
   }
   if (s.includes("NASSCOM")) {
@@ -282,6 +303,15 @@ export function resolveOfficialSourceUrl(sourceText: string): { url: string; lab
   }
   if (s.includes("DPDP") || s.includes("DATA PROTECTION")) {
     return { url: OFFICIAL_SOURCES.DPDP.officialUrl, label: "DPDP Act 2023 Gazette" };
+  }
+  if (
+    s.includes("STATUTORY") ||
+    s.includes("REGULATORY") ||
+    s.includes("TAXONOMY") ||
+    s.includes("MINISTRY OF EDUCATION") ||
+    s.includes("EDUCATION FRAMEWORK")
+  ) {
+    return { url: OFFICIAL_SOURCES.AICTE.officialUrl, label: "AICTE / Statutory Regulatory Council" };
   }
 
   return null;

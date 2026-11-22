@@ -31,7 +31,7 @@ export function FeaturesSection() {
       icon: Sparkles,
       iconColor: "text-amber-500 bg-amber-500/10 border-amber-500/20",
       description:
-        "Empathetic, explainable career guidance in English, हिन्दी, and Hinglish grounded in real educational pathways with zero hallucination.",
+        "Empathetic, explainable career guidance in English, हिन्दी, and Hinglish grounded in curated educational pathways and official curriculum frameworks.",
       href: "/student/mentor",
       cta: "Chat with Mentor",
       visualization: (

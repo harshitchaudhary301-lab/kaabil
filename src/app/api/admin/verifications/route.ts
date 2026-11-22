@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSessionUser } from "@/lib/auth/session";
+import { getAuthenticatedPortalSession } from "@/lib/auth/rbac";
 import { AdminService } from "@/lib/admin/admin-service";
 import { VerificationDecision } from "@/types/admin";
 
@@ -7,6 +7,14 @@ export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   try {
+    const auth = await getAuthenticatedPortalSession(["SUPER_ADMIN"], "admin-super-01");
+    if (!auth.isAuthorized) {
+      return NextResponse.json(
+        { success: false, error: auth.error || "Unauthorized admin access." },
+        { status: auth.status }
+      );
+    }
+
     const { searchParams } = new URL(req.url);
     const type = searchParams.get("type") || undefined;
     const status = searchParams.get("status") || undefined;
@@ -29,9 +37,16 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const sessionUser = await getSessionUser();
-    const adminId = sessionUser?.id || "admin-super-01";
-    const adminName = sessionUser?.name || "Dr. Vikramaditya Sen";
+    const auth = await getAuthenticatedPortalSession(["SUPER_ADMIN"], "admin-super-01");
+    if (!auth.isAuthorized) {
+      return NextResponse.json(
+        { success: false, error: auth.error || "Unauthorized admin access." },
+        { status: auth.status }
+      );
+    }
+
+    const adminId = auth.user?.id || "admin-super-01";
+    const adminName = auth.user?.name || "Dr. Vikramaditya Sen";
 
     const body = await req.json();
     const { requestId, decision, reviewNotes } = body;

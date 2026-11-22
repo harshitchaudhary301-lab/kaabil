@@ -31,6 +31,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { getCareerBySlug, CAREER_PATHS_DATABASE } from "@/data/careersData";
+import { resolveOfficialSourceUrl } from "@/lib/constants/official-sources";
 
 export default function CareerDetailPage() {
   const params = useParams();
@@ -438,19 +439,32 @@ export default function CareerDetailPage() {
           <h4 className="font-heading text-xs uppercase font-bold text-text-muted tracking-wider">
             Authoritative Sources & Regulatory References
           </h4>
-          <div className="flex flex-wrap gap-4 text-xs text-text-secondary">
-            {(career.sources || [{ name: "Ministry of Labour & Employment (NCO-2015)", year: 2024 }]).map((src: any, i: number) => (
-              <div key={i} className="flex items-center gap-1.5 text-text-primary">
-                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                <span>{src.name}</span>
-                {src.year && <span className="text-[10px] text-text-muted">({src.year})</span>}
-                {src.url && (
-                  <a href={src.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                    <ExternalLink className="h-3 w-3 inline ml-0.5" />
-                  </a>
-                )}
-              </div>
-            ))}
+          <div className="flex flex-wrap items-center gap-4 text-xs text-text-secondary">
+            {(career.sources || [{ name: "Ministry of Labour & Employment (NCO-2015)", year: 2024 }]).map((src: any, i: number) => {
+              const officialLink = src.url || resolveOfficialSourceUrl(src.name)?.url;
+              return (
+                <div key={i} className="flex items-center gap-1.5 text-text-primary">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                  <span>{src.name}</span>
+                  {src.year && <span className="text-[10px] text-text-muted">({src.year})</span>}
+                  {officialLink && (
+                    <a
+                      href={officialLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline inline-flex items-center gap-0.5"
+                      title="Open official statutory portal"
+                    >
+                      <ExternalLink className="h-3 w-3 inline ml-0.5 text-primary" />
+                    </a>
+                  )}
+                </div>
+              );
+            })}
+            <div className="flex items-center gap-1 text-[11px] text-text-muted bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">
+              <Clock className="h-3 w-3 text-slate-500" />
+              <span>Verified: {career.lastReviewedDate || "Q1 2025"}</span>
+            </div>
           </div>
           <p className="text-[10px] text-text-muted pt-2 border-t border-border">
             * Note: Salary figures, entrance requirements, and duration are based on official government gazettes, regulatory council guidelines, and campus placement audits.

@@ -115,20 +115,22 @@ export default function PassportVerificationPage() {
               </Button>
             </div>
 
-            {/* Quick Demo Pre-fill Pills */}
-            <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-              <span className="font-semibold text-slate-700">Test Samples:</span>
-              <button
-                type="button"
-                onClick={() => {
-                  setTokenInput("sample-demo-token-medical-2026");
-                  handleVerify("sample-demo-token-medical-2026");
-                }}
-                className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded text-slate-700 border border-slate-300 font-mono transition-colors"
-              >
-                sample-demo-token-medical-2026
-              </button>
-            </div>
+            {/* Quick Demo Pre-fill Pills (Active only in demo testing environments) */}
+            {process.env.NEXT_PUBLIC_DEMO_MODE === "true" && (
+              <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                <span className="font-semibold text-slate-700">Test Samples:</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTokenInput("sample-demo-token-medical-2026");
+                    handleVerify("sample-demo-token-medical-2026");
+                  }}
+                  className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded text-slate-700 border border-slate-300 font-mono transition-colors"
+                >
+                  sample-demo-token-medical-2026
+                </button>
+              </div>
+            )}
           </CardContent>
         </Card>
 

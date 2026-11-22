@@ -60,7 +60,7 @@
    - **Admin Platform Governance & User Directorate (`/admin/dashboard`, `/admin/users`):** Central command console aggregating real operational telemetry (total users, active students, institutions, employers, active opportunities, assessment pass rate, and AI latency). Granular user management supporting role changes, status updates (`ACTIVE`, `SUSPENDED`, `DEACTIVATED`, `PENDING_DELETION`), and DPDP Right to be Forgotten account erasure with full administrative provenance logs.
    - **Trust & Safety Verification Directorate (`/admin/verifications`):** Human-in-the-loop review queue for Educational Institutions (AISHE/CBSE verification) and Corporate Employers (MCA CIN, GSTIN, and business incorporation checks) with mandatory reviewer audit notes and real-time organization status synchronization.
    - **Universal Platform CMS & Taxonomy Engine (`/admin/cms`):** Multi-stream content authoring across all 13 educational domains supporting career catalogues, entrance examinations, scholarships, assessment question banks, and statutory platform policies with automated version control.
-   - **AI Governance, Safety & Telemetry Monitor (`/admin/ai-governance`):** Real-time monitoring of Gemini 1.5 Pro latency (P95), token usage, request volume, prompt versions, and deterministic offline fallbacks. Strict zero-hallucination disclaimers and absolute prohibition of algorithmic rejection or biometric scoring.
+   - **AI Governance, Safety & Telemetry Monitor (`/admin/ai-governance`):** Real-time monitoring of Gemini 1.5 Pro latency (P95), token usage, request volume, prompt versions, and deterministic offline fallbacks. Strict curated career information disclaimers and absolute prohibition of algorithmic rejection or biometric scoring.
    - **Student Learning Academy (`/student/academy`):** Curated multi-stream educational repository featuring courses, video masterclasses, and documentation with real-time progress tracking.
    - **Resume Studio with Digital Skill Passport Badges (`/student/resume`):** Professional ATS-friendly resume builder with auto-populated verified skills, 3 professional styling templates (`CLASSIC_IVY`, `MODERN_CLEAN`, `MINIMAL_EXECUTIVE`), and clean browser print/PDF export styling.
    - **Mock Interview Practice Lab (`/student/interview-lab`):** Career-specific question bank across technical and behavioral domains with structured STAR rubric evaluation, instant constructive feedback, and ethical AI guarantees (zero facial or biometric emotion analysis).
@@ -123,7 +123,7 @@
 3. **Universal AI Career Mentor (Part D1)**:
    - Personalized, trilingual (English, Hindi, Hinglish) conversational AI guidance (`/student/mentor`).
    - Equal parity across all 13 streams; grounded directly in the student's Career Digital Twin, CRI breakdown, active roadmap milestones, and verified skills.
-   - Powered by Gemini 2.0 Flash (`gemini-2.0-flash`) with strict 8-second SLA, bounded retry, and deterministic zero-hallucination fallback.
+   - Powered by Gemini 2.0 Flash (`gemini-2.0-flash`) with strict 8-second SLA, bounded retry, and deterministic curated knowledge fallback.
    - Action proposal generator recommending milestone adjustments or skill assessments with a student confirmation review modal.
 
 2. **Intelligent Skill Assessment Engine (Part D1)**:

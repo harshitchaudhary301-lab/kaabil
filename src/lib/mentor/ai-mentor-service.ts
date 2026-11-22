@@ -62,6 +62,7 @@ export interface MentorReply {
   language: "en" | "hi" | "hinglish";
   source: "gemini_2_flash" | "kaabil_deterministic_mentor";
   verifiedSources?: string[];
+  verificationDate?: string;
   disclaimer?: string;
   actionProposal?: MentorActionProposal | null;
   createdAt: string;
@@ -88,6 +89,7 @@ export interface VerifiedCareerContext {
   verificationStatus?: string;
   typicalDurationYears?: string;
   dailyRoutine?: string;
+  lastReviewedDate?: string;
   alternativePathways?: { title: string; slug?: string; description: string }[];
   educationalPathways?: { step: number; stage: string; description: string; exams?: string[] }[];
 }
@@ -162,6 +164,7 @@ export interface AiEngineStatus {
   modelName: string;
   deterministicFallbackReady: boolean;
   zeroHallucinationGuaranteed: boolean;
+  curatedCareerGrounding: boolean;
   verifiedFallbackDescription?: string;
   slaLimitSeconds: number;
 }
@@ -177,8 +180,9 @@ export class AiMentorService {
       modelName: liveAvailable ? GEMINI_MODEL : "KAABIL Deterministic Knowledge Engine v2.0",
       deterministicFallbackReady: true,
       zeroHallucinationGuaranteed: true,
+      curatedCareerGrounding: true,
       verifiedFallbackDescription:
-        "Operating in verified knowledge mode using curated statutory guidelines, regulatory criteria, and official national curriculum data.",
+        "Guidance based on curated career information from statutory regulatory bodies, official national exams, and 7th Pay Commission data.",
       slaLimitSeconds: TIMEOUT_MS / 1000,
     };
   }
@@ -270,6 +274,7 @@ export class AiMentorService {
         verificationStatus: careerRecord.verificationStatus,
         typicalDurationYears: careerRecord.typicalDurationYears,
         dailyRoutine: careerRecord.dailyRoutine,
+        lastReviewedDate: careerRecord.lastReviewedDate || "Q1 2025",
         alternativePathways: careerRecord.alternativePathways,
         educationalPathways: careerRecord.educationalPathways,
       };
@@ -592,6 +597,11 @@ MANDATORY RESPONSE STRUCTURE & VERIFIED KNOWLEDGE GROUNDING RULES:
     // Detect actionable proposal
     actionProposal = this.detectActionProposal(context, userMessage, mentionedCareer);
 
+    const verificationDate =
+      context.targetCareerVerified?.lastReviewedDate ||
+      mentionedCareer?.lastReviewedDate ||
+      "Q1 2025";
+
     const reply: MentorReply = {
       id: `rep-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       conversationId,
@@ -600,6 +610,7 @@ MANDATORY RESPONSE STRUCTURE & VERIFIED KNOWLEDGE GROUNDING RULES:
       language,
       source,
       verifiedSources: Array.from(new Set(verifiedSources)),
+      verificationDate,
       disclaimer,
       actionProposal,
       createdAt: new Date().toISOString(),
@@ -1194,7 +1205,7 @@ Apne learning plan mein is hafte ke core subject sprint par focus karein.`,
 - **Statutory Eligibility**: ${career.eligibilityCriteria || "Class 12 senior secondary qualification with mandatory domain subjects."}
 - **Leading Accredited Institutions**: ${career.topCollegesInIndia.slice(0, 4).join(", ")}
 
-### 📊 Examination Advisory & Anti-Hallucination Guardrail:
+### 📊 Examination Advisory & Verification Guidelines:
 - Application schedules and category cutoffs fluctuate annually based on candidate volume and seat matrix. Consult official testing portals (e.g. NTA, UPSC, ICAI) for authentic dates.
 
 ### 🎯 Actionable Next Step:

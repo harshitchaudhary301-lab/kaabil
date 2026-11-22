@@ -311,7 +311,7 @@ export default function AdminDashboardPage() {
               </div>
             </Card>
 
-            {/* AI Safety Guarantee */}
+            {/* AI Safety Guardrails */}
             <Card className="p-6 bg-gradient-to-br from-indigo-50/50 to-purple-50/30 border-primary/20">
               <div className="flex items-center gap-2 mb-2">
                 <Sparkles className="h-4 w-4 text-primary" />
@@ -320,7 +320,7 @@ export default function AdminDashboardPage() {
                 </h4>
               </div>
               <p className="text-xs text-text-secondary leading-relaxed mb-3">
-                KAABIL enforces zero-hallucination disclaimers across all AI-generated career guidance and what-if simulations. Automated hiring decisions and facial biometric scoring are strictly prohibited by architecture.
+                KAABIL enforces curated career information disclaimers across all AI-generated career guidance and what-if simulations. Automated hiring decisions and facial biometric scoring are strictly prohibited by architecture.
               </p>
               <div className="flex items-center justify-between text-[11px] font-medium text-text-muted pt-2 border-t border-border/60">
                 <span>Active Model: Gemini 1.5 Pro</span>

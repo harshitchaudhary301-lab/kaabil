@@ -190,7 +190,7 @@ export default function AdminAIGovernancePage() {
                     endpoint: "Universal AI Career Mentor",
                     model: "gemini-1.5-pro",
                     version: "v2.4-strict-safety",
-                    policy: "Grounding across all 13 streams; no hallucinations",
+                    policy: "Grounding across all 13 streams based on curated career information",
                     fallback: "Offline Stream Playbooks",
                   },
                   {

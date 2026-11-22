@@ -104,6 +104,10 @@ export default function LoginPage() {
 
   // Dedicated demo persona access (strictly isolated from real user form inputs)
   const handleDemoQuickLogin = async (demoEmail: string, destination: string) => {
+    if (process.env.NEXT_PUBLIC_DEMO_MODE !== "true") {
+      setErrorMessage("Demo accounts and shortcuts are disabled in this environment.");
+      return;
+    }
     setIsLoading(true);
     setErrorMessage(null);
     try {
@@ -428,55 +432,57 @@ export default function LoginPage() {
             )}
           </div>
 
-          {/* Quick Demo Personas Sandbox */}
-          <div className="pt-2 border-t border-slate-200/70 space-y-2">
-            <div className="flex items-center justify-between text-[11px]">
-              <span className="font-bold uppercase tracking-wider text-slate-400">
-                1-Click Demo Testing
-              </span>
-              <span className="text-[10px] text-purple-700 bg-purple-50 px-2 py-0.5 rounded font-semibold border border-purple-200">
-                Sandbox
-              </span>
+          {/* Quick Demo Personas Sandbox (Active only in explicit demo testing environments) */}
+          {process.env.NEXT_PUBLIC_DEMO_MODE === "true" && (
+            <div className="pt-2 border-t border-slate-200/70 space-y-2">
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="font-bold uppercase tracking-wider text-slate-400">
+                  1-Click Demo Testing
+                </span>
+                <span className="text-[10px] text-purple-700 bg-purple-50 px-2 py-0.5 rounded font-semibold border border-purple-200">
+                  Sandbox
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleDemoQuickLogin("demo.student@kaabil.in", "/student/dashboard")}
+                  disabled={isLoading}
+                  className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-purple-50 text-xs font-semibold text-slate-700 hover:text-purple-900 transition-all flex items-center justify-center gap-1.5 shadow-2xs"
+                >
+                  <GraduationCap className="h-3.5 w-3.5 text-purple-600" />
+                  <span>Student Demo</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDemoQuickLogin("institution@kaabil.in", "/institution/dashboard")}
+                  disabled={isLoading}
+                  className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-indigo-50 text-xs font-semibold text-slate-700 hover:text-indigo-900 transition-all flex items-center justify-center gap-1.5 shadow-2xs"
+                >
+                  <Building2 className="h-3.5 w-3.5 text-indigo-600" />
+                  <span>College Demo</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDemoQuickLogin("employer@kaabil.in", "/employer/dashboard")}
+                  disabled={isLoading}
+                  className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-sky-50 text-xs font-semibold text-slate-700 hover:text-sky-900 transition-all flex items-center justify-center gap-1.5 shadow-2xs"
+                >
+                  <Briefcase className="h-3.5 w-3.5 text-sky-600" />
+                  <span>Employer Demo</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDemoQuickLogin("admin@kaabil.in", "/admin/dashboard")}
+                  disabled={isLoading}
+                  className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-xs font-semibold text-slate-700 hover:text-slate-900 transition-all flex items-center justify-center gap-1.5 shadow-2xs"
+                >
+                  <Lock className="h-3.5 w-3.5 text-slate-600" />
+                  <span>Admin Demo</span>
+                </button>
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => handleDemoQuickLogin("demo.student@kaabil.in", "/student/dashboard")}
-                disabled={isLoading}
-                className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-purple-50 text-xs font-semibold text-slate-700 hover:text-purple-900 transition-all flex items-center justify-center gap-1.5 shadow-2xs"
-              >
-                <GraduationCap className="h-3.5 w-3.5 text-purple-600" />
-                <span>Student Demo</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDemoQuickLogin("institution@kaabil.in", "/institution/dashboard")}
-                disabled={isLoading}
-                className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-indigo-50 text-xs font-semibold text-slate-700 hover:text-indigo-900 transition-all flex items-center justify-center gap-1.5 shadow-2xs"
-              >
-                <Building2 className="h-3.5 w-3.5 text-indigo-600" />
-                <span>College Demo</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDemoQuickLogin("employer@kaabil.in", "/employer/dashboard")}
-                disabled={isLoading}
-                className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-sky-50 text-xs font-semibold text-slate-700 hover:text-sky-900 transition-all flex items-center justify-center gap-1.5 shadow-2xs"
-              >
-                <Briefcase className="h-3.5 w-3.5 text-sky-600" />
-                <span>Employer Demo</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDemoQuickLogin("admin@kaabil.in", "/admin/dashboard")}
-                disabled={isLoading}
-                className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-xs font-semibold text-slate-700 hover:text-slate-900 transition-all flex items-center justify-center gap-1.5 shadow-2xs"
-              >
-                <Lock className="h-3.5 w-3.5 text-slate-600" />
-                <span>Admin Demo</span>
-              </button>
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

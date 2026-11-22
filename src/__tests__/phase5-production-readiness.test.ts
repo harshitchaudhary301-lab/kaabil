@@ -39,7 +39,7 @@ describe("Phase 5: Production Readiness, Security & Deployment Preparation", () 
       expect(status.deterministicFallbackReady).toBe(true);
       expect(status.zeroHallucinationGuaranteed).toBe(true);
       expect(status.verifiedFallbackDescription).toBeDefined();
-      expect(status.verifiedFallbackDescription).toContain("verified knowledge mode");
+      expect(status.verifiedFallbackDescription).toContain("curated career information");
       expect(status.slaLimitSeconds).toBeLessThanOrEqual(8);
     });
 

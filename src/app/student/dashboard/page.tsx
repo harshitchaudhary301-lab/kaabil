@@ -253,7 +253,7 @@ export default function StudentDashboardPage() {
 
   const isFreshAccount = !hasRealData;
 
-  // Actual readiness score from persistent store (Zero Hallucination Rule)
+  // Actual readiness score from persistent store (Curated Benchmark Evaluation)
   const actualCriScore = hasRealData ? (readiness?.overallScore ?? user?.studentProfile?.careerReadinessIndex ?? 79) : null;
   const actualVerifiedSkills = hasRealData ? (digitalTwin?.verifiedSkillsCount ?? readiness?.evidenceSummary?.verifiedCount ?? 2) : 0;
 

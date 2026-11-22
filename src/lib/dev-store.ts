@@ -1016,6 +1016,7 @@ class DevStore {
 
   // Users
   getUserByEmail(email: string) {
+    if (!email || typeof email !== "string") return null;
     const store = this.loadStore();
     return store.users[email.toLowerCase().trim()] || null;
   }
@@ -2483,8 +2484,9 @@ class DevStore {
   }
 
   getUser(emailOrId: string): any | null {
+    if (!emailOrId || typeof emailOrId !== "string") return null;
     const store = this.loadStore();
-    const clean = (emailOrId || "").toLowerCase().trim();
+    const clean = emailOrId.toLowerCase().trim();
     if (store.users[clean]) return store.users[clean];
     return Object.values(store.users).find((u: any) => u.id === emailOrId || u.email?.toLowerCase() === clean) || null;
   }

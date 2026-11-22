@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSessionUser } from "@/lib/auth/session";
+import { getAuthenticatedPortalSession } from "@/lib/auth/rbac";
 import { AdminService } from "@/lib/admin/admin-service";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   try {
-    const user = await getSessionUser();
-    // In demo environment, allow super admin or default to platform admin
-    const isAdmin = user?.role === "SUPER_ADMIN" || !user;
+    const auth = await getAuthenticatedPortalSession(["SUPER_ADMIN"], "admin-super-01");
+    if (!auth.isAuthorized) {
+      return NextResponse.json(
+        { success: false, error: auth.error || "Unauthorized admin access." },
+        { status: auth.status }
+      );
+    }
 
     const metrics = AdminService.getPlatformMetrics();
 

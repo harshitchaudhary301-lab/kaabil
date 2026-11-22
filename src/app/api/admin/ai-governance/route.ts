@@ -1,11 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { devStore } from "@/lib/dev-store";
-import { getSessionUser } from "@/lib/auth/session";
+import { getAuthenticatedPortalSession } from "@/lib/auth/rbac";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   try {
+    const auth = await getAuthenticatedPortalSession(["SUPER_ADMIN"], "admin-super-01");
+    if (!auth.isAuthorized) {
+      return NextResponse.json(
+        { success: false, error: auth.error || "Unauthorized admin access." },
+        { status: auth.status }
+      );
+    }
+
     const { searchParams } = new URL(req.url);
     const limit = parseInt(searchParams.get("limit") || "50", 10);
 
@@ -28,9 +36,16 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const sessionUser = await getSessionUser();
-    const adminId = sessionUser?.id || "admin-super-01";
-    const adminName = sessionUser?.name || "Dr. Vikramaditya Sen";
+    const auth = await getAuthenticatedPortalSession(["SUPER_ADMIN"], "admin-super-01");
+    if (!auth.isAuthorized) {
+      return NextResponse.json(
+        { success: false, error: auth.error || "Unauthorized admin access." },
+        { status: auth.status }
+      );
+    }
+
+    const adminId = auth.user?.id || "admin-super-01";
+    const adminName = auth.user?.name || "Dr. Vikramaditya Sen";
 
     const body = await req.json();
     const { endpoint, model, latencyMs, status, tokensUsed, fallbackUsed, errorDetails } = body;

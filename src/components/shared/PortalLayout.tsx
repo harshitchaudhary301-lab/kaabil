@@ -170,7 +170,11 @@ export function PortalLayout({
   }[portalRole];
 
   return (
-    <div className="min-h-screen bg-[#FAF8FD] flex flex-col antialiased text-text-primary">
+    <div
+      className={`${
+        pathname === "/student/mentor" ? "h-screen overflow-hidden" : "min-h-screen"
+      } bg-[#FAF8FD] flex flex-col antialiased text-text-primary`}
+    >
       <div className="flex flex-1 overflow-hidden">
         {/* Desktop Sidebar */}
         <aside
@@ -324,7 +328,11 @@ export function PortalLayout({
         </aside>
 
         {/* Main Content Area */}
-        <div className={`flex-1 flex flex-col overflow-y-auto ${isStudent ? "bg-[#FAF8FD]" : "bg-[#F8FAFC]"}`}>
+        <div
+          className={`flex-1 flex flex-col min-h-0 ${
+            pathname === "/student/mentor" ? "overflow-hidden" : "overflow-y-auto"
+          } ${isStudent ? "bg-[#FAF8FD]" : "bg-[#F8FAFC]"}`}
+        >
           {/* Top Header Bar */}
           <header className={`h-16 border-b px-4 sm:px-6 flex items-center justify-between sticky top-0 z-20 ${
             isStudent
@@ -559,7 +567,15 @@ export function PortalLayout({
           </header>
 
           {/* Page Body */}
-          <main className="p-4 sm:p-6 lg:p-8 flex-1">{children}</main>
+          <main
+            className={`flex-1 min-h-0 ${
+              pathname === "/student/mentor"
+                ? "p-2 sm:p-4 overflow-hidden flex flex-col h-[calc(100vh-4rem)]"
+                : "p-4 sm:p-6 lg:p-8"
+            }`}
+          >
+            {children}
+          </main>
         </div>
       </div>
 

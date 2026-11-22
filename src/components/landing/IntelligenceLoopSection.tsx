@@ -91,7 +91,7 @@ const LOOP_STEPS: LoopStep[] = [
     institution:
       "Facilitate campus placement drives connecting certified cohorts with high-intent corporate partners.",
     employer:
-      "Hire top performers through two-way algorithmic matching guaranteed invariant to demographic traits.",
+      "Hire top performers through two-way algorithmic matching mathematically invariant to demographic traits.",
   },
   {
     step: 6,

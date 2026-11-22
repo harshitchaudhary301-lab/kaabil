@@ -179,3 +179,81 @@ export function buildRecruiterMinorProtectionFilter() {
     },
   };
 }
+
+/**
+ * Resolves session, enforces portal role authorization, and provides tenant organization context.
+ * In production (`NEXT_PUBLIC_DEMO_MODE !== "true"`), strictly fails closed with 401/403.
+ */
+export async function getAuthenticatedPortalSession(
+  allowedRoles: (UserRoleType | string)[],
+  fallbackOrgId?: string
+): Promise<{
+  isAuthorized: boolean;
+  status: number;
+  error?: string;
+  user: AuthenticatedUser | null;
+  organizationId: string;
+}> {
+  const isDemo = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+  let user: AuthenticatedUser | null = null;
+  try {
+    user = await getSessionUser();
+  } catch {
+    user = null;
+  }
+
+  if (!user) {
+    if (isDemo && fallbackOrgId) {
+      return {
+        isAuthorized: true,
+        status: 200,
+        user: null,
+        organizationId: fallbackOrgId,
+      };
+    }
+    return {
+      isAuthorized: false,
+      status: 401,
+      error: "Authentication required to access this resource.",
+      user: null,
+      organizationId: "",
+    };
+  }
+
+  if (user.status === "SUSPENDED" || user.status === "DEACTIVATED") {
+    return {
+      isAuthorized: false,
+      status: 403,
+      error: "Your account has been suspended or deactivated. Please contact support@kaabil.in.",
+      user,
+      organizationId: "",
+    };
+  }
+
+  const hasAllowedRole =
+    allowedRoles.includes(user.role) ||
+    user.role === "SUPER_ADMIN" ||
+    allowedRoles.includes("*");
+
+  if (!hasAllowedRole) {
+    return {
+      isAuthorized: false,
+      status: 403,
+      error: `Access denied. Role '${user.role}' is not authorized for this resource.`,
+      user,
+      organizationId: "",
+    };
+  }
+
+  const userOrgId =
+    user.organizations?.[0]?.id ||
+    (isDemo ? fallbackOrgId : undefined) ||
+    "";
+
+  return {
+    isAuthorized: true,
+    status: 200,
+    user,
+    organizationId: userOrgId,
+  };
+}

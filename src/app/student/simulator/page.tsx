@@ -338,7 +338,7 @@ export default function StudentSimulatorPage() {
             <div className="p-4 rounded-xl border border-amber-200 bg-amber-50/60 text-xs text-amber-900 flex items-start gap-3">
               <ShieldAlert className="h-5 w-5 text-amber-700 shrink-0 mt-0.5" />
               <div className="leading-relaxed">
-                <strong>Statutory Notice & AI Ethics Guarantee: </strong>
+                <strong>Statutory Notice & AI Ethics Framework: </strong>
                 Simulated readiness scores and timelines are illustrative algorithmic projections based on national curriculum frameworks and do not constitute guaranteed employment, placement, or admission offers.
               </div>
             </div>

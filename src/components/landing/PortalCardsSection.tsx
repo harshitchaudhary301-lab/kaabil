@@ -147,7 +147,7 @@ export function PortalCardsSection() {
           </div>
           <div className="text-[10px] text-emerald-700 font-semibold flex items-center gap-1">
             <ShieldCheck className="h-3 w-3" />
-            <span>Fairness Guaranteed • Demographic Invariant</span>
+            <span>Fairness Audited • Demographic Invariant</span>
           </div>
         </div>
       ),

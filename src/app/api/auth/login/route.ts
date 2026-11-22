@@ -178,6 +178,7 @@ export async function POST(req: NextRequest) {
       }
 
       // Password verification: require strictly matching password hash or verified credential
+      const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
       const DEMO_DEFAULT_PASSWORD = "Kaabil@2026";
       const isDemoAccount = [
         "demo.student@kaabil.in",
@@ -188,11 +189,11 @@ export async function POST(req: NextRequest) {
       ].includes(email.toLowerCase());
 
       let passwordMatches = false;
-      if (isDemoAccount && (password === DEMO_DEFAULT_PASSWORD || password === "Kaabil@2026" || password === "Kaabil@123" || password === "password123")) {
+      if (isDemoMode && isDemoAccount && (password === DEMO_DEFAULT_PASSWORD || password === "Kaabil@2026" || password === "Kaabil@123" || password === "password123")) {
         passwordMatches = true;
       } else if (storedOffline.passwordHash && !storedOffline.passwordHash.startsWith("$2b$10$DEMO_HASH")) {
         passwordMatches = await verifyPassword(password, storedOffline.passwordHash);
-      } else if (isDemoAccount) {
+      } else if (isDemoMode && isDemoAccount) {
         passwordMatches = password === DEMO_DEFAULT_PASSWORD;
       }
 

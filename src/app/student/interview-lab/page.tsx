@@ -133,7 +133,7 @@ export default function StudentInterviewLabPage() {
           <div className="flex items-start gap-3">
             <ShieldCheck className="h-5 w-5 text-primary shrink-0 mt-0.5" />
             <div className="text-xs text-text-secondary leading-relaxed">
-              <strong className="text-text-primary font-semibold">Ethical AI Guarantee: </strong>
+              <strong className="text-text-primary font-semibold">Ethical AI Standards: </strong>
               KAABIL evaluates practice interviews solely using structured competency and domain knowledge rubrics. Facial emotion detection, gaze tracking, and vocal pitch scoring are strictly prohibited to ensure an unbiased, inclusive learning environment.
             </div>
           </div>

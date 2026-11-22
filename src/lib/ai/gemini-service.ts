@@ -1,7 +1,7 @@
 // ==============================================================================
 // KAABIL (काबिल) — Gemini AI Career Intelligence Service
 // Multi-Tier Architecture: Layer 3 Generative AI with Deterministic Safe Fallback
-// Strictly enforces Zero Hallucination, Rate Limiting & Safe Logging
+// Strictly enforces Curated Grounding, Rate Limiting & Safe Logging
 // ==============================================================================
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -195,7 +195,7 @@ Return ONLY valid JSON matching this exact structure:
 
   /**
    * Deterministic fallback rule engine.
-   * Produces explainable, high-quality guidance based on exact database matches without hallucinations.
+   * Produces explainable, high-quality guidance based on curated career information.
    */
   generateDeterministicExplanation(ctx: CareerContext, lang: "en" | "hi" | "hinglish"): CareerExplanation {
     const matchedInterests = ctx.interests.filter((i) =>

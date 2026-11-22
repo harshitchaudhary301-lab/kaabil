@@ -54,8 +54,8 @@ export async function GET() {
       dpdpAct2023Alignment: true,
       under18MinorShieldActive: true,
       recruitmentCommercializationLockout: true,
+      curatedCareerInformationGuarantees: true,
       verifiedKnowledgeBaseGuarantees: true,
-      zeroHallucinationGuarantees: true,
     },
   };
 

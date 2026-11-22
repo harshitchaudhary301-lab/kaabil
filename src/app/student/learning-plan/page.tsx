@@ -485,7 +485,7 @@ export default function StudentLearningPlanPage() {
                   </p>
                 </div>
                 <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-xs">
-                  Zero Fabrication Guarantee
+                  Curated Authentic Resources
                 </Badge>
               </div>
 
@@ -613,7 +613,7 @@ export default function StudentLearningPlanPage() {
               <ShieldCheck className="h-5 w-5 shrink-0 text-purple-600 mt-0.5" />
               <div className="space-y-1">
                 <p className="font-bold">
-                  How KAABIL Evaluates Project Submissions (Zero Fabrication)
+                  How KAABIL Evaluates Project Submissions (Authentic Evidence)
                 </p>
                 <p className="text-purple-800 leading-relaxed">
                   Completing milestones and submitting deliverables showcases your authentic work under your KAABIL Portfolio as <em>Self-Directed Practical Evidence</em>. External accreditation, CRI boost, or employer skill verification badges are strictly issued when assessed through formal proctored diagnostic checkpoints.

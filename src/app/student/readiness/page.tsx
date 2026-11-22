@@ -176,7 +176,7 @@ export default function CareerReadinessPage() {
               <p className="text-xs text-purple-200 text-center leading-relaxed">
                 {isInsufficient
                   ? "KAABIL never generates fabricated scores. Complete a diagnostic assessment or practical project to establish your verified readiness baseline."
-                  : `Your preparation aligns with national standards for ${readiness.careerTitle}. Evaluated deterministically with zero hallucination.`}
+                  : `Your preparation aligns with national standards for ${readiness.careerTitle}. Evaluated deterministically based on curated career benchmarks.`}
               </p>
             </div>
 
