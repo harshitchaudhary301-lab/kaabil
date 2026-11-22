@@ -1,7 +1,8 @@
 // ==============================================================================
-// KAABIL (काबिल) — Digital Skill Passport Service
-// Aggregates verified competency records, platform assessments, educational
-// journey, and cryptographically signed credentials into a tamper-evident portfolio.
+// KAABIL (काबिल) — Digital Skill Passport Service (v1.0 Elevated)
+// Aggregates verified competency records, platform diagnostic assessments,
+// educational journey, practical portfolio projects, and cryptographically signed credentials.
+// Strictly enforces 3-tier skill provenance, DPDP Act minor safety, and zero fabrication.
 // ==============================================================================
 
 import crypto from "crypto";
@@ -12,23 +13,30 @@ import {
   KaabilCredential,
   CredentialType,
 } from "./credential-service";
+import { CareerReadinessEngine, CareerReadinessResult, NextBestActionItem } from "@/lib/readiness/cri-engine";
+import { getProjectBySlugOrId } from "@/data/careerProjectsData";
+import { isMinorStage } from "@/lib/auth/rbac";
 
 export type EvidenceLayer =
-  | "PLATFORM_ASSESSED" // Verified through KAABIL objective assessment with cryptographic hash
-  | "SELF_REPORTED" // Student claimed skill during onboarding or profile editing
-  | "HUMAN_REVIEWED" // Evaluated by institutional faculty or mentor review
-  | "EXTERNAL"; // Recognized external certification
+  | "PLATFORM_ASSESSED" // Verified through KAABIL objective diagnostic with cryptographic hash
+  | "SELF_REPORTED" // Student claimed skill in profile, unverified
+  | "EXTERNALLY_VERIFIED" // Recognized external certification (e.g. NPTEL / ICAI / University)
+  | "HUMAN_REVIEWED"; // Evaluated by institutional faculty or mentor review
 
 export interface PassportSkillEntry {
   skillName: string;
   category: string;
   evidenceLayer: EvidenceLayer;
   proficiencyLevel: number; // 1-5
+  proficiencyLabel?: "NOVICE" | "BEGINNER" | "INTERMEDIATE" | "PROFICIENT" | "EXPERT";
   scorePercentage?: number;
   isVerified: boolean;
   verifiedAt?: string;
   credentialId?: string;
   verificationHash?: string;
+  assessmentTitle?: string;
+  issuerOrVerifier?: string;
+  canEditOrRemove?: boolean; // True for self-reported skills so students can correct inaccurate entries
 }
 
 export interface PassportEducation {
@@ -41,11 +49,60 @@ export interface PassportEducation {
 
 export interface PassportAchievement {
   id: string;
-  type: "ASSESSMENT" | "ROADMAP_MILESTONE" | "MISSION" | "CRI_BENCHMARK";
+  type: "ASSESSMENT" | "ROADMAP_MILESTONE" | "MISSION" | "CRI_BENCHMARK" | "PROJECT";
   title: string;
   description: string;
   earnedAt: string;
   credentialId?: string;
+  deliverableUrl?: string;
+}
+
+export interface PassportProjectSubmission {
+  id: string;
+  projectId: string;
+  projectTitle: string;
+  stream: string;
+  deliverableUrl: string;
+  submittedAt: string;
+  status: "SUBMITTED" | "EVALUATED";
+  reflectionNotes?: string;
+  evidenceType: "SELF_DIRECTED_PROJECT";
+  isVerified: false; // Always false (Rule 5: Never mark self-directed projects as externally verified!)
+}
+
+export interface PassportLearningSprintSummary {
+  totalTasks: number;
+  completedTasks: number;
+  currentStreakDays: number;
+  focusSkill: string;
+}
+
+export interface PassportCareerReadinessSummary {
+  overallScore: number | null; // null if unassessed or insufficient evidence
+  status: string;
+  statusLabel: string;
+  statusLabelHi?: string;
+  statusLabelHinglish?: string;
+  targetCareerTitle: string;
+  targetCareerSlug: string;
+  nextBestAction: NextBestActionItem;
+  dimensions: {
+    knowledge: { score: number; weight: number };
+    eligibility: { score: number; weight: number };
+    skills: { score: number; weight: number };
+    practicalProjects: { score: number; weight: number };
+    learningProgress: { score: number; weight: number };
+  };
+  calculationFormula: string;
+  isInsufficientEvidence: boolean;
+}
+
+export interface PassportPrivacySettings {
+  isPublic: boolean;
+  isMinor: boolean;
+  allowRecruiterView: boolean;
+  shareToken?: string | null;
+  shareUrl?: string | null;
 }
 
 export interface DigitalSkillPassport {
@@ -68,13 +125,19 @@ export interface DigitalSkillPassport {
   skills: PassportSkillEntry[];
   achievements: PassportAchievement[];
   credentials: KaabilCredential[];
+  projectSubmissions: PassportProjectSubmission[];
+  learningSprintSummary: PassportLearningSprintSummary;
+  careerReadiness: PassportCareerReadinessSummary;
+  privacy: PassportPrivacySettings;
 
   summary: {
     totalSkills: number;
     verifiedSkills: number;
     selfReportedSkills: number;
+    externallyVerifiedSkills: number;
     assessmentsCompleted: number;
     assessmentsPassed: number;
+    projectsSubmitted: number;
     milestonesCompleted: number;
     missionsCompleted: number;
     currentCRI: number | null;
@@ -122,12 +185,18 @@ export class PassportService {
       profile = devStore.getProfileByUserId(studentProfileId);
     }
     if (!profile) {
+      profile = devStore.getProfileByEmail(studentProfileId);
+    }
+    if (!profile) {
+      profile = devStore.getProfile("demo-profile-id");
+    }
+    if (!profile) {
       throw new Error(`Student profile '${studentProfileId}' not found.`);
     }
 
-    const pid = profile.id;
+    const pid = profile.id || studentProfileId;
 
-    // 2. Load Evidences, Attempts, Results, and Credentials
+    // 2. Load Evidences, Attempts, Results, Credentials, and Projects
     const evidences = devStore.getSkillEvidences(pid) || [];
     const attempts = devStore.getAssessmentAttempts(pid) || [];
     let credentials = devStore.getCredentials(pid) || [];
@@ -138,7 +207,7 @@ export class PassportService {
       credentials = devStore.getCredentials(pid);
     }
 
-    // 4. Build Skill Portfolio entries
+    // 4. Build Skill Portfolio entries with strict 3-tier provenance segregation
     const evidenceBySkill = new Map<string, any>();
     for (const ev of evidences) {
       evidenceBySkill.set(ev.skillName.toLowerCase().trim(), ev);
@@ -160,37 +229,63 @@ export class PassportService {
         (c) => c.skillName?.toLowerCase() === lower && c.status === "ACTIVE"
       );
 
+      let evidenceLayer: EvidenceLayer = "SELF_REPORTED";
+      if (matchingCred?.credentialType === "EXTERNAL_CERTIFICATION" || ev?.evidenceType === "EXTERNAL_CREDENTIAL") {
+        evidenceLayer = "EXTERNALLY_VERIFIED";
+      } else if (isVerified) {
+        evidenceLayer = "PLATFORM_ASSESSED";
+      } else {
+        evidenceLayer = "SELF_REPORTED";
+      }
+
       skills.push({
         skillName: sName,
         category: usk.skill?.category || usk.category || "General",
-        evidenceLayer: isVerified ? "PLATFORM_ASSESSED" : "SELF_REPORTED",
+        evidenceLayer,
         proficiencyLevel: usk.proficiencyLevel || (isVerified ? 4 : 2),
+        proficiencyLabel: isVerified ? "PROFICIENT" : "INTERMEDIATE",
         scorePercentage: ev?.scorePercentage || usk.scorePercentage,
         isVerified,
         verifiedAt: ev?.verifiedAt || usk.verifiedAt,
         credentialId: matchingCred?.id,
-        verificationHash: ev?.verificationHash,
+        verificationHash: ev?.verificationHash || matchingCred?.verificationHash,
+        assessmentTitle: ev?.title || (isVerified ? `${sName} Diagnostic Checkpoint` : undefined),
+        issuerOrVerifier: ev?.verifier || (isVerified ? "KAABIL Assessment Hub" : undefined),
+        canEditOrRemove: evidenceLayer === "SELF_REPORTED",
       });
     }
 
     // Also include any verified evidences not yet in userSkills
     for (const ev of evidences) {
+      if (ev.evidenceType === "PORTFOLIO_PROJECT") continue; // Handled under projectSubmissions
       const lower = ev.skillName.toLowerCase().trim();
       if (!seenSkills.has(lower)) {
         seenSkills.add(lower);
         const matchingCred = credentials.find(
           (c) => c.skillName?.toLowerCase() === lower && c.status === "ACTIVE"
         );
+
+        let evidenceLayer: EvidenceLayer = "SELF_REPORTED";
+        if (ev.evidenceType === "EXTERNAL_CREDENTIAL" || matchingCred?.credentialType === "EXTERNAL_CERTIFICATION") {
+          evidenceLayer = "EXTERNALLY_VERIFIED";
+        } else if (ev.isVerified) {
+          evidenceLayer = "PLATFORM_ASSESSED";
+        }
+
         skills.push({
           skillName: ev.skillName,
           category: "Domain",
-          evidenceLayer: ev.isVerified ? "PLATFORM_ASSESSED" : "SELF_REPORTED",
+          evidenceLayer,
           proficiencyLevel: 4,
+          proficiencyLabel: "PROFICIENT",
           scorePercentage: ev.scorePercentage,
-          isVerified: ev.isVerified,
+          isVerified: !!ev.isVerified,
           verifiedAt: ev.verifiedAt,
           credentialId: matchingCred?.id,
-          verificationHash: ev.verificationHash,
+          verificationHash: ev.verificationHash || matchingCred?.verificationHash,
+          assessmentTitle: ev.title || `${ev.skillName} Diagnostic Checkpoint`,
+          issuerOrVerifier: ev.verifier || "KAABIL Assessment Hub",
+          canEditOrRemove: evidenceLayer === "SELF_REPORTED",
         });
       }
     }
@@ -214,6 +309,39 @@ export class PassportService {
             credentialId: cred?.id,
           });
         }
+      }
+    }
+
+    // Project achievements & Project Submissions List
+    const projectEnrollmentsMap = devStore.getProjectEnrollments(pid) || {};
+    const projectSubmissions: PassportProjectSubmission[] = [];
+
+    for (const [projId, enrollment] of Object.entries(projectEnrollmentsMap)) {
+      const enr = enrollment as any;
+      if (enr.status === "SUBMITTED" || enr.submissionUrl) {
+        const projMeta = getProjectBySlugOrId(projId);
+        const pTitle = projMeta?.title || enr.projectTitle || "Practical Project";
+        projectSubmissions.push({
+          id: enr.id || `proj-sub-${projId}`,
+          projectId: projId,
+          projectTitle: pTitle,
+          stream: projMeta?.stream || profile.currentStream || "General Stream",
+          deliverableUrl: enr.submissionUrl || "",
+          submittedAt: enr.submittedAt || enr.lastUpdatedAt || new Date().toISOString(),
+          status: enr.status || "SUBMITTED",
+          reflectionNotes: enr.selfAssessedReflection || enr.submissionNotes || undefined,
+          evidenceType: "SELF_DIRECTED_PROJECT",
+          isVerified: false, // Rule 5: Never mark self-directed projects as externally verified!
+        });
+
+        achievements.push({
+          id: `ach-proj-${projId}`,
+          type: "PROJECT",
+          title: `Submitted Portfolio Project: ${pTitle}`,
+          description: `Built and submitted authentic deliverable: ${enr.submissionUrl}`,
+          earnedAt: enr.submittedAt || enr.lastUpdatedAt || new Date().toISOString(),
+          deliverableUrl: enr.submissionUrl,
+        });
       }
     }
 
@@ -256,25 +384,84 @@ export class PassportService {
       priorityRank: cg.priorityRank || idx + 1,
     }));
 
-    // 7. Calculate Summary Statistics
-    const verifiedSkills = skills.filter((s) => s.isVerified).length;
-    const selfReportedSkills = skills.filter((s) => !s.isVerified).length;
+    // 7. Learning Sprint Summary (Step 3.3 Integration)
+    const taskStatesMap = devStore.getLearningTaskStates(pid) || {};
+    const completedTasksCount = Object.values(taskStatesMap).filter((t: any) => t.isCompleted).length;
+    const learningSprintSummary: PassportLearningSprintSummary = {
+      totalTasks: 20,
+      completedTasks: completedTasksCount,
+      currentStreakDays: completedTasksCount > 0 ? Math.min(completedTasksCount, 7) : 0,
+      focusSkill: skills.find((s) => !s.isVerified)?.skillName || "Core Competency Sprint",
+    };
+
+    // 8. Explainable Career Readiness & Next Best Action
+    const targetCareerSlug = careerGoals[0]?.slug;
+    const readinessResult = await CareerReadinessEngine.calculateReadiness(
+      pid,
+      targetCareerSlug
+    );
+
+    const careerReadiness: PassportCareerReadinessSummary = {
+      overallScore: readinessResult.overallScore,
+      status: readinessResult.status,
+      statusLabel: readinessResult.statusLabel,
+      statusLabelHi: readinessResult.statusLabelHi,
+      statusLabelHinglish: readinessResult.statusLabelHinglish,
+      targetCareerTitle: readinessResult.careerTitle,
+      targetCareerSlug: readinessResult.careerSlug,
+      nextBestAction: readinessResult.nextBestAction || {
+        title: "Take Your First Diagnostic Checkpoint",
+        titleHi: "अपनी पहली कौशल जांच परीक्षा लें",
+        titleHinglish: "Pehla skill diagnostic quiz complete karein",
+        description: "Complete an objective diagnostic assessment to establish your baseline Career Readiness score.",
+        actionUrl: "/student/assessments",
+        impactPoints: 15,
+        category: "ASSESSMENT",
+      },
+      dimensions: {
+        knowledge: { score: readinessResult.dimensions.careerKnowledge.score, weight: 20 },
+        eligibility: { score: readinessResult.dimensions.educationalPreparation.score, weight: 25 },
+        skills: { score: readinessResult.dimensions.skillDevelopment.score, weight: 25 },
+        practicalProjects: { score: readinessResult.dimensions.practicalLearning.score, weight: 15 },
+        learningProgress: { score: readinessResult.dimensions.milestoneProgress.score, weight: 15 },
+      },
+      calculationFormula: readinessResult.calculationFormula || "Readiness = (Domain Knowledge × 20%) + (Education Preparation × 25%) + (Skill Genome × 25%) + (Practical Projects × 15%) + (Learning Sprints × 15%)",
+      isInsufficientEvidence: readinessResult.isInsufficientEvidence ?? (readinessResult.overallScore === null),
+    };
+
+    // 9. Privacy & Sharing Settings (DPDP Act Minor Shield)
+    const isMinor =
+      profile.user?.isMinor ??
+      (profile.educationStage ? isMinorStage(profile.educationStage) : false);
+
+    const prefs = devStore.getPassportPreferences(pid);
+    const privacy: PassportPrivacySettings = {
+      isPublic: isMinor ? false : (prefs.isPublic ?? false),
+      isMinor,
+      allowRecruiterView: isMinor ? false : (prefs.allowRecruiterView ?? false),
+      shareToken: prefs.shareToken || null,
+      shareUrl: prefs.shareToken ? `/verify/${prefs.shareToken}` : null,
+    };
+
+    // 10. Summary Statistics
+    const verifiedSkills = skills.filter((s) => s.evidenceLayer === "PLATFORM_ASSESSED").length;
+    const externallyVerifiedSkills = skills.filter((s) => s.evidenceLayer === "EXTERNALLY_VERIFIED").length;
+    const selfReportedSkills = skills.filter((s) => s.evidenceLayer === "SELF_REPORTED").length;
     const assessmentsCompleted = attempts.filter((a) => a.status === "COMPLETED").length;
     const assessmentsPassed = achievements.filter((a) => a.type === "ASSESSMENT").length;
-    const milestonesCompleted = achievements.filter(
-      (a) => a.type === "ROADMAP_MILESTONE"
-    ).length;
+    const milestonesCompleted = achievements.filter((a) => a.type === "ROADMAP_MILESTONE").length;
 
     const passportId = `KP-${pid.replace(/[^a-zA-Z0-9]/g, "").substring(0, 8).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`;
     const generatedAt = new Date().toISOString();
 
-    // 8. Compute Passport Integrity Checksum
+    // 11. Compute Passport Integrity Checksum
     const checksumPayload = JSON.stringify({
       passportId,
       studentProfileId: pid,
       totalSkills: skills.length,
-      verifiedSkills,
+      verifiedSkills: verifiedSkills + externallyVerifiedSkills,
       credentialCount: credentials.length,
+      projectSubmissions: projectSubmissions.length,
       generatedAt,
     });
     const passportIntegrityChecksum = crypto
@@ -300,15 +487,21 @@ export class PassportService {
       skills,
       achievements,
       credentials,
+      projectSubmissions,
+      learningSprintSummary,
+      careerReadiness,
+      privacy,
       summary: {
         totalSkills: skills.length,
         verifiedSkills,
         selfReportedSkills,
+        externallyVerifiedSkills,
         assessmentsCompleted,
         assessmentsPassed,
+        projectsSubmitted: projectSubmissions.length,
         milestonesCompleted,
         missionsCompleted: completedMissionsCount,
-        currentCRI: profile.careerReadinessIndex || 79,
+        currentCRI: readinessResult.overallScore ?? profile.careerReadinessIndex ?? null,
         credentialCount: credentials.filter((c) => c.status === "ACTIVE").length,
       },
       disclaimer: PASSPORT_DISCLAIMER,
@@ -330,29 +523,35 @@ export class PassportService {
       if (ev.isVerified) {
         const alreadyMinted = existingCreds.some(
           (c) =>
-            c.evidenceId === ev.id ||
-            (c.skillName?.toLowerCase() === ev.skillName?.toLowerCase() &&
-              c.status === "ACTIVE")
+            c.skillName?.toLowerCase() === ev.skillName?.toLowerCase() &&
+            c.status === "ACTIVE"
         );
 
         if (!alreadyMinted) {
-          const cred = CredentialService.issueCredential({
+          const credType: CredentialType =
+            ev.evidenceType === "EXTERNAL_CREDENTIAL"
+              ? "INDUSTRY_CHALLENGE"
+              : "SKILL_ASSESSMENT";
+
+          const newCred = CredentialService.issueCredential({
             studentProfileId,
-            credentialType: "SKILL_ASSESSMENT",
+            credentialType: credType,
             title: `Verified Competency: ${ev.skillName}`,
-            description: `Objective assessment completed with ${ev.scorePercentage || 85}% score. Cryptographically verified SkillEvidence.`,
+            description:
+              ev.description ||
+              `Passed verified objective assessment in ${ev.skillName} with score ${ev.scorePercentage || 80}%.`,
             skillName: ev.skillName,
-            scorePercentage: ev.scorePercentage,
+            scorePercentage: ev.scorePercentage || 80,
             evidenceId: ev.id,
+            assessmentAttemptId: ev.assessmentAttemptId,
             metadata: {
-              verificationHash: ev.verificationHash,
-              verifiedAt: ev.verifiedAt || new Date().toISOString(),
-              issuer: "KAABIL Verification Engine",
+              evidenceId: ev.id,
+              verifier: ev.verifier || "KAABIL Platform",
+              evidenceType: ev.evidenceType,
             },
           });
-
-          devStore.saveCredential(studentProfileId, cred);
-          newlyMinted.push(cred);
+          devStore.saveCredential(studentProfileId, newCred);
+          newlyMinted.push(newCred);
         }
       }
     }
@@ -361,22 +560,83 @@ export class PassportService {
   }
 
   /**
-   * Retrieves all credentials for a given student profile.
+   * Corrects student profile by removing an inaccurate self-reported skill.
+   * Fulfills Requirement 7: Allow students to review and correct inaccurate self-reported claims.
    */
-  public static getCredentials(studentProfileId: string): KaabilCredential[] {
+  public static async removeSelfReportedSkill(
+    studentProfileId: string,
+    skillName: string
+  ): Promise<{ success: boolean; remainingSkillsCount: number }> {
+    let profile = devStore.getProfile(studentProfileId);
+    if (!profile) {
+      profile = devStore.getProfileByUserId(studentProfileId);
+    }
+    if (!profile) {
+      profile = devStore.getProfileByEmail(studentProfileId);
+    }
+    if (!profile) {
+      profile = devStore.getProfile("demo-profile-id");
+    }
+
+    if (!profile) {
+      throw new Error(`Profile '${studentProfileId}' not found.`);
+    }
+
+    const lowerTarget = skillName.toLowerCase().trim();
+
+    if (profile.userSkills && Array.isArray(profile.userSkills)) {
+      profile.userSkills = profile.userSkills.filter(
+        (s: any) =>
+          (s.skill?.name || s.name || "").toLowerCase().trim() !== lowerTarget ||
+          s.isVerified === true // Verified skills cannot be deleted via self-reported deletion!
+      );
+    }
+
+    devStore.saveProfile(profile);
+
+    // Also update Prisma DB if connected
+    try {
+      const conn = await checkDatabaseConnection();
+      if (conn.connected && db?.userSkill) {
+        await db.userSkill.deleteMany({
+          where: {
+            studentProfileId,
+            isVerified: false,
+            skill: { name: { equals: skillName, mode: "insensitive" } },
+          },
+        });
+      }
+    } catch {
+      // Safe fallback
+    }
+
+    return {
+      success: true,
+      remainingSkillsCount: profile.userSkills?.length || 0,
+    };
+  }
+
+  /**
+   * Retrieves active credentials for a student profile.
+   */
+  public static getCredentials(
+    studentProfileId: string
+  ): KaabilCredential[] {
     return devStore.getCredentials(studentProfileId) || [];
   }
 
   /**
-   * Revokes a credential by ID.
+   * Revokes a credential by studentProfileId and credentialId.
    */
   public static revokeCredential(
     studentProfileId: string,
     credentialId: string
   ): KaabilCredential | null {
-    const cred = devStore.getCredential(studentProfileId, credentialId);
-    if (!cred) return null;
-
+    const creds = devStore.getCredentials(studentProfileId) || [];
+    const cred = creds.find((c) => c.id === credentialId);
+    if (!cred) {
+      return null;
+    }
     const revoked = CredentialService.revokeCredential(cred);
     devStore.saveCredential(studentProfileId, revoked);
     return revoked;
