@@ -832,7 +832,7 @@ export default function StudentDashboardPage() {
                     Compare your verified skills against industry demand to find the exact topics you need for top roles.
                   </p>
                 </div>
-                <Link href="/student/gap-analysis">
+                <Link href="/student/skill-gaps">
                   <Button variant="outline" size="sm" className="w-full text-xs font-bold rounded-xl border-purple-200 text-purple-700 hover:bg-purple-50 justify-between">
                     <span>Analyze Skills</span>
                     <ArrowRight className="h-3.5 w-3.5" />

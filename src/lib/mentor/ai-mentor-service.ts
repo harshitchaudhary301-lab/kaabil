@@ -81,7 +81,13 @@ export class AiMentorService {
    * Builds the comprehensive live context for a student from Digital Twin, CRI, and Roadmaps.
    */
   public static async getStudentLiveContext(studentProfileId: string): Promise<StudentLiveContext> {
-    const profile = devStore.getProfile(studentProfileId);
+    let profile = devStore.getProfile(studentProfileId);
+    if (!profile) {
+      profile = devStore.getProfileByUserId(studentProfileId);
+    }
+    if (!profile) {
+      profile = devStore.getProfileByEmail(studentProfileId);
+    }
     let criData = {
       overallScore: 0,
       status: "UNASSESSED",

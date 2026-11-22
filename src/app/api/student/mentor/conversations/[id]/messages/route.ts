@@ -25,6 +25,15 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
+function resolveStudentProfileId(user: any): string {
+  if (user?.studentProfile?.id) return user.studentProfile.id;
+  const devProf = devStore.getProfileByUserId(user.id);
+  if (devProf) return devProf.id;
+  const byEmail = devStore.getProfileByEmail(user.email);
+  if (byEmail) return byEmail.id;
+  return "prof-" + user.id;
+}
+
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const user = await getSessionUser();
@@ -34,19 +43,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     }
 
-    let studentProfileId = user.studentProfile?.id;
-    if (!studentProfileId) {
-      try {
-        const prof = await prisma.studentProfile.findUnique({
-          where: { userId },
-          select: { id: true },
-        });
-        studentProfileId = prof?.id;
-      } catch {}
-    }
-    if (!studentProfileId) {
-      studentProfileId = "demo-profile-id";
-    }
+    let studentProfileId = resolveStudentProfileId(user);
 
     const body = await req.json();
     const { content, language } = body;

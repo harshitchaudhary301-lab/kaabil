@@ -1064,6 +1064,13 @@ class DevStore {
       this.saveStore();
       return null;
     }
+    if (record.user?.email && store.users[record.user.email]) {
+      const liveUser = store.users[record.user.email];
+      return {
+        ...record.user,
+        studentProfile: liveUser.studentProfile || record.user.studentProfile,
+      };
+    }
     return record.user;
   }
 
@@ -1084,6 +1091,11 @@ class DevStore {
   getProfileByUserId(userId: string) {
     const store = this.loadStore();
     return Object.values(store.profiles).find((p) => p.userId === userId) || null;
+  }
+
+  getProfileByEmail(email: string) {
+    const store = this.loadStore();
+    return Object.values(store.profiles).find((p) => p.user?.email === email) || null;
   }
 
   saveProfile(profile: any) {

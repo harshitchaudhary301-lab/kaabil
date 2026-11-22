@@ -122,10 +122,11 @@ export async function POST(req: NextRequest) {
     const primaryStream: EducationalStream = sortedStreams[0] || (choseNotSure ? "UNDECIDED" : "NON_MEDICAL_PCM");
 
     // 2. Build StudentProfileContext for CareerRecommendationEngine
+    const effectiveStage = user?.studentProfile?.educationStage || educationStage || "CLASS_12";
     const studentContext: StudentProfileContext = {
       id: user?.id || "guest-discovery-user",
       name: user?.name || "Student Learner",
-      educationStage: educationStage || "CLASS_11",
+      educationStage: effectiveStage,
       primaryStream,
       selectedStreams: sortedStreams.slice(0, 3),
       interests: extractedInterests,

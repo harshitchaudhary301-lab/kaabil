@@ -107,9 +107,25 @@ export async function GET(req: NextRequest) {
           aiSource = aiResult.source;
           aiModel = aiResult.modelUsed;
 
+          const legacyBreakdown = {
+            interestAlignment: rec.breakdown.interestScore,
+            streamSubjectAlignment: rec.breakdown.streamScore,
+            skillAlignment: rec.breakdown.skillScore,
+            careerGoalsAlignment: rec.breakdown.goalScore,
+            learningPreferencesAlignment: rec.breakdown.preferenceScore,
+            ...rec.breakdown,
+          };
+
           return {
             ...rec,
+            score: rec.compatibilityScore,
+            breakdown: legacyBreakdown,
+            reasons: rec.explanationPoints && rec.explanationPoints.length > 0
+              ? rec.explanationPoints
+              : [rec.whySuited || `Well aligned with your interests and academic preparation.`],
+            aiReasoning: aiResult.explanation,
             aiExplanation: aiResult.explanation,
+            aiProvider: aiResult.source === "gemini_ai" ? "GEMINI_2_FLASH" : "DETERMINISTIC_HYBRID",
           };
         }
 
@@ -130,9 +146,25 @@ export async function GET(req: NextRequest) {
           preferredLang
         );
 
+        const legacyBreakdown = {
+          interestAlignment: rec.breakdown.interestScore,
+          streamSubjectAlignment: rec.breakdown.streamScore,
+          skillAlignment: rec.breakdown.skillScore,
+          careerGoalsAlignment: rec.breakdown.goalScore,
+          learningPreferencesAlignment: rec.breakdown.preferenceScore,
+          ...rec.breakdown,
+        };
+
         return {
           ...rec,
+          score: rec.compatibilityScore,
+          breakdown: legacyBreakdown,
+          reasons: rec.explanationPoints && rec.explanationPoints.length > 0
+            ? rec.explanationPoints
+            : [rec.whySuited || `Well aligned with your interests and academic preparation.`],
+          aiReasoning: deterministicExp,
           aiExplanation: deterministicExp,
+          aiProvider: "DETERMINISTIC_HYBRID",
         };
       })
     );

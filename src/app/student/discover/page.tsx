@@ -52,16 +52,35 @@ interface Recommendation {
     skills: string[];
     sources?: { name: string; url: string }[];
   };
-  score: number;
-  breakdown: {
-    interestAlignment: number;
-    streamSubjectAlignment: number;
-    skillAlignment: number;
-    careerGoalsAlignment: number;
-    learningPreferencesAlignment: number;
+  score?: number;
+  compatibilityScore?: number;
+  breakdown?: {
+    interestAlignment?: number;
+    interestScore?: number;
+    streamSubjectAlignment?: number;
+    streamScore?: number;
+    skillAlignment?: number;
+    skillScore?: number;
+    careerGoalsAlignment?: number;
+    goalScore?: number;
+    learningPreferencesAlignment?: number;
+    preferenceScore?: number;
   };
-  reasons: string[];
+  reasons?: string[];
+  explanationPoints?: string[];
+  whySuited?: string;
+  alignedStrengths?: string[];
+  skillsToImprove?: string[];
+  eligibility?: {
+    status?: string;
+    statusLabel?: string;
+    isEligible?: boolean;
+    missingPrerequisites?: string[];
+    entranceExamsRequired?: string[];
+  };
+  recommendedNextAction?: string;
   aiReasoning?: string;
+  aiExplanation?: string;
   aiProvider?: string;
 }
 
@@ -376,61 +395,82 @@ export default function StudentDiscoverPage() {
                         </div>
 
                         {/* Factor Score Breakdown Meter */}
-                        <div className="p-4 rounded-xl bg-slate-50/80 border border-border/80 space-y-3">
-                          <span className="text-[11px] font-bold uppercase tracking-wider text-text-secondary block">
-                            Deterministic Formula Match Breakdown
-                          </span>
-                          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-center">
-                            <div className="p-2 rounded-lg bg-white border border-border/60">
-                              <span className="text-xs font-bold text-text-primary block">
-                                {rec.breakdown.interestAlignment}%
-                              </span>
-                              <span className="text-[10px] text-text-secondary">Interests (30%)</span>
-                            </div>
-                            <div className="p-2 rounded-lg bg-white border border-border/60">
-                              <span className="text-xs font-bold text-text-primary block">
-                                {rec.breakdown.streamSubjectAlignment}%
-                              </span>
-                              <span className="text-[10px] text-text-secondary">Stream/Subject (20%)</span>
-                            </div>
-                            <div className="p-2 rounded-lg bg-white border border-border/60">
-                              <span className="text-xs font-bold text-text-primary block">
-                                {rec.breakdown.skillAlignment}%
-                              </span>
-                              <span className="text-[10px] text-text-secondary">Skill Match (20%)</span>
-                            </div>
-                            <div className="p-2 rounded-lg bg-white border border-border/60">
-                              <span className="text-xs font-bold text-text-primary block">
-                                {rec.breakdown.careerGoalsAlignment}%
-                              </span>
-                              <span className="text-[10px] text-text-secondary">Goals (20%)</span>
-                            </div>
-                            <div className="p-2 rounded-lg bg-white border border-border/60">
-                              <span className="text-xs font-bold text-text-primary block">
-                                {rec.breakdown.learningPreferencesAlignment}%
-                              </span>
-                              <span className="text-[10px] text-text-secondary">Preferences (10%)</span>
+                        {rec.breakdown && (
+                          <div className="p-4 rounded-xl bg-slate-50/80 border border-border/80 space-y-3">
+                            <span className="text-[11px] font-bold uppercase tracking-wider text-text-secondary block">
+                              Deterministic Formula Match Breakdown
+                            </span>
+                            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-center">
+                              <div className="p-2 rounded-lg bg-white border border-border/60">
+                                <span className="text-xs font-bold text-text-primary block">
+                                  {rec.breakdown.interestAlignment ?? rec.breakdown.interestScore ?? 0}%
+                                </span>
+                                <span className="text-[10px] text-text-secondary">Interests (30%)</span>
+                              </div>
+                              <div className="p-2 rounded-lg bg-white border border-border/60">
+                                <span className="text-xs font-bold text-text-primary block">
+                                  {rec.breakdown.streamSubjectAlignment ?? rec.breakdown.streamScore ?? 0}%
+                                </span>
+                                <span className="text-[10px] text-text-secondary">Stream/Subject (20%)</span>
+                              </div>
+                              <div className="p-2 rounded-lg bg-white border border-border/60">
+                                <span className="text-xs font-bold text-text-primary block">
+                                  {rec.breakdown.skillAlignment ?? rec.breakdown.skillScore ?? 0}%
+                                </span>
+                                <span className="text-[10px] text-text-secondary">Skill Match (20%)</span>
+                              </div>
+                              <div className="p-2 rounded-lg bg-white border border-border/60">
+                                <span className="text-xs font-bold text-text-primary block">
+                                  {rec.breakdown.careerGoalsAlignment ?? rec.breakdown.goalScore ?? 0}%
+                                </span>
+                                <span className="text-[10px] text-text-secondary">Goals (20%)</span>
+                              </div>
+                              <div className="p-2 rounded-lg bg-white border border-border/60">
+                                <span className="text-xs font-bold text-text-primary block">
+                                  {rec.breakdown.learningPreferencesAlignment ?? rec.breakdown.preferenceScore ?? 0}%
+                                </span>
+                                <span className="text-[10px] text-text-secondary">Preferences (10%)</span>
+                              </div>
                             </div>
                           </div>
-                        </div>
+                        )}
 
                         {/* Explainability Points */}
-                        <div className="space-y-1.5">
-                          <span className="text-xs font-semibold text-text-primary block">
-                            Why KAABIL Recommends This:
-                          </span>
-                          <ul className="space-y-1 text-xs text-text-secondary">
-                            {rec.reasons.map((reason, idx) => (
-                              <li key={idx} className="flex items-start gap-1.5">
-                                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                                <span>{reason}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
+                        {((rec.reasons && rec.reasons.length > 0) || (rec.explanationPoints && rec.explanationPoints.length > 0) || rec.whySuited) && (
+                          <div className="space-y-1.5">
+                            <span className="text-xs font-semibold text-text-primary block">
+                              Why KAABIL Recommends This:
+                            </span>
+                            <ul className="space-y-1 text-xs text-text-secondary">
+                              {(rec.reasons || rec.explanationPoints || [rec.whySuited]).map((reason, idx) => (
+                                <li key={idx} className="flex items-start gap-1.5">
+                                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                                  <span>{reason}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* Prerequisite & Eligibility Badge */}
+                        {rec.eligibility && (
+                          <div className="p-3 rounded-xl bg-purple-50/50 border border-purple-100 flex items-center justify-between text-xs">
+                            <div className="flex items-center gap-2">
+                              <ShieldCheck className="h-4 w-4 text-purple-600" />
+                              <span className="font-semibold text-purple-900">
+                                Regulatory Status: {rec.eligibility.statusLabel || rec.eligibility.status}
+                              </span>
+                            </div>
+                            {rec.recommendedNextAction && (
+                              <span className="text-[11px] text-purple-700 font-medium">
+                                Next: {rec.recommendedNextAction}
+                              </span>
+                            )}
+                          </div>
+                        )}
 
                         {/* Layer 3 Generative AI / Explainability Banner */}
-                        {rec.aiReasoning && (
+                        {(rec.aiReasoning || rec.aiExplanation) && (
                           <div className="p-3.5 rounded-xl bg-primary/5 border border-primary/20 space-y-1.5">
                             <div className="flex items-center justify-between">
                               <span className="text-[11px] font-bold text-primary flex items-center gap-1.5">
@@ -444,7 +484,7 @@ export default function StudentDiscoverPage() {
                               </span>
                             </div>
                             <p className="text-xs text-text-secondary leading-relaxed italic">
-                              &ldquo;{rec.aiReasoning}&rdquo;
+                              &ldquo;{rec.aiReasoning || rec.aiExplanation}&rdquo;
                             </p>
                           </div>
                         )}
@@ -454,13 +494,13 @@ export default function StudentDiscoverPage() {
                           <span className="text-xs font-semibold text-text-primary mr-1">
                             Key Skills:
                           </span>
-                          {rec.career.skills.slice(0, 5).map((skill, idx) => (
+                          {(rec.career.skills || []).slice(0, 5).map((skill, idx) => (
                             <Badge
                               key={idx}
                               variant="outline"
                               className="text-[10px] bg-slate-50 text-text-secondary"
                             >
-                              {skill}
+                              {typeof skill === "string" ? skill : (skill as any).name}
                             </Badge>
                           ))}
                         </div>
@@ -470,7 +510,7 @@ export default function StudentDiscoverPage() {
                       <div className="lg:w-72 shrink-0 flex flex-col justify-between p-5 rounded-2xl bg-slate-50 border border-border space-y-4">
                         <div className="text-center pb-4 border-b border-border/80">
                           <span className="text-4xl font-extrabold text-primary font-heading">
-                            {rec.score}%
+                            {rec.score ?? rec.compatibilityScore ?? 75}%
                           </span>
                           <span className="text-[11px] font-bold uppercase tracking-wider text-text-secondary block mt-0.5">
                             Overall Match Score

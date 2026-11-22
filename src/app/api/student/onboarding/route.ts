@@ -330,8 +330,24 @@ export async function POST(req: NextRequest) {
     } else {
       // Offline fallback: Persist onboarding in devStore
       const profileId = user.studentProfile?.id || "fallback-prof-" + user.id;
-      const targetSlug = data.careerGoal?.targetRole ? data.careerGoal.targetRole.toLowerCase().replace(/[^a-z0-9]/g, "-") : "ai-systems-engineer";
-      const targetTitle = data.careerGoal?.targetRole || "AI Systems Engineer";
+      const streamDefaultTitles: Record<string, string> = {
+        MEDICAL_PCB: "Clinical Healthcare & Medicine",
+        NON_MEDICAL_PCM: "Engineering & Applied Sciences",
+        COMMERCE: "Chartered Accountancy & Finance",
+        ARTS_HUMANITIES: "Humanities & Social Impact",
+        LAW: "Legal Studies & Judiciary",
+        MANAGEMENT: "Business Management",
+        CREATIVE_DESIGN: "Design & Creative Arts",
+        AGRICULTURE: "Agricultural Sciences",
+        VOCATIONAL_TRADES: "Vocational & Applied Technology",
+        SPORTS_PHYSICAL_ED: "Sports & Physical Education",
+        HOSPITALITY_TOURISM: "Hospitality & Tourism Management",
+        INTERDISCIPLINARY: "Interdisciplinary Studies",
+        UNDECIDED: "Exploring Career Pathways",
+      };
+
+      const targetTitle = data.careerGoal?.targetRole || streamDefaultTitles[data.primaryStream] || "Exploring Career Pathways";
+      const targetSlug = targetTitle.toLowerCase().replace(/[^a-z0-9]/g, "-");
       const targetYear = data.careerGoal?.targetYear || 2027;
 
       devStore.saveProfile({
@@ -365,6 +381,7 @@ export async function POST(req: NextRequest) {
       const storedUser = devStore.getUserByEmail(user.email);
       if (storedUser) {
         if (!storedUser.studentProfile) storedUser.studentProfile = {};
+        storedUser.studentProfile.id = profileId;
         storedUser.studentProfile.educationStage = data.educationStage;
         storedUser.studentProfile.currentStream = data.primaryStream;
         storedUser.studentProfile.onboardingCompleted = true;

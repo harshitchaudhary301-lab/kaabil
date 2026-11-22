@@ -14,6 +14,15 @@ const nextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: '/student/gap-analysis',
+        destination: '/student/skill-gaps',
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {

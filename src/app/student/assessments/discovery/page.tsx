@@ -102,10 +102,29 @@ export default function DiscoveryAssessmentPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [language, setLanguage] = useState<"en" | "hi" | "hinglish">("en");
-  const [educationStage, setEducationStage] = useState<string>("CLASS_11");
+  const [educationStage, setEducationStage] = useState<string>("CLASS_12");
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<any | null>(null);
   const [autoSavedTime, setAutoSavedTime] = useState<string | null>(null);
+
+  // Fetch active session user's education stage
+  useEffect(() => {
+    async function loadUserStage() {
+      try {
+        const res = await fetch("/api/auth/session");
+        if (res.ok) {
+          const data = await res.json();
+          const stage = data?.user?.studentProfile?.educationStage;
+          if (stage) {
+            setEducationStage(stage);
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+    loadUserStage();
+  }, []);
 
   // Restore saved state from localStorage
   useEffect(() => {
