@@ -204,10 +204,100 @@ describe("Step 3.4 — Evidence-Backed Skill Passport & Career Readiness", () =>
         result.dimensions.milestoneProgress.weight;
       expect(totalWeight).toBe(100);
 
+      // CRITICAL: Sum of dimension points strictly equals overallScore (Zero Inconsistency!)
+      const sumWeightedPoints =
+        result.dimensions.careerKnowledge.weightedPoints +
+        result.dimensions.educationalPreparation.weightedPoints +
+        result.dimensions.skillDevelopment.weightedPoints +
+        result.dimensions.practicalLearning.weightedPoints +
+        result.dimensions.milestoneProgress.weightedPoints;
+      expect(sumWeightedPoints).toBe(result.overallScore);
+      expect(sumWeightedPoints).toBeLessThanOrEqual(100);
+
+      // Verify each dimension never exceeds its maximum weight
+      expect(result.dimensions.careerKnowledge.weightedPoints).toBeLessThanOrEqual(20);
+      expect(result.dimensions.educationalPreparation.weightedPoints).toBeLessThanOrEqual(25);
+      expect(result.dimensions.skillDevelopment.weightedPoints).toBeLessThanOrEqual(25);
+      expect(result.dimensions.practicalLearning.weightedPoints).toBeLessThanOrEqual(15);
+      expect(result.dimensions.milestoneProgress.weightedPoints).toBeLessThanOrEqual(15);
+
       expect(result.calculationFormula).toContain("Readiness =");
       expect(result.nextBestAction).toBeDefined();
       expect(result.nextBestAction?.impactPoints).toBeGreaterThan(0);
       expect(result.disclaimer).toContain("does NOT predict admission probability");
+    });
+
+    it("handles incomplete student profile (interests only, no skills) with insufficient evidence guard", async () => {
+      const incompleteId = `incomplete-student-${Date.now()}`;
+      devStore.saveProfile({
+        id: incompleteId,
+        userId: `user-${incompleteId}`,
+        educationStage: "UNDERGRADUATE",
+        currentStream: "NON_MEDICAL_PCM",
+        interests: [{ id: "int-1", name: "Robotics" }],
+        userSkills: [],
+        careerGoals: [{ targetRoleTitle: "AI Systems Engineer", targetRoleSlug: "ai-systems-engineer" }],
+        roadmaps: [],
+        dailyMissions: [],
+      });
+
+      const result = await CareerReadinessEngine.calculateReadiness(incompleteId, "ai-systems-engineer");
+      expect(result.overallScore).toBeNull();
+      expect(result.status).toBe("INSUFFICIENT_EVIDENCE");
+      expect(result.isInsufficientEvidence).toBe(true);
+
+      // Sum of points is 0 and never exceeds max
+      const sumPoints =
+        result.dimensions.careerKnowledge.weightedPoints +
+        result.dimensions.educationalPreparation.weightedPoints +
+        result.dimensions.skillDevelopment.weightedPoints +
+        result.dimensions.practicalLearning.weightedPoints +
+        result.dimensions.milestoneProgress.weightedPoints;
+      expect(sumPoints).toBe(0);
+    });
+
+    it("handles fully verified returning student with multiple projects and sprint tasks without exceeding 100", async () => {
+      const returningId = `returning-student-${Date.now()}`;
+      devStore.saveProfile({
+        id: returningId,
+        userId: `user-${returningId}`,
+        educationStage: "UNDERGRADUATE",
+        currentStream: "NON_MEDICAL_PCM",
+        interests: [{ id: "int-1", name: "AI" }],
+        userSkills: [
+          { name: "Python", isVerified: true },
+          { name: "Data Structures", isVerified: true },
+          { name: "Machine Learning", isVerified: true },
+        ],
+        careerGoals: [{ targetRoleTitle: "AI Systems Engineer", targetRoleSlug: "ai-systems-engineer" }],
+        roadmaps: [{ id: "rm-1", milestones: [{ id: "m-1", isCompleted: true }] }],
+        dailyMissions: [{ id: "dm-1", status: "COMPLETED" }],
+      });
+
+      devStore.saveProjectEnrollment(returningId, "project-ai-1", {
+        projectId: "project-ai-1",
+        status: "SUBMITTED",
+        submissionUrl: "https://github.com/example/ai-project",
+      });
+
+      devStore.saveLearningTaskState(returningId, "task-1", {
+        taskId: "task-1",
+        isCompleted: true,
+      });
+
+      const result = await CareerReadinessEngine.calculateReadiness(returningId, "ai-systems-engineer");
+      expect(result.overallScore).not.toBeNull();
+      expect(result.overallScore!).toBeGreaterThan(50);
+      expect(result.overallScore!).toBeLessThanOrEqual(100);
+
+      const sumPoints =
+        result.dimensions.careerKnowledge.weightedPoints +
+        result.dimensions.educationalPreparation.weightedPoints +
+        result.dimensions.skillDevelopment.weightedPoints +
+        result.dimensions.practicalLearning.weightedPoints +
+        result.dimensions.milestoneProgress.weightedPoints;
+      expect(sumPoints).toBe(result.overallScore);
+      expect(sumPoints).toBeLessThanOrEqual(100);
     });
   });
 

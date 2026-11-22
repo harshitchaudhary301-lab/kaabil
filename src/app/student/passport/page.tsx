@@ -474,11 +474,17 @@ export default function DigitalSkillPassportPage() {
                     {/* Dimension Progress Bars */}
                     <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
                       <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-3">
-                        <div className="text-[11px] font-semibold text-gray-500 uppercase">
-                          Career Knowledge (20%)
+                        <div className="text-[11px] font-semibold text-gray-500 uppercase flex items-center justify-between">
+                          <span>Career Knowledge</span>
+                          <span className="text-[10px] text-purple-700 font-mono font-bold">20%</span>
                         </div>
-                        <div className="mt-1 text-lg font-bold text-gray-900">
-                          {passport.careerReadiness.dimensions.knowledge.score}%
+                        <div className="mt-1 flex items-baseline justify-between">
+                          <span className="text-lg font-bold text-gray-900">
+                            {passport.careerReadiness.dimensions.knowledge.score}%
+                          </span>
+                          <span className="text-xs text-purple-700 font-semibold font-mono">
+                            {passport.careerReadiness.dimensions.knowledge.weightedPoints ?? Math.round(passport.careerReadiness.dimensions.knowledge.score * 0.2)} / 20 pts
+                          </span>
                         </div>
                         <div className="mt-1.5 h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
                           <div
@@ -489,11 +495,17 @@ export default function DigitalSkillPassportPage() {
                       </div>
 
                       <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-3">
-                        <div className="text-[11px] font-semibold text-gray-500 uppercase">
-                          Eligibility (25%)
+                        <div className="text-[11px] font-semibold text-gray-500 uppercase flex items-center justify-between">
+                          <span>Eligibility</span>
+                          <span className="text-[10px] text-indigo-700 font-mono font-bold">25%</span>
                         </div>
-                        <div className="mt-1 text-lg font-bold text-gray-900">
-                          {passport.careerReadiness.dimensions.eligibility.score}%
+                        <div className="mt-1 flex items-baseline justify-between">
+                          <span className="text-lg font-bold text-gray-900">
+                            {passport.careerReadiness.dimensions.eligibility.score}%
+                          </span>
+                          <span className="text-xs text-indigo-700 font-semibold font-mono">
+                            {passport.careerReadiness.dimensions.eligibility.weightedPoints ?? Math.round(passport.careerReadiness.dimensions.eligibility.score * 0.25)} / 25 pts
+                          </span>
                         </div>
                         <div className="mt-1.5 h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
                           <div
@@ -504,11 +516,17 @@ export default function DigitalSkillPassportPage() {
                       </div>
 
                       <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-3">
-                        <div className="text-[11px] font-semibold text-gray-500 uppercase">
-                          Skill Genome (25%)
+                        <div className="text-[11px] font-semibold text-gray-500 uppercase flex items-center justify-between">
+                          <span>Skill Genome</span>
+                          <span className="text-[10px] text-emerald-700 font-mono font-bold">25%</span>
                         </div>
-                        <div className="mt-1 text-lg font-bold text-gray-900">
-                          {passport.careerReadiness.dimensions.skills.score}%
+                        <div className="mt-1 flex items-baseline justify-between">
+                          <span className="text-lg font-bold text-gray-900">
+                            {passport.careerReadiness.dimensions.skills.score}%
+                          </span>
+                          <span className="text-xs text-emerald-700 font-semibold font-mono">
+                            {passport.careerReadiness.dimensions.skills.weightedPoints ?? Math.round(passport.careerReadiness.dimensions.skills.score * 0.25)} / 25 pts
+                          </span>
                         </div>
                         <div className="mt-1.5 h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
                           <div
@@ -519,11 +537,17 @@ export default function DigitalSkillPassportPage() {
                       </div>
 
                       <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-3">
-                        <div className="text-[11px] font-semibold text-gray-500 uppercase">
-                          Projects (15%)
+                        <div className="text-[11px] font-semibold text-gray-500 uppercase flex items-center justify-between">
+                          <span>Projects</span>
+                          <span className="text-[10px] text-blue-700 font-mono font-bold">15%</span>
                         </div>
-                        <div className="mt-1 text-lg font-bold text-gray-900">
-                          {passport.careerReadiness.dimensions.practicalProjects.score}%
+                        <div className="mt-1 flex items-baseline justify-between">
+                          <span className="text-lg font-bold text-gray-900">
+                            {passport.careerReadiness.dimensions.practicalProjects.score}%
+                          </span>
+                          <span className="text-xs text-blue-700 font-semibold font-mono">
+                            {passport.careerReadiness.dimensions.practicalProjects.weightedPoints ?? Math.round(passport.careerReadiness.dimensions.practicalProjects.score * 0.15)} / 15 pts
+                          </span>
                         </div>
                         <div className="mt-1.5 h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
                           <div
@@ -534,11 +558,17 @@ export default function DigitalSkillPassportPage() {
                       </div>
 
                       <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-3">
-                        <div className="text-[11px] font-semibold text-gray-500 uppercase">
-                          Sprints (15%)
+                        <div className="text-[11px] font-semibold text-gray-500 uppercase flex items-center justify-between">
+                          <span>Sprints</span>
+                          <span className="text-[10px] text-amber-700 font-mono font-bold">15%</span>
                         </div>
-                        <div className="mt-1 text-lg font-bold text-gray-900">
-                          {passport.careerReadiness.dimensions.learningProgress.score}%
+                        <div className="mt-1 flex items-baseline justify-between">
+                          <span className="text-lg font-bold text-gray-900">
+                            {passport.careerReadiness.dimensions.learningProgress.score}%
+                          </span>
+                          <span className="text-xs text-amber-700 font-semibold font-mono">
+                            {passport.careerReadiness.dimensions.learningProgress.weightedPoints ?? Math.round(passport.careerReadiness.dimensions.learningProgress.score * 0.15)} / 15 pts
+                          </span>
                         </div>
                         <div className="mt-1.5 h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
                           <div

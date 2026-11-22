@@ -324,16 +324,51 @@ export class CareerReadinessEngine {
     milestoneScore = Math.min(100, milestoneScore);
 
     // =========================================================================
-    // Overall Weighted Score
+    // Overall Weighted Score & Integer Rubric Apportionment
     // Formula: (Knowledge * 0.20) + (Edu * 0.25) + (Skill * 0.25) + (Practical * 0.15) + (Milestone * 0.15)
+    // Mathematical Invariant: Sum of dimension weightedPoints strictly equals overallScore!
+    // And overallScore <= 100, dimension.weightedPoints <= dimension.weight.
     // =========================================================================
-    const weightedScore = Math.round(
-      knowledgeScore * 0.20 +
-      eduScore * 0.25 +
-      skillScore * 0.25 +
-      practicalScore * 0.15 +
-      milestoneScore * 0.15
-    );
+    const rawKnowledge = Math.min(20, Math.max(0, knowledgeScore * 0.20));
+    const rawEdu = Math.min(25, Math.max(0, eduScore * 0.25));
+    const rawSkill = Math.min(25, Math.max(0, skillScore * 0.25));
+    const rawPractical = Math.min(15, Math.max(0, practicalScore * 0.15));
+    const rawMilestone = Math.min(15, Math.max(0, milestoneScore * 0.15));
+
+    const totalRaw = rawKnowledge + rawEdu + rawSkill + rawPractical + rawMilestone;
+    const weightedScore = Math.min(100, Math.max(0, Math.round(totalRaw)));
+
+    // Largest Remainder Method (Hare-Niemeyer) ensures integer points sum EXACTLY to overallScore
+    const dimApportionment = [
+      { key: "careerKnowledge", raw: rawKnowledge, max: 20 },
+      { key: "educationalPreparation", raw: rawEdu, max: 25 },
+      { key: "skillDevelopment", raw: rawSkill, max: 25 },
+      { key: "practicalLearning", raw: rawPractical, max: 15 },
+      { key: "milestoneProgress", raw: rawMilestone, max: 15 },
+    ];
+
+    const allocatedPoints: Record<string, number> = {};
+    const remainders: { key: string; remainder: number; max: number }[] = [];
+    let sumFloors = 0;
+
+    for (const d of dimApportionment) {
+      const fl = Math.floor(d.raw);
+      allocatedPoints[d.key] = fl;
+      remainders.push({ key: d.key, remainder: d.raw - fl, max: d.max });
+      sumFloors += fl;
+    }
+
+    let extraToDistribute = weightedScore - sumFloors;
+    // Sort remainders descending by fractional remainder
+    remainders.sort((a, b) => b.remainder - a.remainder);
+
+    for (const r of remainders) {
+      if (extraToDistribute <= 0) break;
+      if (allocatedPoints[r.key] < r.max) {
+        allocatedPoints[r.key] += 1;
+        extraToDistribute -= 1;
+      }
+    }
 
     let status: ReadinessStatus = "DEVELOPING";
     let statusLabel = "Developing Foundations";
@@ -412,7 +447,7 @@ export class CareerReadinessEngine {
           name: "Career Domain Knowledge",
           weight: 20,
           score: knowledgeScore,
-          weightedPoints: Math.round(knowledgeScore * 0.20),
+          weightedPoints: allocatedPoints["careerKnowledge"],
           evidencePoints: knowledgeEvidence,
           missingEvidence: knowledgeMissing,
         },
@@ -420,7 +455,7 @@ export class CareerReadinessEngine {
           name: "Educational & Subject Preparation",
           weight: 25,
           score: eduScore,
-          weightedPoints: Math.round(eduScore * 0.25),
+          weightedPoints: allocatedPoints["educationalPreparation"],
           evidencePoints: eduEvidence,
           missingEvidence: eduMissing,
         },
@@ -428,7 +463,7 @@ export class CareerReadinessEngine {
           name: "Skill Genome & Verification",
           weight: 25,
           score: skillScore,
-          weightedPoints: Math.round(skillScore * 0.25),
+          weightedPoints: allocatedPoints["skillDevelopment"],
           evidencePoints: skillEvidence,
           missingEvidence: skillMissing,
         },
@@ -436,7 +471,7 @@ export class CareerReadinessEngine {
           name: "Practical Application & Projects",
           weight: 15,
           score: practicalScore,
-          weightedPoints: Math.round(practicalScore * 0.15),
+          weightedPoints: allocatedPoints["practicalLearning"],
           evidencePoints: practicalEvidence,
           missingEvidence: practicalMissing,
         },
@@ -444,7 +479,7 @@ export class CareerReadinessEngine {
           name: "Learning Consistency & Sprints",
           weight: 15,
           score: milestoneScore,
-          weightedPoints: Math.round(milestoneScore * 0.15),
+          weightedPoints: allocatedPoints["milestoneProgress"],
           evidencePoints: milestoneEvidence,
           missingEvidence: milestoneMissing,
         },

@@ -192,7 +192,9 @@ export default function CareerReadinessPage() {
               <h2 className="font-heading text-base sm:text-lg font-bold text-slate-900">
                 5-Dimension Preparation Rubric
               </h2>
-              <span className="text-xs text-purple-700 font-semibold">Weighted Formula</span>
+              <span className="text-xs text-purple-700 font-bold font-mono bg-purple-50 px-2.5 py-1 rounded-full border border-purple-200">
+                Total: {readiness ? `${readiness.overallScore ?? 0} / 100 Points` : "Weighted Formula"}
+              </span>
             </div>
 
             {readiness ? (
@@ -202,7 +204,7 @@ export default function CareerReadinessPage() {
                   <div className="flex items-center justify-between text-xs font-semibold mb-1">
                     <span className="text-slate-800">1. Domain Knowledge (Weight: 20%)</span>
                     <span className="font-bold text-purple-700">
-                      {readiness.dimensions.careerKnowledge.score}% ({readiness.dimensions.careerKnowledge.weightedPoints} pts)
+                      {readiness.dimensions.careerKnowledge.score}% ({readiness.dimensions.careerKnowledge.weightedPoints} / 20 pts)
                     </span>
                   </div>
                   <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
@@ -218,7 +220,7 @@ export default function CareerReadinessPage() {
                   <div className="flex items-center justify-between text-xs font-semibold mb-1">
                     <span className="text-slate-800">2. Education & Eligibility (Weight: 25%)</span>
                     <span className="font-bold text-indigo-700">
-                      {readiness.dimensions.educationalPreparation.score}% ({readiness.dimensions.educationalPreparation.weightedPoints} pts)
+                      {readiness.dimensions.educationalPreparation.score}% ({readiness.dimensions.educationalPreparation.weightedPoints} / 25 pts)
                     </span>
                   </div>
                   <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
@@ -234,7 +236,7 @@ export default function CareerReadinessPage() {
                   <div className="flex items-center justify-between text-xs font-semibold mb-1">
                     <span className="text-slate-800">3. Demonstrated Skills (Weight: 25%)</span>
                     <span className="font-bold text-emerald-700">
-                      {readiness.dimensions.skillDevelopment.score}% ({readiness.dimensions.skillDevelopment.weightedPoints} pts)
+                      {readiness.dimensions.skillDevelopment.score}% ({readiness.dimensions.skillDevelopment.weightedPoints} / 25 pts)
                     </span>
                   </div>
                   <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
@@ -250,7 +252,7 @@ export default function CareerReadinessPage() {
                   <div className="flex items-center justify-between text-xs font-semibold mb-1">
                     <span className="text-slate-800">4. Practical Projects (Weight: 15%)</span>
                     <span className="font-bold text-blue-700">
-                      {readiness.dimensions.practicalLearning.score}% ({readiness.dimensions.practicalLearning.weightedPoints} pts)
+                      {readiness.dimensions.practicalLearning.score}% ({readiness.dimensions.practicalLearning.weightedPoints} / 15 pts)
                     </span>
                   </div>
                   <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
@@ -266,7 +268,7 @@ export default function CareerReadinessPage() {
                   <div className="flex items-center justify-between text-xs font-semibold mb-1">
                     <span className="text-slate-800">5. Learning Sprints (Weight: 15%)</span>
                     <span className="font-bold text-amber-700">
-                      {readiness.dimensions.milestoneProgress.score}% ({readiness.dimensions.milestoneProgress.weightedPoints} pts)
+                      {readiness.dimensions.milestoneProgress.score}% ({readiness.dimensions.milestoneProgress.weightedPoints} / 15 pts)
                     </span>
                   </div>
                   <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">

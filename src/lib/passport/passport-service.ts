@@ -87,11 +87,11 @@ export interface PassportCareerReadinessSummary {
   targetCareerSlug: string;
   nextBestAction: NextBestActionItem;
   dimensions: {
-    knowledge: { score: number; weight: number };
-    eligibility: { score: number; weight: number };
-    skills: { score: number; weight: number };
-    practicalProjects: { score: number; weight: number };
-    learningProgress: { score: number; weight: number };
+    knowledge: { score: number; weight: number; weightedPoints: number };
+    eligibility: { score: number; weight: number; weightedPoints: number };
+    skills: { score: number; weight: number; weightedPoints: number };
+    practicalProjects: { score: number; weight: number; weightedPoints: number };
+    learningProgress: { score: number; weight: number; weightedPoints: number };
   };
   calculationFormula: string;
   isInsufficientEvidence: boolean;
@@ -419,11 +419,31 @@ export class PassportService {
         category: "ASSESSMENT",
       },
       dimensions: {
-        knowledge: { score: readinessResult.dimensions.careerKnowledge.score, weight: 20 },
-        eligibility: { score: readinessResult.dimensions.educationalPreparation.score, weight: 25 },
-        skills: { score: readinessResult.dimensions.skillDevelopment.score, weight: 25 },
-        practicalProjects: { score: readinessResult.dimensions.practicalLearning.score, weight: 15 },
-        learningProgress: { score: readinessResult.dimensions.milestoneProgress.score, weight: 15 },
+        knowledge: {
+          score: readinessResult.dimensions.careerKnowledge.score,
+          weight: 20,
+          weightedPoints: readinessResult.dimensions.careerKnowledge.weightedPoints,
+        },
+        eligibility: {
+          score: readinessResult.dimensions.educationalPreparation.score,
+          weight: 25,
+          weightedPoints: readinessResult.dimensions.educationalPreparation.weightedPoints,
+        },
+        skills: {
+          score: readinessResult.dimensions.skillDevelopment.score,
+          weight: 25,
+          weightedPoints: readinessResult.dimensions.skillDevelopment.weightedPoints,
+        },
+        practicalProjects: {
+          score: readinessResult.dimensions.practicalLearning.score,
+          weight: 15,
+          weightedPoints: readinessResult.dimensions.practicalLearning.weightedPoints,
+        },
+        learningProgress: {
+          score: readinessResult.dimensions.milestoneProgress.score,
+          weight: 15,
+          weightedPoints: readinessResult.dimensions.milestoneProgress.weightedPoints,
+        },
       },
       calculationFormula: readinessResult.calculationFormula || "Readiness = (Domain Knowledge × 20%) + (Education Preparation × 25%) + (Skill Genome × 25%) + (Practical Projects × 15%) + (Learning Sprints × 15%)",
       isInsufficientEvidence: readinessResult.isInsufficientEvidence ?? (readinessResult.overallScore === null),
