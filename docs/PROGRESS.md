@@ -1,14 +1,67 @@
 # PROGRESS.md — Active Implementation Tracker & Living Changelog
 
 ## Project: KAABIL (काबिल)
-**Current Stage:** Phase 3 — Step 3.2 Complete (Awaiting Validation & Step 3.3 Approval)  
+**Current Stage:** Phase 3 Complete (All Steps 3.1–3.4 Verified & Checkpointed)  
 **Workspace Path:** `C:\Users\Harshit\.gemini\antigravity\scratch\kaabil`  
 **Last Updated:** November 22, 2026  
-**Baseline Audited Checkpoint:** `checkpoint-phase3-step31` (Tag)  
+**Latest Audited Checkpoint:** `checkpoint-phase3-step34` (Tag: `303d44b`)  
 
 ---
 
 ### Phase 3: Dynamic Skill Architectures & Personalized Profile Elevation
+
+#### Step 3.4: Evidence-Backed Skill Passport & Career Readiness (November 22, 2026)
+- **1. Three-Tier Skill Provenance Segregation (`src/lib/passport/passport-service.ts`):**
+  - Built strict 3-tier classification: `PLATFORM_ASSESSED`, `SELF_REPORTED`, and `EXTERNALLY_VERIFIED`.
+  - Platform-assessed skills: Linked directly to objective assessment attempts, score percentages, timestamps, and SHA-256 verification hashes.
+  - Self-reported skills: Displayed with distinct unverified badges and an explicit notice: *"Self-reported claim: Not independently assessed or verified."*
+  - Externally verified credentials: Signed by KAABIL Credential Engine representing statutory boards, universities, or accredited certifications.
+  - Strict Rule 5 & 14 Enforcement: Completing projects or self-reporting skills never grants automatic external verification.
+- **2. Self-Reported Skill Claim Correction (`src/app/api/student/passport/route.ts`):**
+  - Added `DELETE /api/student/passport?skillName=<name>` allowing students to correct or remove inaccurate self-reported claims.
+  - Verified and platform-assessed skills are immutable from this endpoint.
+- **3. Explainable 5-Dimension Career Readiness Index (`src/lib/readiness/cri-engine.ts`):**
+  - Integrated 5 transparent dimensions: Career Knowledge (20%), Education & Statutory Preparation (25%), Skill Genome & Gap Coverage (25%), Practical Projects (15%), and Learning Sprints (15%).
+  - Transparent formula: `Readiness = (Domain Knowledge × 20%) + (Education Preparation × 25%) + (Skill Genome × 25%) + (Practical Projects × 15%) + (Learning Sprints × 15%)`.
+  - Deterministic Next Best Action recommendation with quantified readiness point impact.
+  - Zero Fabrication & Insufficient Evidence Guard (Rule 10): Fresh unassessed students receive `overallScore: null` and *"Not enough information yet"* state instead of misleading fabricated scores.
+  - Guidance Disclaimer: Clarifies that CRI is a formative learning indicator, not an employability guarantee or statutory licensure credential.
+- **4. Practical Projects Portfolio & Step 3.3 Integration:**
+  - Integrated project deliverables, submission URLs (GitHub/Drive/Figma), and reflections into the Passport portfolio section.
+  - Projects marked as `SELF_DIRECTED_PROJECT` with `isVerified: false` to prevent unassessed project fabrication.
+- **5. DPDP Act 2023 Child Privacy & Age-Aware Sharing:**
+  - School students (Class 8–12 minors) have recruiter visibility and public link generation locked by default.
+  - Adult students can generate tokenized 7-day expiring public verification links (`/verify/[token]`) with sanitized privacy settings.
+- **6. Elevated Pages & Trilingual UI:**
+  - `/student/passport`: Elevated UI with 3-tier filtering, interactive skill removal, project showcase, and share modal.
+  - `/student/readiness`: Dedicated deep-dive scorecard displaying benchmark status, 5-dimension rubric breakdown, transparent formula, and Next Best Action.
+  - Interactive language switcher: English, हिन्दी (Hindi), and Hinglish.
+- **7. Validation & Automated Tests:**
+  - Created 11 automated tests in `src/__tests__/evidence-backed-skill-passport.test.ts`.
+  - All 56 test files and **326 tests passed** (`npx vitest run`).
+  - Strict TypeScript check: 0 errors (`npx tsc --noEmit`).
+  - Next.js production build: 74/74 static/dynamic routes compiled successfully (`npm run build`).
+  - Browser verification confirmed via live browser subagent on `http://localhost:3000/student/passport` and `/student/readiness`.
+  - Checkpoint created and tagged: `checkpoint-phase3-step34`.
+
+---
+
+#### Step 3.3: Personalized Learning Plan & Projects Hub (November 22, 2026)
+- **1. Multi-Stream Learning Plan Engine (`src/lib/learning/learning-plan-service.ts`):**
+  - Built personalized learning plan generation based on selected career, educational stage, missing skills, available weekly hours, and budget preferences.
+  - Generates 4-week structured sprint roadmaps with daily 30-45 minute tasks and clear completion criteria.
+  - Authentic, curated free and affordable Indian educational resources (NPTEL, SWAYAM, Khan Academy, NCERT, Coursera Financial Aid).
+- **2. Multi-Stream Projects Hub (`src/data/careerProjectsData.ts` & `src/app/student/learning-plan/page.tsx`):**
+  - Created real-world project repository across all educational streams: STEM, Medical, Commerce, Law, Design, Agriculture, and Vocational Trades.
+  - Includes difficulty tiers (Beginner, Intermediate, Advanced), milestones, deliverable requirements, and submission options (GitHub, Google Drive, Figma, PDF).
+- **3. Task Progress & Persistence:**
+  - Integrated `devStore` task state tracking (ACTIVE, COMPLETED, PAUSED) allowing students to pause and resume sprints without losing progress.
+  - "What Should I Do Today?" priority action card guiding students to their next incomplete task.
+- **4. Verification & Automated Tests:**
+  - 16 automated tests in `src/__tests__/personalized-learning-plan.test.ts`.
+  - Checkpoint tagged: `checkpoint-phase3-step33`.
+
+---
 
 #### Step 3.2: Dynamic Career Skill Tree & Skill Gap Analysis (November 22, 2026)
 - **1. Universal Multi-Stream Competency Graph Engine (`src/lib/skills/skill-tree-engine.ts`):**
