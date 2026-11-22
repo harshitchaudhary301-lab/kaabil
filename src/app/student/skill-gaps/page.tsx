@@ -145,6 +145,13 @@ export default function SkillGapAnalyzerPage() {
               Recalculate
             </Button>
 
+            <Link href={`/student/skill-tree?careerSlug=${selectedCareer}`}>
+              <Button size="sm" variant="outline" className="gap-1.5 border-purple-200 text-purple-700 bg-purple-50 hover:bg-purple-100">
+                <BrainCircuit className="h-3.5 w-3.5 text-purple-600" />
+                Interactive Skill Tree
+              </Button>
+            </Link>
+
             <Link href="/student/mentor">
               <Button size="sm" className="gap-1.5 bg-primary hover:bg-primary/95 text-white">
                 <Sparkles className="h-3.5 w-3.5" />

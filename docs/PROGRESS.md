@@ -1,14 +1,64 @@
 # PROGRESS.md — Active Implementation Tracker & Living Changelog
 
 ## Project: KAABIL (काबिल)
-**Current Stage:** Phase 3 — Step 3.1 Complete (Awaiting Technical Validation & Step 3.2 Approval)  
+**Current Stage:** Phase 3 — Step 3.2 Complete (Awaiting Validation & Step 3.3 Approval)  
 **Workspace Path:** `C:\Users\Harshit\.gemini\antigravity\scratch\kaabil`  
 **Last Updated:** November 22, 2026  
-**Baseline Audited Checkpoint:** `checkpoint-phase2-audited` (Tag)  
+**Baseline Audited Checkpoint:** `checkpoint-phase3-step31` (Tag)  
 
 ---
 
 ### Phase 3: Dynamic Skill Architectures & Personalized Profile Elevation
+
+#### Step 3.2: Dynamic Career Skill Tree & Skill Gap Analysis (November 22, 2026)
+- **1. Universal Multi-Stream Competency Graph Engine (`src/lib/skills/skill-tree-engine.ts`):**
+  - Built deterministic competency graph engine providing 100% authentic coverage across all **134 career pathways**.
+  - Handcrafted comprehensive domain trees for landmark careers in each stream:
+    - **STEM / Engineering**: AI Systems Engineer, Aerospace Engineer, Mechanical Robotics Engineer.
+    - **Medical & Healthcare (PCB)**: MBBS Doctor, Dental Surgeon BDS, Ayurvedic Doctor BAMS, Clinical Pharmacist.
+    - **Commerce & Finance**: Chartered Accountant (ICAI), Investment Banker, Actuary.
+    - **Creative Arts & Design**: UI/UX Product Designer, Fashion Apparel Designer, VFX CGI Animator.
+    - **Law & Legal Studies**: Corporate M&A Attorney, Judicial Magistrate, Cyber Law Specialist.
+    - **Agriculture & Food Tech**: Precision Agronomist, AgTech Drone Operator, Food Technologist.
+    - **Vocational & Technical Trades**: Industrial Mechatronics & PLC Technician, Solar PV Grid Specialist, CNC Precision Machinist.
+    - **Hospitality, Tourism & Sports**: Commercial Airline Pilot CPL, Luxury Hotel GM, Sports Physiotherapist.
+  - Dynamic synthesis fallback extracts subjects, competencies, and regulatory specializations for any remaining career in `CAREER_PATHS_DATABASE` without cross-stream contamination (zero engineering/coding leaking into arts or medical careers).
+- **2. Three-Tier Stage Structure & Directed Prerequisites:**
+  - Structured every skill tree into **Foundation**, **Intermediate**, and **Advanced** tiers.
+  - Foundation: Core academic grounding and root prerequisite competencies (0 prerequisites).
+  - Intermediate: Applied tools, practical techniques, and clinical/industrial workflows.
+  - Advanced: Domain specializations, regulatory compliance (NMC, AICTE, ICAI, BCI), and high-complexity challenges.
+  - Directed prerequisite dependency edges (`SkillTreeEdge`) lock dependent nodes until root requirements are satisfied.
+- **3. Authentic Evidence Mapping & Strict Non-Fabrication:**
+  - **Platform-Assessed Skills**: Earned via diagnostic tests with tamper-evident percentage score and verification timestamp.
+  - **Externally Verified Credentials**: Imported from Digital Skill Passport with external issuer attribution.
+  - **Self-Reported Skills**: Distinctly marked as unverified claims with direct 1-click CTA to take diagnostic assessment.
+  - **Critical Rule 6 Enforcement**: Self-reported skills contribute 0% to verified mastery score and are NEVER automatically treated as verified.
+- **4. Interactive Tree Canvas & Accessible List View:**
+  - **Interactive Tree Canvas (`src/components/student/skill-tree/SkillTreeCanvas.tsx`)**:
+    - Multi-tier visual board with stage headers and status legend.
+    - Interactive cards with mastery pills, verified score badges, and pixel-art sparkle accents.
+  - **Accessible List View (`src/components/student/skill-tree/SkillListView.tsx`)**:
+    - High-contrast, screen-reader friendly structured view with expandable stage accordions and completion progress bars.
+  - **Interactive Node Detail Modal (`src/components/student/skill-tree/SkillNodeDetailModal.tsx`)**:
+    - Detailed slide-over inspecting prerequisites, student evidence, verifier source, and direct learning CTAs.
+- **5. Optimal Next Recommendation & Career Switching Without Data Loss:**
+  - **Suggested Next Skill**: Deterministically highlights the highest-priority `READY_TO_LEARN` node whose prerequisites are met.
+  - **Career Goal Switching**: Allows students to explore any of 134 careers via searchable dropdown; "Set as Target Career" persists to profile via API while keeping 100% of previously earned achievements, assessment attempts, and passport credentials intact.
+- **6. Trilingual Support:**
+  - Live language switcher supporting English, हिन्दी (Hindi), and Hinglish for all stages, node titles, and descriptions.
+- **7. Route Handlers & Integration:**
+  - `GET /api/student/skill-tree`: returns complete student skill tree for target career.
+  - `POST /api/student/skill-tree`: updates active target career and returns fresh competency graph.
+  - Linked in student navigation (`src/components/student/student-nav.tsx`) and skill gap analyzer (`src/app/student/skill-gaps/page.tsx`).
+- **8. Verification & Automated Testing:**
+  - Created 17 new automated tests in `src/__tests__/dynamic-career-skill-tree.test.ts`.
+  - All 54 test suites and **299 tests passed** with zero regressions (`npm run test`).
+  - Strict TypeScript check passed with 0 errors (`npx tsc --noEmit`).
+  - Browser verification confirmed via live browser subagent on `http://localhost:3000/student/skill-tree`.
+  - Captured verified Desktop (1280x850) and Mobile (390x844) screenshots for both Tree Canvas and List modes, plus Node Detail modal.
+
+---
 
 #### Step 3.1: My Career Profile Elevation & View Separation (November 22, 2026)
 - **1. Clear View vs Edit Separation:**

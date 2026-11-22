@@ -18,6 +18,7 @@ import {
   Scale,
   GraduationCap,
   User,
+  BrainCircuit,
 } from "lucide-react";
 import { NavItem } from "@/components/shared/PortalLayout";
 
@@ -65,7 +66,15 @@ export const STUDENT_NAV_ITEMS: NavItem[] = [
     icon: <ClipboardCheck className="h-4 w-4 text-emerald-600" />,
     category: "Competence",
   },
-  // 6. What Should I Learn? (Simplified from Skill Gap Analyzer)
+  // 6. Career Skill Tree (Dynamic Competency Progression)
+  {
+    title: "Career Skill Tree",
+    href: "/student/skill-tree",
+    icon: <BrainCircuit className="h-4 w-4 text-purple-600" />,
+    badge: "Interactive",
+    category: "Competence",
+  },
+  // 7. What Should I Learn? (Skill Gap Analyzer)
   {
     title: "What Should I Learn?",
     href: "/student/skill-gaps",
