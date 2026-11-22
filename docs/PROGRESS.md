@@ -1,10 +1,10 @@
 # PROGRESS.md — Active Implementation Tracker & Living Changelog
 
 ## Project: KAABIL (काबिल)
-**Current Stage:** Autonomous Neon PostgreSQL Integration & Vercel Production Deployment  
+**Current Stage:** Autonomous Neon PostgreSQL Integration & Vercel Production Deployment — Verified Live  
 **Workspace Path:** `C:\Users\Harshit\.gemini\antigravity\scratch\kaabil`  
 **Last Updated:** November 22, 2026  
-**Latest Audited Checkpoint:** `checkpoint-phase5-production-ready`  
+**Latest Audited Checkpoint:** `checkpoint-phase5-neon-deployed`  
 **Active Production Domain:** `https://kaabil-eta.vercel.app`  
 
 ---
@@ -22,10 +22,11 @@
   - Synchronized all 77 Prisma models to Neon PostgreSQL via `npx prisma db push`.
   - Populated all 13 educational domains, 13 canonical careers, 52 benchmark skills, and 8 national entrance exams via `node prisma/seed.js`.
   - Multi-session write/read persistence independently verified across disconnected sessions.
+  - Serverless probe timeout calibrated to 8000ms in `src/lib/db.ts` to accommodate cold-starts.
 - **3. Hardened Production Security & RBAC:**
   - Strict tenant boundary isolation and student-to-student data boundary verified.
   - Public registration disallows administrative roles (`SUPER_ADMIN`, `CONTENT_ADMIN`).
-  - DPDP Act (2023) minor consent enforcement verified.
+  - DPDP Act (2023) minor consent enforcement verified: under-18 registrations reject without legal guardian consent.
   - Server-side rate limiting on registration and authentication endpoints verified.
 - **4. Vercel Production Environment Configuration:**
   - Linked GitHub Repository: `harshitchaudhary301-lab/kaabil` on `main`.
@@ -34,6 +35,16 @@
   - `NEXT_PUBLIC_DEMO_MODE`: Configured as `"false"` (Config type) for Production & Preview.
   - `NEXT_PUBLIC_APP_ENV`: `"production"`.
   - `AUTH_SECRET` & `CREDENTIAL_SIGNING_SECRET`: Configured for Production & Preview.
+- **5. Live Production Verification Evidence:**
+  - Production URL: `https://kaabil-eta.vercel.app` (Status: Ready, Commit `69214e2`).
+  - Health Endpoint: `GET /api/health` returned `status: "healthy"`, `database.connected: true`, `database.provider: "postgresql"`, `resilienceStore.active: false`.
+  - Database Status Endpoint: `GET /api/database/status` returned `activeSource: "database"`, `isLive: true`, `totalCareers: 13`, `totalStreams: 13`.
+  - Live PostgreSQL Write: Registered student `priya.patel.live.prod@kaabil.in` via `POST /api/auth/register` (User ID `cmws17z0g0001pcar11od0dgl`, Profile ID `cmws17z180005pcartk3yiv1g`).
+  - Live Authentication: `POST /api/auth/login` issued secure `kaabil_session_token` cookie with 7-day expiration.
+  - Live Skill Passport: `GET /api/student/passport` generated `KP-CMWS17Z1-MWS199JP` with SHA-256 integrity checksum `0bc221e3...`.
+  - AI Mentor Fallback: `POST /api/student/mentor/conversations/[id]/messages` returned evidence-based response with citations to AICTE, NMC, and MoHFW 7th Pay Commission data.
+- **6. Release Checkpoint Tag:**
+  - Tag: `checkpoint-phase5-neon-deployed` pushed to GitHub `origin/main`.
 
 ---
 
