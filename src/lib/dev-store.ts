@@ -29,6 +29,9 @@ export interface DevStoreData {
   credentials: Record<string, any[]>; // profileId -> KaabilCredential[]
   shareTokens: Record<string, any>; // token -> share record
   passportPreferences: Record<string, any>; // profileId -> privacy preferences
+  learningPreferences?: Record<string, any>; // profileId -> LearningPlanPreferences
+  learningTaskStates?: Record<string, Record<string, any>>; // profileId -> taskId -> state
+  projectEnrollments?: Record<string, Record<string, any>>; // profileId -> projectId -> enrollment
   // Institution Multi-Tenant Collections (Part E1)
   institutions: Record<string, any>; // institutionId -> InstitutionRecord
   departments: Record<string, any[]>; // institutionId -> DepartmentRecord[]
@@ -251,6 +254,9 @@ function getInitialStore(): DevStoreData {
     credentials: {},
     shareTokens: {},
     passportPreferences: {},
+    learningPreferences: {},
+    learningTaskStates: {},
+    projectEnrollments: {},
     institutions: {
       "inst-demo-tech": {
         id: "inst-demo-tech",
@@ -951,6 +957,9 @@ class DevStore {
       parsed.credentials = parsed.credentials || {};
       parsed.shareTokens = parsed.shareTokens || {};
       parsed.passportPreferences = parsed.passportPreferences || {};
+      parsed.learningPreferences = parsed.learningPreferences || {};
+      parsed.learningTaskStates = parsed.learningTaskStates || {};
+      parsed.projectEnrollments = parsed.projectEnrollments || {};
       parsed.institutions = parsed.institutions && Object.keys(parsed.institutions).length > 0
         ? parsed.institutions
         : getInitialStore().institutions;
@@ -1473,6 +1482,65 @@ class DevStore {
     };
     this.saveStore();
     return store.passportPreferences[studentProfileId];
+  }
+
+  // Learning Plan & Projects Hub Persistence
+  getLearningPreferences(studentProfileId: string): any {
+    const store = this.loadStore();
+    return (
+      store.learningPreferences?.[studentProfileId] || {
+        weeklyTimeCommitmentHours: 10,
+        budgetPreference: "FREE_ONLY",
+        learningPace: "STEADY",
+      }
+    );
+  }
+
+  saveLearningPreferences(studentProfileId: string, prefs: any): any {
+    const store = this.loadStore();
+    store.learningPreferences = store.learningPreferences || {};
+    store.learningPreferences[studentProfileId] = {
+      ...(store.learningPreferences[studentProfileId] || {}),
+      ...prefs,
+      updatedAt: new Date().toISOString(),
+    };
+    this.saveStore();
+    return store.learningPreferences[studentProfileId];
+  }
+
+  getLearningTaskStates(studentProfileId: string): Record<string, any> {
+    const store = this.loadStore();
+    return store.learningTaskStates?.[studentProfileId] || {};
+  }
+
+  saveLearningTaskState(studentProfileId: string, taskId: string, state: any): any {
+    const store = this.loadStore();
+    store.learningTaskStates = store.learningTaskStates || {};
+    store.learningTaskStates[studentProfileId] = store.learningTaskStates[studentProfileId] || {};
+    store.learningTaskStates[studentProfileId][taskId] = {
+      ...state,
+      updatedAt: new Date().toISOString(),
+    };
+    this.saveStore();
+    return store.learningTaskStates[studentProfileId][taskId];
+  }
+
+  getProjectEnrollments(studentProfileId: string): Record<string, any> {
+    const store = this.loadStore();
+    return store.projectEnrollments?.[studentProfileId] || {};
+  }
+
+  saveProjectEnrollment(studentProfileId: string, projectId: string, enrollment: any): any {
+    const store = this.loadStore();
+    store.projectEnrollments = store.projectEnrollments || {};
+    store.projectEnrollments[studentProfileId] = store.projectEnrollments[studentProfileId] || {};
+    store.projectEnrollments[studentProfileId][projectId] = {
+      ...(store.projectEnrollments[studentProfileId][projectId] || {}),
+      ...enrollment,
+      lastUpdatedAt: new Date().toISOString(),
+    };
+    this.saveStore();
+    return store.projectEnrollments[studentProfileId][projectId];
   }
 
   // --------------------------------------------------------------------------

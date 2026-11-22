@@ -19,6 +19,7 @@ import {
   GraduationCap,
   User,
   BrainCircuit,
+  Calendar,
 } from "lucide-react";
 import { NavItem } from "@/components/shared/PortalLayout";
 
@@ -72,6 +73,14 @@ export const STUDENT_NAV_ITEMS: NavItem[] = [
     href: "/student/skill-tree",
     icon: <BrainCircuit className="h-4 w-4 text-purple-600" />,
     badge: "Interactive",
+    category: "Competence",
+  },
+  // 6.1. Learning Plan & Projects Hub (Personalized Daily Routine & Projects)
+  {
+    title: "Learning Plan & Projects",
+    href: "/student/learning-plan",
+    icon: <Calendar className="h-4 w-4 text-purple-600" />,
+    badge: "New",
     category: "Competence",
   },
   // 7. What Should I Learn? (Skill Gap Analyzer)
