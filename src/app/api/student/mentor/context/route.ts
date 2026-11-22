@@ -51,7 +51,8 @@ export async function GET(req: NextRequest) {
     }
 
     const context = await AiMentorService.getStudentLiveContext(studentProfileId);
-    return NextResponse.json({ success: true, context });
+    const aiEngineStatus = AiMentorService.getAiEngineStatus();
+    return NextResponse.json({ success: true, context, aiEngineStatus });
   } catch (error: any) {
     console.error("[GET /api/student/mentor/context] Error:", error);
     return NextResponse.json({ error: "Failed to retrieve student context" }, { status: 500 });

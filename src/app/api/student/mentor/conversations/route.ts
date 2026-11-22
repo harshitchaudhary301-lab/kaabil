@@ -27,7 +27,8 @@ export async function GET(req: NextRequest) {
     let studentProfileId = resolveStudentProfileId(user);
 
     const conversations = await AiMentorService.getConversations(studentProfileId);
-    return NextResponse.json({ success: true, conversations });
+    const aiEngineStatus = AiMentorService.getAiEngineStatus();
+    return NextResponse.json({ success: true, conversations, aiEngineStatus });
   } catch (error: any) {
     console.error("[GET /api/student/mentor/conversations] Error:", error);
     return NextResponse.json({ error: "Failed to retrieve conversations" }, { status: 500 });

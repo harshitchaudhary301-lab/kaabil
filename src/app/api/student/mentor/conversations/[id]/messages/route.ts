@@ -18,6 +18,11 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       return NextResponse.json({ error: "Conversation not found" }, { status: 404 });
     }
 
+    const studentProfileId = resolveStudentProfileId(user);
+    if (conversation.studentProfileId && conversation.studentProfileId !== studentProfileId) {
+      return NextResponse.json({ error: "Unauthorized access to conversation" }, { status: 403 });
+    }
+
     return NextResponse.json({ success: true, messages: conversation.messages || [] });
   } catch (error: any) {
     console.error("[GET /api/student/mentor/conversations/[id]/messages] Error:", error);
@@ -52,10 +57,16 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       return NextResponse.json({ error: "Message content cannot be empty" }, { status: 400 });
     }
 
+    if (content.length > 1000) {
+      return NextResponse.json({ error: "Message exceeds 1000 characters limit" }, { status: 400 });
+    }
+
     // Ensure conversation exists or create on the fly
     let conv = await AiMentorService.getConversation(params.id);
     if (!conv) {
       conv = await AiMentorService.createConversation(studentProfileId, undefined, language || "en");
+    } else if (conv.studentProfileId && conv.studentProfileId !== studentProfileId) {
+      return NextResponse.json({ error: "Unauthorized access to conversation" }, { status: 403 });
     }
 
     const convId = conv.id;
@@ -79,10 +90,13 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       language || conv.language || "en"
     );
 
+    const aiEngineStatus = AiMentorService.getAiEngineStatus();
+
     return NextResponse.json({
       success: true,
       userMessage: studentMessage,
       mentorReply,
+      aiEngineStatus,
     });
   } catch (error: any) {
     console.error("[POST /api/student/mentor/conversations/[id]/messages] Error:", error);
