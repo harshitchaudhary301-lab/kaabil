@@ -51,12 +51,12 @@ export async function checkDatabaseConnection(): Promise<{
   }
 
   try {
-    // Quick probe with timeout
+    // Quick probe with timeout (8s for cloud serverless cold-start)
     const timeoutPromise = new Promise<{ connected: false; message: string }>(
       (_, reject) =>
         setTimeout(
-          () => reject(new Error("Database connection probe timed out (2500ms)")),
-          2500
+          () => reject(new Error("Database connection probe timed out (8000ms)")),
+          8000
         )
     );
 
