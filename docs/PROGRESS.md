@@ -1,10 +1,56 @@
 # PROGRESS.md — Active Implementation Tracker & Living Changelog
 
 ## Project: KAABIL (काबिल)
-**Current Stage:** Phase 2: Career Intelligence Engine & Multi-Stream Pathways Complete (Final Verified Checkpoint)  
+**Current Stage:** Phase 3 — Step 3.1 Complete (Awaiting Technical Validation & Step 3.2 Approval)  
 **Workspace Path:** `C:\Users\Harshit\.gemini\antigravity\scratch\kaabil`  
 **Last Updated:** November 22, 2026  
-**Final Release Checkpoint:** `checkpoint-phase2-final` (Tag)  
+**Baseline Audited Checkpoint:** `checkpoint-phase2-audited` (Tag)  
+
+---
+
+### Phase 3: Dynamic Skill Architectures & Personalized Profile Elevation
+
+#### Step 3.1: My Career Profile Elevation & View Separation (November 22, 2026)
+- **1. Clear View vs Edit Separation:**
+  - Implemented `/student/profile` (`src/app/student/profile/page.tsx`) with dedicated View Mode and Edit Mode.
+  - **Viewing Mode** functions as a student career dossier displaying avatar, pixel-art campus sunset accents, academic details, location, headline/bio, target career goals, and demonstrated skills.
+  - **Editing Mode** provides interactive inputs for personal bio, city, state, language, education stage, stream, institution, graduation year, major, grade, target career (from 134 authentic pathways), interests, and self-reported skills.
+  - Integrated with smooth transitions, explicit mode toggle, and automatic debounced save.
+- **2. Demonstrated Skills Isolation (Assessed vs Self-Reported):**
+  - **Assessed & Verified Skills**:
+    - Displayed with emerald shield badge, verified percentage score, proficiency tier, verification timestamp, and tamper-evident credential pill.
+    - Strictly locked against manual modification or score fabrication in Edit Mode.
+  - **Self-Reported Skills**:
+    - Displayed with distinct portfolio badge and proficiency indicator.
+    - Editable in Edit Mode (add, update proficiency, remove) with a direct 1-click "Verify" CTA pointing to `/student/assessments`.
+- **3. Automatic Saving with Real-Time Feedback:**
+  - 800ms debounced auto-save directly saves changes to `/api/student/profile` (PATCH).
+  - Sticky bottom action bar and header badge display live status: `All changes saved`, `Saving...`, or `Save error`.
+- **4. DPDP Act (2023) Child Privacy Enforcement:**
+  - Identifies school students (Class 8–12) and minors (< 18), activating the Minor Shield.
+  - Recruiter outreach is hard-locked to false for minor accounts with clear regulatory explanations.
+  - Adult undergraduate/working students retain full consent controls over recruiter visibility.
+- **5. Navigation Elevation:**
+  - Added "My Career Profile" to `src/components/student/student-nav.tsx` under Main.
+  - Added "My Career Profile" to the user profile avatar menu in `src/components/shared/PortalLayout.tsx`.
+- **6. Verification & Automated Testing:**
+  - Created 17 automated unit and integration tests in `src/__tests__/student-profile-view-separation.test.ts`.
+  - Comprehensive coverage of:
+    1. Complete Profile View Data Model & Human-Friendly Labels.
+    2. Strict Separation of Assessed Skills vs. Self-Reported Skills.
+    3. Authentic Assessment History Preservation.
+    4. Profile Editing & 800ms Debounced Automatic Saving.
+    5. Integrity Guard: Inability to overwrite, downgrade, or manipulate verified skills via self-reporting.
+    6. DPDP Act 2023 Minor Shield hard-locking recruiter view for minor/school students.
+    7. Route Handlers: `GET` and `PATCH /api/student/profile` with Zod validation.
+    8. Persistence across page refresh, simulated logout, and re-login.
+    9. Cross-student boundary & session authorization isolation (spoofing and foreign ID injection rejection).
+    10. Skill provenance, tamper-evident verification badges, evidence types, and verifier attribution.
+  - All 53 test suites and **282 tests passed** with zero regressions (`npm run test`).
+  - Strict TypeScript check passed with 0 errors (`npm run typecheck`).
+  - Browser verification confirmed via live browser subagent on `http://localhost:3000/student/profile` (Aryan Sharma demo account, View Mode dossier, Edit Mode workspace toggle, visual stability, purple-light design tokens, and pixel-art accents).
+  - Captured verified Desktop (1280x850) and Mobile (390x844) full-page screenshots for both View and Edit modes stored in brain artifacts directory and `public/screenshots/`.
+  - Tagged Git checkpoint `checkpoint-phase3-step31`.
 
 ---
 

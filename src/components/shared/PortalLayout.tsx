@@ -24,6 +24,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Globe,
+  Settings,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -456,12 +457,22 @@ export function PortalLayout({
                     </div>
 
                     <div className="py-1">
+                      {isStudent && (
+                        <Link
+                          href="/student/profile"
+                          onClick={() => setProfileDropdownOpen(false)}
+                          className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-50"
+                        >
+                          <User className="h-3.5 w-3.5 text-purple-600" />
+                          My Career Profile
+                        </Link>
+                      )}
                       <Link
                         href="/student/settings"
                         onClick={() => setProfileDropdownOpen(false)}
                         className="flex items-center gap-2 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-slate-900"
                       >
-                        <User className="h-3.5 w-3.5 text-slate-400" />
+                        <Settings className="h-3.5 w-3.5 text-slate-400" />
                         Settings & Privacy
                       </Link>
                       <Link

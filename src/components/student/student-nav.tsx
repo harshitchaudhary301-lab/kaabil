@@ -17,6 +17,7 @@ import {
   Settings,
   Scale,
   GraduationCap,
+  User,
 } from "lucide-react";
 import { NavItem } from "@/components/shared/PortalLayout";
 
@@ -28,7 +29,14 @@ export const STUDENT_NAV_ITEMS: NavItem[] = [
     icon: <LayoutDashboard className="h-4 w-4" />,
     category: "Main",
   },
-  // 2. AI Career Mentor
+  // 2. My Career Profile
+  {
+    title: "My Career Profile",
+    href: "/student/profile",
+    icon: <User className="h-4 w-4 text-purple-600" />,
+    category: "Main",
+  },
+  // 3. AI Career Mentor
   {
     title: "AI Career Mentor",
     href: "/student/mentor",
