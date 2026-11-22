@@ -28,7 +28,7 @@ let cachedConnectionStatus: {
   checkedAt: number;
 } | null = null;
 
-const CACHE_TTL_MS = 5000; // Cache connection status for 5 seconds
+const CACHE_TTL_MS = 15000; // Cache connection status for 15 seconds
 
 /**
  * Check whether the active PostgreSQL database connection is operational.
@@ -60,10 +60,15 @@ export async function checkDatabaseConnection(): Promise<{
         )
     );
 
-    const queryPromise = db.$queryRaw`SELECT 1`.then(() => ({
-      connected: true,
-      message: "PostgreSQL connection successfully established.",
-    }));
+    const queryPromise = db.$queryRaw`SELECT 1`
+      .then(() => ({
+        connected: true,
+        message: "PostgreSQL connection successfully established.",
+      }))
+      .catch((err) => ({
+        connected: false as const,
+        message: `Database unreachable: ${(err as Error).message}`,
+      }));
 
     const result = (await Promise.race([
       queryPromise,

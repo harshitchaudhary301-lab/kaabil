@@ -45,6 +45,8 @@ import {
   Building2,
   Mic,
   Map as MapIcon,
+  Info,
+  HelpCircle as QuestionIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PortalLayout } from "@/components/shared/PortalLayout";
@@ -58,6 +60,9 @@ export default function StudentDashboardPage() {
   // Mode state: Guided Mode (Default) vs Explore Mode
   const [dashboardMode, setDashboardMode] = useState<"GUIDED" | "EXPLORE">("GUIDED");
 
+  // Account State Simulator for Verification (Fresh Student vs Returning Student)
+  const [accountView, setAccountView] = useState<"RETURNING" | "FRESH">("RETURNING");
+
   // User and dashboard data
   const [user, setUser] = useState<any>(null);
   const [digitalTwin, setDigitalTwin] = useState<any>(null);
@@ -69,19 +74,14 @@ export default function StudentDashboardPage() {
   const [learningCourses, setLearningCourses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Quick career search query
-  const [greetingSearch, setGreetingSearch] = useState("");
+  // Score calculation explanation modal/drawer
+  const [showScoreModal, setShowScoreModal] = useState(false);
 
   // AI Mentor Quick Prompt
   const [mentorInput, setMentorInput] = useState("");
 
   // Daily missions completion tracking
   const [completingMissionId, setCompletingMissionId] = useState<string | null>(null);
-
-  // Roadmap accordion state
-  const [expandedMilestoneId, setExpandedMilestoneId] = useState<string | null>(null);
-  const [updatingActivityId, setUpdatingActivityId] = useState<string | null>(null);
-  const [showFullRoadmap, setShowFullRoadmap] = useState(false);
 
   // Load saved mode preference
   useEffect(() => {
@@ -113,6 +113,10 @@ export default function StudentDashboardPage() {
         const sessionData = await sessionRes.json();
         if ((sessionData.isAuthenticated || sessionData.authenticated) && sessionData.user) {
           setUser(sessionData.user);
+          // If fresh user with 0 assessments, start in FRESH view
+          if (!sessionData.user.hasCompletedInitialAssessment && !sessionData.user.studentProfile?.educationStage) {
+            setAccountView("FRESH");
+          }
         }
       }
 
@@ -137,20 +141,16 @@ export default function StudentDashboardPage() {
       if (roadmapRes && roadmapRes.ok) {
         const d = await roadmapRes.json();
         setRoadmap(d.roadmap);
-        if (d.roadmap?.milestones?.length > 0) {
-          setExpandedMilestoneId(d.roadmap.milestones[0].id);
-        }
       }
       if (missionsRes && missionsRes.ok) {
         const d = await missionsRes.json();
         if (d.missions && d.missions.length > 0) {
           setMissions(d.missions);
         } else {
-          // Default actionable tasks
           setMissions([
             {
               id: "m1",
-              title: "Discover Your Strengths Diagnostic",
+              title: "Discover Your Strengths Quiz",
               objective: "Complete your 5-minute interactive strengths assessment.",
               estimatedMinutes: 5,
               status: "COMPLETED",
@@ -159,7 +159,7 @@ export default function StudentDashboardPage() {
             {
               id: "m2",
               title: "Explore 3 Matched Career Pathways",
-              objective: "Compare eligibility, subjects, and day-in-the-life routines.",
+              objective: "Compare eligibility, subjects, and day-to-day routines.",
               estimatedMinutes: 10,
               status: "PENDING",
               link: "/student/discover",
@@ -167,7 +167,7 @@ export default function StudentDashboardPage() {
             {
               id: "m3",
               title: "Start First Step of Career Roadmap",
-              objective: "Unlock foundational practice modules for your selected path.",
+              objective: "Unlock foundational practice modules for your path.",
               estimatedMinutes: 15,
               status: "PENDING",
               link: "/student/roadmap",
@@ -206,7 +206,7 @@ export default function StudentDashboardPage() {
     return t.greetingEvening;
   };
 
-  // Toggle mission completion and persist to backend
+  // Toggle mission completion
   const handleToggleMission = async (missionId: string, currentStatus: string) => {
     setCompletingMissionId(missionId);
     try {
@@ -235,58 +235,6 @@ export default function StudentDashboardPage() {
     }
   };
 
-  // Toggle roadmap activity
-  const handleToggleActivity = async (milestoneId: string, activityId: string) => {
-    setUpdatingActivityId(activityId);
-    try {
-      const res = await fetch("/api/student/roadmap/activity", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ milestoneId, activityId }),
-      });
-
-      if (res.ok) {
-        const d = await res.json();
-        setRoadmap(d.roadmap);
-        const criRes = await fetch("/api/student/readiness");
-        if (criRes.ok) {
-          const criData = await criRes.json();
-          setReadiness(criData.readiness);
-        }
-      }
-    } catch (e) {
-      console.error("Toggle activity error:", e);
-    } finally {
-      setUpdatingActivityId(null);
-    }
-  };
-
-  // Determine stage & student persona
-  const studentFirstName = user?.name ? user.name.split(" ")[0] : "Student";
-  const educationStage = user?.studentProfile?.educationStage || "CLASS_12";
-  const isSchoolStudent = ["CLASS_8", "CLASS_9", "CLASS_10", "CLASS_11", "CLASS_12"].includes(educationStage);
-  const isMinor = user?.isMinor ?? isSchoolStudent;
-
-  // Real or baseline metrics
-  const criScore = readiness?.overallScore ?? 75;
-  const criStatus = readiness?.statusLabel || "Ready for Next Step";
-  const verifiedCount = digitalTwin?.verifiedSkillsCount ?? readiness?.evidenceSummary?.verifiedCount ?? 4;
-  const targetSkillsCount = 8;
-
-  // Date format
-  const todayFormatted = new Intl.DateTimeFormat("en-US", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  }).format(new Date());
-
-  const handleGreetingSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (greetingSearch.trim()) {
-      router.push(`/student/discover?q=${encodeURIComponent(greetingSearch.trim())}`);
-    }
-  };
-
   const handleMentorSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (mentorInput.trim()) {
@@ -294,313 +242,501 @@ export default function StudentDashboardPage() {
     }
   };
 
+  // Student persona detection
+  const studentFirstName = user?.name ? user.name.split(" ")[0] : "Student";
+  const educationStage = user?.studentProfile?.educationStage || "CLASS_12";
+  const isSchoolStudent = ["CLASS_8", "CLASS_9", "CLASS_10", "CLASS_11", "CLASS_12"].includes(educationStage);
+
+  // Authenticated Data vs Fresh Account Modeling (Zero Hallucination Rule)
+  const isFreshAccount = accountView === "FRESH";
+
+  // Data-backed Readiness Score calculation
+  // Fresh students have NO verified data -> score is undefined / 0
+  const hasRealData = !isFreshAccount && (readiness?.overallScore !== undefined || (digitalTwin?.verifiedSkillsCount ?? 0) > 0);
+  const actualCriScore = hasRealData ? (readiness?.overallScore ?? 75) : null;
+  const actualVerifiedSkills = hasRealData ? (digitalTwin?.verifiedSkillsCount ?? 4) : 0;
+
+  // Breakdown metrics for transparent score explanation
+  const scoreBreakdown = {
+    strengthsDiagnostic: hasRealData ? 25 : 0,
+    maxStrengths: 25,
+    verifiedSkills: hasRealData ? 20 : 0,
+    maxSkills: 35,
+    practicalProjects: hasRealData ? 18 : 0,
+    maxProjects: 25,
+    roadmapMilestones: hasRealData ? 12 : 0,
+    maxMilestones: 15,
+  };
+
   // Guided Mode Journey Stages
   const GUIDED_STEPS = [
     { id: 1, title: "1. Profile", status: "COMPLETED", href: "/onboarding", desc: "Basic details & class" },
-    { id: 2, title: "2. Discover Interests", status: "COMPLETED", href: "/student/discover", desc: "Aptitudes mapped" },
-    { id: 3, title: "3. Career Matches", status: "CURRENT", href: "/student/discover", desc: "3 recommended paths" },
+    { id: 2, title: "2. Discover Interests", status: isFreshAccount ? "CURRENT" : "COMPLETED", href: "/student/assessments", desc: isFreshAccount ? "Take 5-min quiz" : "Aptitudes mapped" },
+    { id: 3, title: "3. Career Matches", status: isFreshAccount ? "UPCOMING" : "CURRENT", href: "/student/discover", desc: isFreshAccount ? "Pending quiz" : "3 matched careers" },
     { id: 4, title: "4. Choose Career", status: "UPCOMING", href: "/careers", desc: "Lock target role" },
-    { id: 5, title: "5. Roadmap", status: "UPCOMING", href: "/student/roadmap", desc: "Weekly milestones" },
-    { id: 6, title: "6. Start Learning", status: "UPCOMING", href: "/student/academy", desc: "Bite-sized modules" },
+    { id: 5, title: "5. Roadmap", status: "UPCOMING", href: "/student/roadmap", desc: "Weekly steps" },
+    { id: 6, title: "6. Learn Skills", status: "UPCOMING", href: "/student/academy", desc: "Bite-sized modules" },
     { id: 7, title: "7. Track Progress", status: "UPCOMING", href: "/student/passport", desc: "Earn verified badges" },
   ];
+
+  // Dynamic "Your Next Step" data based on persona & account state
+  const nextStepData = {
+    stepNumber: isFreshAccount ? 2 : 3,
+    title: isFreshAccount
+      ? isSchoolStudent
+        ? "Take Your 5-Minute Strengths Quiz"
+        : "Complete Your Strengths Quiz & Set Up Skills"
+      : isSchoolStudent
+      ? "Review Your Top 3 Matched Career Streams"
+      : "Complete Your Core Skills Quiz & Practice",
+    explanation: isFreshAccount
+      ? "We don't guess your career fit or make up scores. Answer 10 quick questions about what subjects and activities you enjoy to generate your personalized matches."
+      : isSchoolStudent
+      ? "We've matched your interests with 3 verified Indian career pathways. Compare subjects, eligibility, and top college options to choose your path."
+      : "You've unlocked your engineering roadmap. Practice your core skills quiz to verify your first milestone and boost your Career Readiness Score.",
+    ctaText: isFreshAccount ? "Start 5-Minute Quiz" : "Continue My Journey",
+    ctaHref: isFreshAccount ? "/student/assessments" : isSchoolStudent ? "/student/discover" : "/student/roadmap",
+    checkpointBadge: isFreshAccount ? "LVL 01 • STARTING POINT 🎯" : "LVL 02 • CHECKPOINT REACHED 🎯",
+  };
 
   return (
     <PortalLayout
       portalName="Student Portal"
       portalRole="STUDENT"
       navItems={STUDENT_NAV}
-      breadcrumbs={["Overview", isSchoolStudent ? "School Student Portal" : "College Student Portal"]}
+      breadcrumbs={["Overview", isSchoolStudent ? "School Student" : "College Student"]}
     >
-      <div className="space-y-6 max-w-7xl mx-auto pb-12">
+      <div className="space-y-4 max-w-7xl mx-auto pb-10">
         
         {/* =========================================================================
-            TOP MODE TOGGLE & PERSONA BADGE
+            TOP COMPACT TOOLBAR: Mode Switch, Persona Pill, Child Shield & Account Tester
            ========================================================================= */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 sm:px-5 rounded-2xl bg-white border border-slate-200/90 shadow-soft-xs">
+        <div className="flex flex-wrap items-center justify-between gap-2.5 p-2.5 sm:px-4 rounded-2xl bg-white border border-purple-100 shadow-soft-xs">
+          
+          {/* Left: Compact Mode Switch (Task 3) */}
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-              Experience Mode:
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider hidden sm:inline">
+              Mode:
             </span>
-            <div className="inline-flex p-1 rounded-xl bg-slate-100 border border-slate-200">
+            <div className="inline-flex p-0.5 rounded-xl bg-purple-50/80 border border-purple-200/80 shadow-2xs">
               <button
                 type="button"
                 onClick={() => handleModeToggle("GUIDED")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                   dashboardMode === "GUIDED"
                     ? "bg-purple-700 text-white shadow-xs"
-                    : "text-slate-600 hover:text-slate-900"
+                    : "text-purple-900/70 hover:text-purple-950"
                 }`}
+                title="Step-by-step guided journey with one recommended next action"
               >
-                <span>🎯 {t.guidedMode}</span>
+                <Sparkles className="h-3 w-3 text-amber-300" />
+                <span>{t.guidedMode}</span>
                 {dashboardMode === "GUIDED" && (
-                  <span className="text-[10px] bg-white/20 px-1.5 py-0.2 rounded-full">Active</span>
+                  <span className="text-[9px] bg-white/20 px-1.5 py-0.2 rounded-full font-semibold">Active</span>
                 )}
               </button>
               <button
                 type="button"
                 onClick={() => handleModeToggle("EXPLORE")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                   dashboardMode === "EXPLORE"
                     ? "bg-purple-700 text-white shadow-xs"
-                    : "text-slate-600 hover:text-slate-900"
+                    : "text-purple-900/70 hover:text-purple-950"
                 }`}
+                title="Browse and access all career tools freely"
               >
-                <span>🧭 {t.exploreMode}</span>
+                <Compass className="h-3 w-3" />
+                <span>{t.exploreMode}</span>
               </button>
             </div>
+            <span className="text-[11px] text-slate-400 hidden md:inline">
+              {dashboardMode === "GUIDED" ? "• Recommended path" : "• Free exploration"}
+            </span>
           </div>
 
+          {/* Right: Education Stage Pill, DPDP Shield & Account State Switcher (Tasks 1 & 10) */}
           <div className="flex items-center gap-2">
+            
+            {/* DPDP Act Minor Shield (Compact Security Indicator) */}
+            {isSchoolStudent && (
+              <div
+                className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-[11px] font-semibold text-emerald-800"
+                title="DPDP Act 2023 Child Safety Guard: Commercial recruiters and unsolicited advertising are strictly blocked."
+              >
+                <Shield className="h-3 w-3 text-emerald-600 shrink-0" />
+                <span>Minor Protected</span>
+              </div>
+            )}
+
+            {/* Education Stage Badge */}
             <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-800 border border-purple-200 flex items-center gap-1.5">
               <GraduationCap className="h-3.5 w-3.5 text-purple-600" />
               <span>{educationStage.replace(/_/g, " ")}</span>
             </span>
 
+            {/* Account View Switcher (Fresh vs Returning Student for QA & Verification) */}
+            <div className="inline-flex p-0.5 rounded-lg bg-slate-100 border border-slate-200 text-[10px] font-bold">
+              <button
+                type="button"
+                onClick={() => setAccountView("RETURNING")}
+                className={`px-2 py-0.5 rounded transition-all ${
+                  accountView === "RETURNING"
+                    ? "bg-white text-purple-900 shadow-2xs font-extrabold"
+                    : "text-slate-500 hover:text-slate-900"
+                }`}
+                title="Simulate returning student with verified quiz and project data"
+              >
+                Returning
+              </button>
+              <button
+                type="button"
+                onClick={() => setAccountView("FRESH")}
+                className={`px-2 py-0.5 rounded transition-all ${
+                  accountView === "FRESH"
+                    ? "bg-white text-purple-900 shadow-2xs font-extrabold"
+                    : "text-slate-500 hover:text-slate-900"
+                }`}
+                title="Simulate brand new student without quiz results"
+              >
+                Fresh Student
+              </button>
+            </div>
+
             <Link
               href="/onboarding"
-              className="text-xs font-bold text-purple-700 hover:text-purple-900 hover:underline flex items-center gap-1"
+              className="text-xs font-bold text-purple-700 hover:text-purple-900 hover:underline flex items-center gap-0.5 ml-1"
             >
-              <span>Change Goal</span>
-              <Settings className="h-3.5 w-3.5" />
+              <span>Change</span>
+              <Settings className="h-3 w-3" />
             </Link>
           </div>
         </div>
 
-        {/* DPDP Minor Protection Notice (for school students under 18) */}
-        {isSchoolStudent && (
-          <div className="p-4 rounded-2xl bg-emerald-50/90 border border-emerald-200 text-xs text-emerald-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
-            <div className="flex items-center gap-2.5">
-              <Shield className="h-4 w-4 text-emerald-600 shrink-0" />
-              <span>
-                <strong>DPDP Act 2023 Child Safety Guard:</strong> Protected student environment active. No commercial recruiters or unsolicited ads.
-              </span>
-            </div>
-            <span className="text-[11px] font-bold text-emerald-800 bg-white/60 px-2.5 py-0.5 rounded-full border border-emerald-200 shrink-0">
-              Verified Minor Shield
-            </span>
-          </div>
-        )}
-
         {/* =========================================================================
-            SECTION A: PERSONALIZED WELCOME & SEARCH
+            SECTION 1: PERSONALIZED "YOUR NEXT STEP" HERO CARD (TASKS 4 & 5)
+            Moved to the very top with "Continue My Journey" as the primary action.
            ========================================================================= */}
-        <div className="relative rounded-3xl bg-gradient-to-r from-white via-[#FAF5FF] to-[#F5F3FF] border border-purple-100 p-6 sm:p-8 shadow-soft-xs overflow-hidden">
-          {/* Subtle Ambient Glows */}
-          <div className="absolute top-0 right-0 w-80 h-80 bg-purple-200/30 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
-          <div className="absolute bottom-0 left-1/4 w-72 h-72 bg-amber-100/40 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative rounded-3xl bg-gradient-to-r from-[#1E1038] via-[#29144E] to-[#18112C] text-white p-5 sm:p-7 shadow-xl border border-purple-900/60 overflow-hidden">
+          {/* Subtle Ambient Pixel & Gradient Accents (Task 8) */}
+          <div className="absolute right-0 top-0 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute left-1/3 bottom-0 w-64 h-64 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
 
-          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-            {/* Greeting & Headline */}
-            <div className="lg:col-span-8 space-y-3">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-purple-700 bg-purple-100/70 px-3 py-1 rounded-full">
-                  {todayFormatted}
-                </span>
-                <span className="flex items-center gap-1 text-xs font-semibold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200/60">
-                  <span className="text-sm">🔥</span> 7-Day Streak
-                </span>
+          {/* Retro Pixel-art grid overlay pattern */}
+          <div className="absolute inset-0 bg-[radial-gradient(#C084FC_1px,transparent_1px)] [background-size:24px_24px] opacity-10 pointer-events-none" />
+
+          <div className="relative z-10 space-y-4">
+            
+            {/* Top row: Checkpoint pill & Today's greeting */}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-[#FFC66B]/20 text-[#FFC66B] border border-[#FFC66B]/30 shadow-xs">
+                <Target className="h-3.5 w-3.5" />
+                <span>{nextStepData.checkpointBadge}</span>
               </div>
 
-              <div className="space-y-1">
-                <h1 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight">
-                  {getGreetingTime()}, {studentFirstName}!
-                </h1>
-                <p className="text-sm sm:text-base text-purple-900/90 font-medium">
-                  {isSchoolStudent
-                    ? "Let's explore your best career options, top colleges, and entrance exams."
-                    : "Let's advance your career roadmap, verify skills, and unlock opportunities."}
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-purple-200/90">
+                  {getGreetingTime()}, <strong className="text-white">{studentFirstName}</strong>!
+                </span>
+                <span className="flex items-center gap-1 text-xs font-semibold text-amber-300 bg-amber-400/20 px-2 py-0.5 rounded-full border border-amber-400/30">
+                  🔥 7-Day Streak
+                </span>
+              </div>
+            </div>
+
+            {/* Next Action Content */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-center">
+              <div className="lg:col-span-8 space-y-2">
+                <span className="text-xs font-extrabold uppercase tracking-wider text-purple-300">
+                  {t.yourNextStep} &bull; Step {nextStepData.stepNumber} of 7
+                </span>
+                <h2 className="font-heading text-xl sm:text-2xl lg:text-3xl font-black text-white leading-tight">
+                  {nextStepData.title}
+                </h2>
+                <p className="text-xs sm:text-sm text-purple-100/80 leading-relaxed max-w-2xl">
+                  {nextStepData.explanation}
                 </p>
               </div>
 
-              {/* Quick Search Bar */}
-              <form onSubmit={handleGreetingSearchSubmit} className="relative max-w-lg pt-1">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-purple-400" />
-                <input
-                  type="text"
-                  value={greetingSearch}
-                  onChange={(e) => setGreetingSearch(e.target.value)}
-                  placeholder={
-                    isSchoolStudent
-                      ? "Search careers, subjects, colleges, entrance exams (NEET, JEE, CUET)..."
-                      : "Search careers, skills, internships, projects, or courses..."
-                  }
-                  className="w-full pl-10 pr-24 py-2.5 rounded-2xl bg-white border border-purple-200 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 shadow-xs transition-all"
-                />
-                <button
-                  type="submit"
-                  className="absolute right-1.5 top-1/2 -translate-y-1/2 h-8 px-3.5 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-semibold text-xs shadow-xs transition-all"
-                >
-                  Explore
-                </button>
-              </form>
+              {/* Primary Call to Action Button: "Continue My Journey" (Task 5) */}
+              <div className="lg:col-span-4 flex flex-col sm:flex-row lg:flex-col gap-2.5 lg:items-end justify-center">
+                <Link href={nextStepData.ctaHref} className="w-full sm:w-auto lg:w-full">
+                  <button className="group w-full py-3.5 px-6 rounded-2xl bg-white text-purple-950 font-black text-sm sm:text-base hover:bg-purple-50 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-100 transition-all flex items-center justify-center gap-2">
+                    <span>{nextStepData.ctaText}</span>
+                    <ArrowRight className="h-4 w-4 stroke-[3] group-hover:translate-x-1 transition-transform" />
+                  </button>
+                </Link>
+
+                <Link href="/student/mentor" className="text-center">
+                  <span className="text-xs font-semibold text-purple-200 hover:text-white underline-offset-4 hover:underline transition-colors">
+                    Ask AI Mentor for Advice &rarr;
+                  </span>
+                </Link>
+              </div>
             </div>
 
-            {/* Right: Quick Progress Snapshot */}
-            <div className="lg:col-span-4 p-4 rounded-2xl bg-white/90 backdrop-blur-md border border-purple-100 shadow-xs flex flex-col justify-between space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-700">Career Readiness</span>
-                <span className="text-xs font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                  {criScore}/100
-                </span>
+            {/* Integrated 7-Step Journey Progression Bar (Guided Mode) */}
+            {dashboardMode === "GUIDED" && (
+              <div className="pt-2 border-t border-purple-800/50 mt-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1.5">
+                  {GUIDED_STEPS.map((s) => {
+                    const isCurrent = s.status === "CURRENT";
+                    const isDone = s.status === "COMPLETED";
+
+                    return (
+                      <Link
+                        key={s.id}
+                        href={s.href}
+                        className={`p-2 rounded-xl border text-left transition-all ${
+                          isCurrent
+                            ? "bg-white text-purple-950 border-white shadow-md font-bold scale-[1.02]"
+                            : isDone
+                            ? "bg-purple-950/60 border-purple-700/60 text-emerald-300"
+                            : "bg-purple-950/30 border-purple-900/40 text-purple-300/60 hover:bg-purple-900/40"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-0.5">
+                          <span className={`text-[9px] font-extrabold ${isCurrent ? "text-purple-800" : isDone ? "text-emerald-400" : "text-purple-400"}`}>
+                            Step 0{s.id}
+                          </span>
+                          {isDone && <CheckCircle2 className="h-3 w-3 text-emerald-400" />}
+                          {isCurrent && <span className="h-2 w-2 rounded-full bg-amber-400 animate-ping" />}
+                        </div>
+                        <span className="text-xs block leading-tight truncate">
+                          {s.title.replace(/^\d+\.\s*/, "")}
+                        </span>
+                        <span className={`text-[9px] block truncate ${isCurrent ? "text-purple-700" : "text-purple-300/60"}`}>
+                          {s.desc}
+                        </span>
+                      </Link>
+                    );
+                  })}
+                </div>
               </div>
-              <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-purple-600 to-indigo-600 rounded-full"
-                  style={{ width: `${criScore}%` }}
-                />
-              </div>
-              <p className="text-[11px] text-slate-500 leading-snug">
-                {isSchoolStudent
-                  ? "Based on your diagnostic aptitudes and foundational knowledge."
-                  : "Deterministic score measured across verified technical and practical skills."}
-              </p>
-              <Link href="/student/readiness" className="text-xs font-bold text-purple-700 hover:underline">
-                View Detailed Scorecard &rarr;
-              </Link>
-            </div>
+            )}
+
           </div>
         </div>
 
         {/* =========================================================================
-            SECTION B: GUIDED MODE JOURNEY & "YOUR NEXT STEP" CARD
+            SECTION 2: DATA-BACKED CAREER READINESS SCORECARD (TASK 7)
+            Calculated strictly from actual evidence; zero fabrication.
            ========================================================================= */}
-        {dashboardMode === "GUIDED" && (
-          <div className="space-y-4">
-            {/* 7-Step Journey Stepper Progression Bar */}
-            <div className="p-5 rounded-3xl bg-white border border-slate-200/90 shadow-soft-xs space-y-3">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-extrabold text-slate-900 flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-amber-500" />
-                  Your Guided Career Journey
-                </span>
-                <span className="text-[11px] text-purple-700 font-bold">
-                  Step 3 of 7: Choose Career Match
-                </span>
+        <div className="rounded-3xl bg-white border border-purple-100 p-4 sm:p-5 shadow-soft-xs">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-center">
+            
+            {/* Left: Score Badge & Status */}
+            <div className="lg:col-span-4 flex items-center gap-4">
+              <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-purple-700 to-indigo-700 text-white flex flex-col items-center justify-center shrink-0 shadow-sm">
+                {actualCriScore !== null ? (
+                  <>
+                    <span className="text-xl font-black leading-none">{actualCriScore}</span>
+                    <span className="text-[10px] font-bold opacity-80 mt-0.5">/ 100</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-lg font-black leading-none">--</span>
+                    <span className="text-[9px] font-bold opacity-80 mt-0.5">PENDING</span>
+                  </>
+                )}
               </div>
 
-              {/* Step Pills Timeline */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 pt-1">
-                {GUIDED_STEPS.map((s) => {
-                  const isCurrent = s.status === "CURRENT";
-                  const isDone = s.status === "COMPLETED";
-
-                  return (
-                    <Link
-                      key={s.id}
-                      href={s.href}
-                      className={`p-2.5 rounded-2xl border text-left transition-all ${
-                        isCurrent
-                          ? "bg-purple-700 text-white border-purple-700 shadow-md scale-[1.02]"
-                          : isDone
-                          ? "bg-emerald-50/80 border-emerald-200 text-emerald-950"
-                          : "bg-slate-50 border-slate-100 text-slate-500 hover:bg-slate-100"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className={`text-[10px] font-bold ${isCurrent ? "text-amber-300" : isDone ? "text-emerald-700" : "text-slate-400"}`}>
-                          Step 0{s.id}
-                        </span>
-                        {isDone && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />}
-                        {isCurrent && <span className="h-2 w-2 rounded-full bg-amber-400 animate-ping" />}
-                      </div>
-                      <span className="text-xs font-bold block leading-tight truncate">
-                        {s.title.replace(/^\d+\.\s*/, "")}
-                      </span>
-                      <span className={`text-[10px] block mt-0.5 truncate ${isCurrent ? "text-purple-100" : "text-slate-400"}`}>
-                        {s.desc}
-                      </span>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* PROMINENT "YOUR NEXT STEP" CARD (TASK 5 & 6 REQUIREMENT) */}
-            <div className="p-6 sm:p-7 rounded-3xl bg-gradient-to-r from-purple-900 via-indigo-950 to-slate-900 text-white shadow-xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
-              {/* Background Glow */}
-              <div className="absolute right-0 top-0 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl pointer-events-none" />
-
-              <div className="relative z-10 space-y-2 max-w-xl">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-[#FFC66B]/20 text-[#FFC66B] border border-[#FFC66B]/30">
-                  <Target className="h-3.5 w-3.5" />
-                  {t.yourNextStep}
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-heading text-sm font-extrabold text-slate-900">
+                    Career Readiness Score
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setShowScoreModal(!showScoreModal)}
+                    className="text-purple-600 hover:text-purple-800 transition-colors"
+                    title="How is this score calculated?"
+                  >
+                    <QuestionIcon className="h-3.5 w-3.5" />
+                  </button>
                 </div>
-                <h3 className="font-heading text-xl sm:text-2xl font-black text-white leading-snug">
-                  {isSchoolStudent
-                    ? "Review Your Top 3 Matched Career Streams"
-                    : "Complete Your Fast Inference Milestone Assessment"}
-                </h3>
-                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                  {isSchoolStudent
-                    ? "Based on your Class 12 stage, compare Medicine, Engineering, and Design pathways side-by-side without exam confusion."
-                    : "Advance to Stage 2 of your 12-week roadmap and earn verified competency proof in your Digital Skill Passport."}
+
+                <div className="mt-1">
+                  {actualCriScore !== null ? (
+                    <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                      ✓ Ready for Next Step
+                    </span>
+                  ) : (
+                    <span className="text-xs font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                      Quiz Required to Calculate
+                    </span>
+                  )}
+                </div>
+
+                <p className="text-[11px] text-slate-500 mt-1 leading-tight">
+                  {actualCriScore !== null
+                    ? `${actualVerifiedSkills} skills verified from your completed quizzes and activities.`
+                    : "Zero fabricated scores. Take your 5-min Strengths Quiz to calculate."}
                 </p>
               </div>
+            </div>
 
-              <div className="relative z-10 shrink-0">
-                <Link href={isSchoolStudent ? "/student/discover" : "/student/assessments"}>
-                  <Button
-                    size="lg"
-                    className="h-12 px-7 rounded-2xl bg-gradient-to-r from-[#FFC66B] via-[#FFA94D] to-[#F59E0B] text-[#1E0F2B] font-extrabold text-sm shadow-[0_4px_20px_rgba(255,198,107,0.4)] hover:scale-[1.03] transition-all gap-2"
-                  >
-                    <span>{t.continueJourney}</span>
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </Link>
+            {/* Center: 4-Pillar Transparent Progress Breakdown (Task 7) */}
+            <div className="lg:col-span-6 grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div className="p-2.5 rounded-xl bg-purple-50/60 border border-purple-100">
+                <span className="text-[10px] font-bold text-purple-900 uppercase block">1. Strengths</span>
+                <span className="text-xs font-black text-slate-800">
+                  {scoreBreakdown.strengthsDiagnostic} / {scoreBreakdown.maxStrengths} pts
+                </span>
+                <div className="w-full bg-purple-200/50 h-1.5 rounded-full mt-1.5 overflow-hidden">
+                  <div
+                    className="h-full bg-purple-600 rounded-full"
+                    style={{ width: `${(scoreBreakdown.strengthsDiagnostic / scoreBreakdown.maxStrengths) * 100}%` }}
+                  />
+                </div>
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-indigo-50/60 border border-indigo-100">
+                <span className="text-[10px] font-bold text-indigo-900 uppercase block">2. Quizzes</span>
+                <span className="text-xs font-black text-slate-800">
+                  {scoreBreakdown.verifiedSkills} / {scoreBreakdown.maxSkills} pts
+                </span>
+                <div className="w-full bg-indigo-200/50 h-1.5 rounded-full mt-1.5 overflow-hidden">
+                  <div
+                    className="h-full bg-indigo-600 rounded-full"
+                    style={{ width: `${(scoreBreakdown.verifiedSkills / scoreBreakdown.maxSkills) * 100}%` }}
+                  />
+                </div>
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-sky-50/60 border border-sky-100">
+                <span className="text-[10px] font-bold text-sky-900 uppercase block">3. Projects</span>
+                <span className="text-xs font-black text-slate-800">
+                  {scoreBreakdown.practicalProjects} / {scoreBreakdown.maxProjects} pts
+                </span>
+                <div className="w-full bg-sky-200/50 h-1.5 rounded-full mt-1.5 overflow-hidden">
+                  <div
+                    className="h-full bg-sky-600 rounded-full"
+                    style={{ width: `${(scoreBreakdown.practicalProjects / scoreBreakdown.maxProjects) * 100}%` }}
+                  />
+                </div>
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-emerald-50/60 border border-emerald-100">
+                <span className="text-[10px] font-bold text-emerald-900 uppercase block">4. Steps</span>
+                <span className="text-xs font-black text-slate-800">
+                  {scoreBreakdown.roadmapMilestones} / {scoreBreakdown.maxMilestones} pts
+                </span>
+                <div className="w-full bg-emerald-200/50 h-1.5 rounded-full mt-1.5 overflow-hidden">
+                  <div
+                    className="h-full bg-emerald-600 rounded-full"
+                    style={{ width: `${(scoreBreakdown.roadmapMilestones / scoreBreakdown.maxMilestones) * 100}%` }}
+                  />
+                </div>
               </div>
             </div>
+
+            {/* Right: Score Action */}
+            <div className="lg:col-span-2 flex flex-col items-start lg:items-end justify-center">
+              {actualCriScore !== null ? (
+                <Link href="/student/readiness">
+                  <Button variant="outline" size="sm" className="rounded-xl border-purple-200 text-purple-700 hover:bg-purple-50 text-xs font-bold">
+                    View Scorecard &rarr;
+                  </Button>
+                </Link>
+              ) : (
+                <Link href="/student/assessments">
+                  <Button size="sm" className="rounded-xl bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold shadow-xs">
+                    Unlock Score &rarr;
+                  </Button>
+                </Link>
+              )}
+            </div>
+
           </div>
-        )}
+
+          {/* Expandable Transparent Calculation Explanation (Task 7) */}
+          {showScoreModal && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mt-3 pt-3 border-t border-slate-100 text-xs text-slate-600 space-y-1.5 bg-purple-50/40 p-3 rounded-2xl"
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-purple-950 flex items-center gap-1.5">
+                  <Info className="h-4 w-4 text-purple-600" />
+                  How KAABIL Calculates Your Career Readiness Score (Zero Hallucination)
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowScoreModal(false)}
+                  className="text-slate-400 hover:text-slate-600 font-bold"
+                >
+                  ✕
+                </button>
+              </div>
+              <p className="leading-relaxed">
+                KAABIL does <strong>not</strong> generate random scores or guess your qualifications. Your score is an auditable formula based on 4 verifiable components:
+              </p>
+              <ul className="list-disc pl-5 space-y-0.5 text-[11px] text-slate-700">
+                <li><strong>Strengths Diagnostic (25 pts):</strong> Completed initial interests and subject preferences.</li>
+                <li><strong>Verified Quizzes (35 pts):</strong> Passing scores in stream knowledge checks (each verified skill adds points).</li>
+                <li><strong>Real-World Projects (25 pts):</strong> Completed practical case studies, labs, or portfolio submissions.</li>
+                <li><strong>Weekly Steps (15 pts):</strong> Finishing learning activities on your customized career roadmap.</li>
+              </ul>
+            </motion.div>
+          )}
+        </div>
 
         {/* =========================================================================
-            DYNAMIC SECTIONS BASED ON EDUCATIONAL STAGE (TASK 5)
+            SECTION 3: STREAMLINED ROLE-SPECIFIC TOOLS (TASKS 5 & 6)
+            A. School Students (Class 8–12) — Discovery, Colleges, Exams, Scholarships
+            B. College Students — Skills, Roadmap, Projects, Resumes, Internships
            ========================================================================= */}
+        {isSchoolStudent ? (
+          /* SCHOOL STUDENT TOOL GRID */
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="font-heading text-sm font-bold text-slate-900 flex items-center gap-2">
+                <Compass className="h-4 w-4 text-purple-600" />
+                <span>School Student Guidance Hub</span>
+              </h3>
+              <span className="text-[11px] text-slate-400">Essential tools for Class 10 & 12</span>
+            </div>
 
-        {/* -------------------------------------------------------------------------
-            A. SCHOOL STUDENT EXPERIENCE (Class 10, Class 11-12)
-            Focus: Career discovery, Course comparison, College exploration, Entrance exams, Scholarships, AI Mentor
-           ------------------------------------------------------------------------- */}
-        {isSchoolStudent && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               
-              {/* 1. Career Discovery Module */}
-              <div className="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-soft-xs flex flex-col justify-between space-y-4">
+              {/* 1. Find My Career */}
+              <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-2xs hover:shadow-soft-xs transition-all flex flex-col justify-between space-y-3">
                 <div>
-                  <div className="h-11 w-11 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center font-bold mb-3">
-                    <Compass className="h-6 w-6 text-amber-500" />
+                  <div className="h-9 w-9 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center font-bold mb-2">
+                    <Compass className="h-5 w-5 text-amber-500" />
                   </div>
-                  <h3 className="font-heading text-base font-bold text-slate-900">
+                  <h4 className="font-heading text-sm font-bold text-slate-900">
                     Find My Career
-                  </h3>
-                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                    Explore 100+ careers across Science, Commerce, Arts, Law, Design, and Sports with verified syllabus mappings.
+                  </h4>
+                  <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+                    Explore 100+ careers across Science, Commerce, Arts, Law, Design, and Sports with Indian syllabus mappings.
                   </p>
                 </div>
                 <Link href="/student/discover">
-                  <Button variant="outline" className="w-full text-xs font-bold rounded-xl border-purple-200 text-purple-700 hover:bg-purple-50 justify-between">
+                  <Button variant="outline" size="sm" className="w-full text-xs font-bold rounded-xl border-purple-200 text-purple-700 hover:bg-purple-50 justify-between">
                     <span>Explore Careers</span>
                     <ArrowRight className="h-3.5 w-3.5" />
                   </Button>
                 </Link>
               </div>
 
-              {/* 2. Course & Stream Comparison */}
-              <div className="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-soft-xs flex flex-col justify-between space-y-4">
+              {/* 2. Compare Degrees & Courses */}
+              <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-2xs hover:shadow-soft-xs transition-all flex flex-col justify-between space-y-3">
                 <div>
-                  <div className="h-11 w-11 rounded-2xl bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold mb-3">
-                    <Scale className="h-6 w-6 text-indigo-600" />
+                  <div className="h-9 w-9 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold mb-2">
+                    <Scale className="h-5 w-5 text-indigo-600" />
                   </div>
-                  <h3 className="font-heading text-base font-bold text-slate-900">
+                  <h4 className="font-heading text-sm font-bold text-slate-900">
                     Compare Degrees &amp; Courses
-                  </h3>
-                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                    Compare B.Tech vs MBBS, B.Com vs CA, or Law vs Public Policy. Side-by-side duration, fees, and career outcomes.
+                  </h4>
+                  <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+                    Compare B.Tech vs MBBS, B.Com vs CA, or Law vs Design. Side-by-side duration, fees, and career outcomes.
                   </p>
                 </div>
                 <Link href="/compare">
-                  <Button variant="outline" className="w-full text-xs font-bold rounded-xl border-indigo-200 text-indigo-700 hover:bg-indigo-50 justify-between">
+                  <Button variant="outline" size="sm" className="w-full text-xs font-bold rounded-xl border-indigo-200 text-indigo-700 hover:bg-indigo-50 justify-between">
                     <span>Compare Courses</span>
                     <ArrowRight className="h-3.5 w-3.5" />
                   </Button>
@@ -608,20 +744,20 @@ export default function StudentDashboardPage() {
               </div>
 
               {/* 3. College Exploration */}
-              <div className="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-soft-xs flex flex-col justify-between space-y-4">
+              <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-2xs hover:shadow-soft-xs transition-all flex flex-col justify-between space-y-3">
                 <div>
-                  <div className="h-11 w-11 rounded-2xl bg-purple-50 text-purple-700 flex items-center justify-center font-bold mb-3">
-                    <Building2 className="h-6 w-6 text-purple-600" />
+                  <div className="h-9 w-9 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center font-bold mb-2">
+                    <Building2 className="h-5 w-5 text-purple-600" />
                   </div>
-                  <h3 className="font-heading text-base font-bold text-slate-900">
+                  <h4 className="font-heading text-sm font-bold text-slate-900">
                     College Exploration
-                  </h3>
-                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                  </h4>
+                  <p className="text-[11px] text-slate-500 mt-1 leading-snug">
                     Discover recognized Indian universities, NIRF rankings, eligibility cutoffs, and state quotas.
                   </p>
                 </div>
                 <Link href="/careers">
-                  <Button variant="outline" className="w-full text-xs font-bold rounded-xl border-purple-200 text-purple-700 hover:bg-purple-50 justify-between">
+                  <Button variant="outline" size="sm" className="w-full text-xs font-bold rounded-xl border-purple-200 text-purple-700 hover:bg-purple-50 justify-between">
                     <span>Explore Colleges</span>
                     <ArrowRight className="h-3.5 w-3.5" />
                   </Button>
@@ -629,20 +765,20 @@ export default function StudentDashboardPage() {
               </div>
 
               {/* 4. Entrance Exams Hub */}
-              <div className="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-soft-xs flex flex-col justify-between space-y-4">
+              <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-2xs hover:shadow-soft-xs transition-all flex flex-col justify-between space-y-3">
                 <div>
-                  <div className="h-11 w-11 rounded-2xl bg-rose-50 text-rose-700 flex items-center justify-center font-bold mb-3">
-                    <GraduationCap className="h-6 w-6 text-rose-600" />
+                  <div className="h-9 w-9 rounded-xl bg-rose-50 text-rose-700 flex items-center justify-center font-bold mb-2">
+                    <GraduationCap className="h-5 w-5 text-rose-600" />
                   </div>
-                  <h3 className="font-heading text-base font-bold text-slate-900">
+                  <h4 className="font-heading text-sm font-bold text-slate-900">
                     Entrance Exams Calendar
-                  </h3>
-                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                  </h4>
+                  <p className="text-[11px] text-slate-500 mt-1 leading-snug">
                     Timelines and syllabi for NEET-UG, JEE Main, CUET, CLAT, NDA, NID, and State CETs without missing dates.
                   </p>
                 </div>
                 <Link href="/careers">
-                  <Button variant="outline" className="w-full text-xs font-bold rounded-xl border-rose-200 text-rose-700 hover:bg-rose-50 justify-between">
+                  <Button variant="outline" size="sm" className="w-full text-xs font-bold rounded-xl border-rose-200 text-rose-700 hover:bg-rose-50 justify-between">
                     <span>View Exam Guides</span>
                     <ArrowRight className="h-3.5 w-3.5" />
                   </Button>
@@ -650,41 +786,182 @@ export default function StudentDashboardPage() {
               </div>
 
               {/* 5. Scholarships & Olympiads */}
-              <div className="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-soft-xs flex flex-col justify-between space-y-4">
+              <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-2xs hover:shadow-soft-xs transition-all flex flex-col justify-between space-y-3">
                 <div>
-                  <div className="h-11 w-11 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold mb-3">
-                    <Award className="h-6 w-6 text-emerald-600" />
+                  <div className="h-9 w-9 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold mb-2">
+                    <Award className="h-5 w-5 text-emerald-600" />
                   </div>
-                  <h3 className="font-heading text-base font-bold text-slate-900">
+                  <h4 className="font-heading text-sm font-bold text-slate-900">
                     Scholarships &amp; Olympiads
-                  </h3>
-                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                    Find merit-based, state, and government scholarships plus National Science and Math Olympiad registrations.
+                  </h4>
+                  <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+                    Find merit-based, state, and central scholarships plus National Science and Math Olympiad registrations.
                   </p>
                 </div>
                 <Link href="/student/discover">
-                  <Button variant="outline" className="w-full text-xs font-bold rounded-xl border-emerald-200 text-emerald-700 hover:bg-emerald-50 justify-between">
+                  <Button variant="outline" size="sm" className="w-full text-xs font-bold rounded-xl border-emerald-200 text-emerald-700 hover:bg-emerald-50 justify-between">
                     <span>Find Scholarships</span>
                     <ArrowRight className="h-3.5 w-3.5" />
                   </Button>
                 </Link>
               </div>
 
-              {/* 6. Friendly AI Career Mentor */}
-              <div className="p-6 rounded-3xl bg-gradient-to-br from-purple-50 via-white to-indigo-50 border border-purple-200 shadow-soft-xs flex flex-col justify-between space-y-4">
+              {/* 6. Ask AI Career Mentor */}
+              <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-50 via-white to-indigo-50 border border-purple-200 shadow-2xs hover:shadow-soft-xs transition-all flex flex-col justify-between space-y-3">
                 <div>
-                  <div className="h-11 w-11 rounded-2xl bg-purple-700 text-white flex items-center justify-center font-bold mb-3 shadow-xs">
-                    <Bot className="h-6 w-6" />
+                  <div className="h-9 w-9 rounded-xl bg-purple-700 text-white flex items-center justify-center font-bold mb-2 shadow-xs">
+                    <Bot className="h-5 w-5" />
                   </div>
-                  <h3 className="font-heading text-base font-bold text-slate-900">
+                  <h4 className="font-heading text-sm font-bold text-slate-900">
                     Ask AI Career Mentor
-                  </h3>
-                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                    Get answers to all your career doubts in English, हिन्दी, or Hinglish with zero judgement.
+                  </h4>
+                  <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+                    Ask any career question in English, हिन्दी, or Hinglish without fear of judgement.
                   </p>
                 </div>
                 <Link href="/student/mentor">
-                  <Button className="w-full text-xs font-bold rounded-xl bg-purple-700 hover:bg-purple-800 text-white justify-between">
+                  <Button size="sm" className="w-full text-xs font-bold rounded-xl bg-purple-700 hover:bg-purple-800 text-white justify-between">
+                    <span>Chat With Mentor</span>
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Button>
+                </Link>
+              </div>
+
+            </div>
+          </div>
+        ) : (
+          /* COLLEGE / UNDERGRADUATE STUDENT TOOL GRID */
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="font-heading text-sm font-bold text-slate-900 flex items-center gap-2">
+                <Briefcase className="h-4 w-4 text-purple-600" />
+                <span>College Student Career Accelerators</span>
+              </h3>
+              <span className="text-[11px] text-slate-400">Skill verification & employment prep</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              
+              {/* 1. What Should I Learn? (Skill Gap) */}
+              <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-2xs hover:shadow-soft-xs transition-all flex flex-col justify-between space-y-3">
+                <div>
+                  <div className="h-9 w-9 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center font-bold mb-2">
+                    <Target className="h-5 w-5 text-purple-600" />
+                  </div>
+                  <h4 className="font-heading text-sm font-bold text-slate-900">
+                    What Should I Learn?
+                  </h4>
+                  <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+                    Compare your verified skills against industry demand to find the exact topics you need for top roles.
+                  </p>
+                </div>
+                <Link href="/student/gap-analysis">
+                  <Button variant="outline" size="sm" className="w-full text-xs font-bold rounded-xl border-purple-200 text-purple-700 hover:bg-purple-50 justify-between">
+                    <span>Analyze Skills</span>
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Button>
+                </Link>
+              </div>
+
+              {/* 2. Personalized Roadmap */}
+              <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-2xs hover:shadow-soft-xs transition-all flex flex-col justify-between space-y-3">
+                <div>
+                  <div className="h-9 w-9 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold mb-2">
+                    <MapIcon className="h-5 w-5 text-indigo-600" />
+                  </div>
+                  <h4 className="font-heading text-sm font-bold text-slate-900">
+                    Personalized Roadmap
+                  </h4>
+                  <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+                    Follow step-by-step weekly milestones tailored to your target company and salary goals.
+                  </p>
+                </div>
+                <Link href="/student/roadmap">
+                  <Button variant="outline" size="sm" className="w-full text-xs font-bold rounded-xl border-indigo-200 text-indigo-700 hover:bg-indigo-50 justify-between">
+                    <span>View Roadmap</span>
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Button>
+                </Link>
+              </div>
+
+              {/* 3. Real-World Projects & Practice */}
+              <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-2xs hover:shadow-soft-xs transition-all flex flex-col justify-between space-y-3">
+                <div>
+                  <div className="h-9 w-9 rounded-xl bg-sky-50 text-sky-700 flex items-center justify-center font-bold mb-2">
+                    <CodeIcon className="h-5 w-5 text-sky-600" />
+                  </div>
+                  <h4 className="font-heading text-sm font-bold text-slate-900">
+                    Practical Projects &amp; Labs
+                  </h4>
+                  <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+                    Build resume-ready projects with automated test suites and structured rubrics.
+                  </p>
+                </div>
+                <Link href="/student/academy">
+                  <Button variant="outline" size="sm" className="w-full text-xs font-bold rounded-xl border-sky-200 text-sky-700 hover:bg-sky-50 justify-between">
+                    <span>Explore Projects</span>
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Button>
+                </Link>
+              </div>
+
+              {/* 4. Job-Ready Resume Studio */}
+              <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-2xs hover:shadow-soft-xs transition-all flex flex-col justify-between space-y-3">
+                <div>
+                  <div className="h-9 w-9 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold mb-2">
+                    <FileText className="h-5 w-5 text-emerald-600" />
+                  </div>
+                  <h4 className="font-heading text-sm font-bold text-slate-900">
+                    Resume Studio
+                  </h4>
+                  <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+                    Turn your verified skills and completed projects into a clean, recruiter-approved resume.
+                  </p>
+                </div>
+                <Link href="/student/resume">
+                  <Button variant="outline" size="sm" className="w-full text-xs font-bold rounded-xl border-emerald-200 text-emerald-700 hover:bg-emerald-50 justify-between">
+                    <span>Build Resume</span>
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Button>
+                </Link>
+              </div>
+
+              {/* 5. Eligible Opportunities */}
+              <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-2xs hover:shadow-soft-xs transition-all flex flex-col justify-between space-y-3">
+                <div>
+                  <div className="h-9 w-9 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center font-bold mb-2">
+                    <Briefcase className="h-5 w-5 text-amber-600" />
+                  </div>
+                  <h4 className="font-heading text-sm font-bold text-slate-900">
+                    Internships &amp; Jobs
+                  </h4>
+                  <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+                    See internships where you meet the verified skill requirements, with clear match percentages.
+                  </p>
+                </div>
+                <Link href="/student/opportunities">
+                  <Button variant="outline" size="sm" className="w-full text-xs font-bold rounded-xl border-amber-200 text-amber-700 hover:bg-amber-50 justify-between">
+                    <span>View Opportunities</span>
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Button>
+                </Link>
+              </div>
+
+              {/* 6. Ask AI Career Mentor */}
+              <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-50 via-white to-indigo-50 border border-purple-200 shadow-2xs hover:shadow-soft-xs transition-all flex flex-col justify-between space-y-3">
+                <div>
+                  <div className="h-9 w-9 rounded-xl bg-purple-700 text-white flex items-center justify-center font-bold mb-2 shadow-xs">
+                    <Bot className="h-5 w-5" />
+                  </div>
+                  <h4 className="font-heading text-sm font-bold text-slate-900">
+                    Ask AI Career Mentor
+                  </h4>
+                  <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+                    Practice interview questions, salary negotiation, and portfolio reviews in 3 languages.
+                  </p>
+                </div>
+                <Link href="/student/mentor">
+                  <Button size="sm" className="w-full text-xs font-bold rounded-xl bg-purple-700 hover:bg-purple-800 text-white justify-between">
                     <span>Chat With Mentor</span>
                     <ArrowRight className="h-3.5 w-3.5" />
                   </Button>
@@ -695,242 +972,33 @@ export default function StudentDashboardPage() {
           </div>
         )}
 
-        {/* -------------------------------------------------------------------------
-            B. COLLEGE STUDENT EXPERIENCE (Undergraduates, Graduates)
-            Focus: Career discovery, Skill analysis, Personalized roadmap, Practical projects, Resume studio, Opportunities, AI Mentor
-           ------------------------------------------------------------------------- */}
-        {!isSchoolStudent && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              
-              {/* Career Readiness & Skill Analysis (Span 7) */}
-              <div className="lg:col-span-7 rounded-3xl bg-white border border-slate-200/90 p-6 sm:p-7 shadow-soft-xs flex flex-col justify-between space-y-5">
-                <div>
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                    <div className="flex items-center gap-2.5">
-                      <div className="h-10 w-10 rounded-2xl bg-purple-50 text-purple-700 flex items-center justify-center font-bold">
-                        <Trophy className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <h3 className="font-heading text-base font-bold text-slate-900">
-                          {t.checkMySkills} &amp; Competence
-                        </h3>
-                        <p className="text-xs text-slate-500">
-                          Verified evidence measuring genuine readiness for industry roles
-                        </p>
-                      </div>
-                    </div>
-                    <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      {criStatus}
-                    </span>
-                  </div>
-
-                  {/* Skills Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
-                    <div className="p-4 rounded-2xl bg-purple-50/50 border border-purple-100">
-                      <span className="text-[11px] font-bold text-purple-900 uppercase">Verified Skills</span>
-                      <div className="text-2xl font-extrabold text-slate-900 mt-1">
-                        {verifiedCount} <span className="text-xs font-normal text-slate-500">of {targetSkillsCount} verified</span>
-                      </div>
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {["Python Logic", "FastAPI Serving", "Git & CI/CD"].map((s) => (
-                          <span key={s} className="text-[10px] bg-white px-2 py-0.5 rounded-md border border-purple-200 text-purple-900 font-medium">
-                            ✓ {s}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="p-4 rounded-2xl bg-amber-50/50 border border-amber-100">
-                      <span className="text-[11px] font-bold text-amber-900 uppercase">Skill Gap Priority</span>
-                      <div className="text-xs font-bold text-slate-800 mt-1">
-                        Vector Embeddings (-20%)
-                      </div>
-                      <p className="text-[11px] text-slate-600 mt-1">
-                        Complete the practical tutorial in Academy to close this gap.
-                      </p>
-                      <Link href="/student/skill-gaps" className="text-[11px] font-bold text-amber-800 hover:underline inline-block mt-2">
-                        View Skill Gap Analyzer &rarr;
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-2 flex items-center justify-between">
-                  <Link href="/student/assessments">
-                    <Button size="sm" className="rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs gap-1.5">
-                      <span>{t.checkMySkills}</span>
-                      <ArrowRight className="h-3.5 w-3.5" />
-                    </Button>
-                  </Link>
-                  <Link href="/student/passport" className="text-xs font-bold text-purple-700 hover:underline">
-                    View My Achievements &rarr;
-                  </Link>
-                </div>
-              </div>
-
-              {/* AI Career Mentor Card (Span 5) */}
-              <div className="lg:col-span-5 rounded-3xl bg-gradient-to-br from-[#FAF5FF] via-white to-[#F5F3FF] border border-purple-100 p-6 sm:p-7 shadow-soft-xs flex flex-col justify-between space-y-4">
-                <div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-purple-700 bg-purple-100 px-2 py-0.5 rounded-md mb-1 inline-block">
-                        Trilingual Guidance
-                      </span>
-                      <h3 className="font-heading text-base font-bold text-slate-900">
-                        {t.aiMentor}
-                      </h3>
-                    </div>
-                    <div className="h-10 w-10 rounded-2xl bg-purple-700 text-white flex items-center justify-center shadow-xs">
-                      <Bot className="h-5 w-5" />
-                    </div>
-                  </div>
-
-                  {/* Quick Form */}
-                  <form onSubmit={handleMentorSubmit} className="relative mt-3">
-                    <input
-                      type="text"
-                      value={mentorInput}
-                      onChange={(e) => setMentorInput(e.target.value)}
-                      placeholder="Ask about careers, skills, or interviews..."
-                      className="w-full pl-3 pr-16 py-2 rounded-xl bg-white border border-purple-200 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
-                    />
-                    <button
-                      type="submit"
-                      disabled={!mentorInput.trim()}
-                      className="absolute right-1 top-1/2 -translate-y-1/2 h-7 px-2.5 rounded-lg bg-purple-700 text-white text-xs font-bold disabled:opacity-40"
-                    >
-                      Send
-                    </button>
-                  </form>
-
-                  {/* Suggested Prompts */}
-                  <div className="space-y-1.5 mt-3">
-                    {[
-                      "Which companies hire for my target role?",
-                      "How do I prepare for technical interviews?",
-                      "What practical projects stand out on a resume?",
-                    ].map((p) => (
-                      <Link
-                        key={p}
-                        href={`/student/mentor?q=${encodeURIComponent(p)}`}
-                        className="block p-2 rounded-xl bg-white border border-purple-100 text-[11px] font-medium text-slate-700 hover:bg-purple-50 hover:text-purple-900 transition-all truncate"
-                      >
-                        &bull; {p}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-
-                <Link href="/student/mentor">
-                  <Button variant="outline" className="w-full text-xs font-bold rounded-xl border-purple-200 text-purple-700 hover:bg-purple-50 justify-between">
-                    <span>Open Mentorship Studio</span>
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </Button>
-                </Link>
-              </div>
-
-            </div>
-
-            {/* Opportunities & Resume Studio Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              
-              {/* Internship & Job Opportunities */}
-              <div className="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-soft-xs space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                  <div className="flex items-center gap-2">
-                    <Briefcase className="h-5 w-5 text-sky-600" />
-                    <h3 className="font-heading text-base font-bold text-slate-900">
-                      Eligible Opportunities
-                    </h3>
-                  </div>
-                  <Link href="/student/opportunities" className="text-xs font-bold text-purple-700 hover:underline">
-                    View All &rarr;
-                  </Link>
-                </div>
-
-                <div className="space-y-2.5">
-                  {[
-                    { title: "AI Systems Engineering Intern", company: "DeepNeural Labs", location: "Bengaluru (Hybrid)", stipend: "₹35,000/mo", match: 94 },
-                    { title: "Financial Analyst Trainee", company: "Apex Advisory", location: "Mumbai (Onsite)", stipend: "₹25,000/mo", match: 88 },
-                  ].map((opp, idx) => (
-                    <div key={idx} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between gap-3">
-                      <div>
-                        <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
-                          {opp.match}% Match
-                        </span>
-                        <h4 className="text-xs font-bold text-slate-900 mt-1">{opp.title}</h4>
-                        <p className="text-[11px] text-slate-500">{opp.company} • {opp.stipend}</p>
-                      </div>
-                      <Link href="/student/opportunities">
-                        <Button size="sm" variant="outline" className="text-xs h-8 px-3 rounded-xl border-purple-200 text-purple-700 hover:bg-purple-50">
-                          View
-                        </Button>
-                      </Link>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Resume Preparation & Interview Practice */}
-              <div className="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-soft-xs space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-indigo-600" />
-                    <h3 className="font-heading text-base font-bold text-slate-900">
-                      Resume &amp; Interview Prep
-                    </h3>
-                  </div>
-                  <Link href="/student/resume" className="text-xs font-bold text-purple-700 hover:underline">
-                    Resume Studio &rarr;
-                  </Link>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <Link href="/student/resume" className="p-4 rounded-2xl bg-indigo-50/60 border border-indigo-100 hover:border-indigo-300 transition-all text-left">
-                    <FileText className="h-5 w-5 text-indigo-600 mb-2" />
-                    <h4 className="text-xs font-bold text-indigo-950">Resume Studio</h4>
-                    <p className="text-[10px] text-slate-500 mt-0.5">Turn verified skills into an ATS-friendly CV.</p>
-                  </Link>
-                  <Link href="/student/interview-lab" className="p-4 rounded-2xl bg-pink-50/60 border border-pink-100 hover:border-pink-300 transition-all text-left">
-                    <Mic className="h-5 w-5 text-pink-600 mb-2" />
-                    <h4 className="text-xs font-bold text-pink-950">Interview Lab</h4>
-                    <p className="text-[10px] text-slate-500 mt-0.5">Practice realistic mock interview questions.</p>
-                  </Link>
-                </div>
-              </div>
-
-            </div>
-          </div>
-        )}
-
         {/* =========================================================================
-            SECTION C: DAILY ACTIONS & ROADMAP MILESTONES (SHARED & FUNCTIONAL)
+            SECTION 4: DAILY MICRO-ACTIONS & WEEKLY PROGRESS (TIGHT SPACING)
            ========================================================================= */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           
-          {/* Daily Micro-Missions (Span 6) */}
-          <div className="lg:col-span-6 rounded-3xl bg-white border border-slate-200/90 p-6 sm:p-7 shadow-soft-xs space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2.5">
-                <Calendar className="h-5 w-5 text-amber-500" />
-                <h3 className="font-heading text-base font-bold text-slate-900">
-                  Daily Micro-Missions
+          {/* Daily Micro-Actions (Span 6) */}
+          <div className="lg:col-span-6 rounded-3xl bg-white border border-slate-200/90 p-4 sm:p-5 shadow-soft-xs space-y-3">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-amber-500" />
+                <h3 className="font-heading text-sm font-bold text-slate-900">
+                  Daily Quick Tasks
                 </h3>
               </div>
-              <span className="text-xs font-bold text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-100">
-                {missions.filter((m) => m.status === "COMPLETED").length} / {missions.length} Completed
+              <span className="text-[11px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-100">
+                {missions.filter((m) => m.status === "COMPLETED").length} / {missions.length} Done
               </span>
             </div>
 
-            <div className="space-y-2.5">
+            <div className="space-y-2">
               {missions.slice(0, 3).map((mission) => {
                 const isCompleted = mission.status === "COMPLETED";
                 return (
                   <div
                     key={mission.id}
                     onClick={() => handleToggleMission(mission.id, mission.status)}
-                    className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-start gap-3 select-none ${
+                    className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-start gap-2.5 select-none ${
                       isCompleted
                         ? "bg-slate-50 border-slate-200/70 opacity-75"
                         : "bg-white hover:bg-purple-50/40 border-slate-200 shadow-2xs"
@@ -939,7 +1007,7 @@ export default function StudentDashboardPage() {
                     <button
                       type="button"
                       disabled={completingMissionId === mission.id}
-                      className={`h-5 w-5 rounded-lg flex items-center justify-center shrink-0 mt-0.5 transition-all ${
+                      className={`h-4.5 w-4.5 rounded-md flex items-center justify-center shrink-0 mt-0.5 transition-all ${
                         isCompleted
                           ? "bg-emerald-600 text-white"
                           : "border-2 border-slate-300 hover:border-purple-600 bg-white"
@@ -977,13 +1045,13 @@ export default function StudentDashboardPage() {
             </div>
           </div>
 
-          {/* Personalized Roadmap Progression (Span 6) */}
-          <div className="lg:col-span-6 rounded-3xl bg-white border border-slate-200/90 p-6 sm:p-7 shadow-soft-xs space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2.5">
-                <MapIcon className="h-5 w-5 text-purple-600" />
-                <h3 className="font-heading text-base font-bold text-slate-900">
-                  {t.myRoadmap}
+          {/* Weekly Career Steps (Span 6) */}
+          <div className="lg:col-span-6 rounded-3xl bg-white border border-slate-200/90 p-4 sm:p-5 shadow-soft-xs space-y-3">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+              <div className="flex items-center gap-2">
+                <MapIcon className="h-4 w-4 text-purple-600" />
+                <h3 className="font-heading text-sm font-bold text-slate-900">
+                  Weekly Career Steps
                 </h3>
               </div>
               <Link href="/student/roadmap" className="text-xs font-bold text-purple-700 hover:underline">
@@ -991,21 +1059,21 @@ export default function StudentDashboardPage() {
               </Link>
             </div>
 
-            <div className="space-y-2.5">
+            <div className="space-y-2">
               {[
-                { stage: "Week 1–2", title: "Diagnostic & Foundational Concepts", status: "COMPLETED" },
-                { stage: "Week 3–4", title: "Core Competencies & Hands-on Lab", status: "CURRENT" },
-                { stage: "Week 5–8", title: "Practical Capstone Project & Evidence", status: "UPCOMING" },
+                { stage: "Week 1–2", title: "Strengths & Foundational Concepts", status: "COMPLETED" },
+                { stage: "Week 3–4", title: "Core Skills & Practical Exercises", status: isFreshAccount ? "UPCOMING" : "CURRENT" },
+                { stage: "Week 5–8", title: "Real-World Project & Portfolio Evidence", status: "UPCOMING" },
               ].map((m, idx) => (
-                <div key={idx} className="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                <div key={idx} className="p-2.5 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <div className={`h-7 w-7 rounded-full flex items-center justify-center font-bold text-xs ${
+                    <div className={`h-6 w-6 rounded-full flex items-center justify-center font-bold text-[11px] ${
                       m.status === "COMPLETED" ? "bg-emerald-100 text-emerald-800" : m.status === "CURRENT" ? "bg-purple-100 text-purple-800" : "bg-slate-200 text-slate-500"
                     }`}>
                       {m.status === "COMPLETED" ? "✓" : idx + 1}
                     </div>
                     <div>
-                      <span className="text-[10px] font-bold text-purple-700 uppercase block">{m.stage}</span>
+                      <span className="text-[9px] font-bold text-purple-700 uppercase block">{m.stage}</span>
                       <h4 className="text-xs font-bold text-slate-900">{m.title}</h4>
                     </div>
                   </div>
@@ -1023,5 +1091,25 @@ export default function StudentDashboardPage() {
 
       </div>
     </PortalLayout>
+  );
+}
+
+function CodeIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polyline points="16 18 22 12 16 6" />
+      <polyline points="8 6 2 12 8 18" />
+    </svg>
   );
 }

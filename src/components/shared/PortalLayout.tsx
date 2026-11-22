@@ -134,6 +134,17 @@ export function PortalLayout({
     }
   };
 
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      if (portalRole === "STUDENT") {
+        router.push(`/student/discover?q=${encodeURIComponent(searchQuery.trim())}`);
+      } else {
+        router.push(`/careers?q=${encodeURIComponent(searchQuery.trim())}`);
+      }
+    }
+  };
+
   const roleStyles = {
     STUDENT: {
       badge: "Student Portal",
@@ -158,58 +169,7 @@ export function PortalLayout({
   }[portalRole];
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col antialiased text-text-primary">
-      {/* Top Banner */}
-      {currentUser ? (
-        <div className="bg-slate-900 text-white px-4 py-2 text-xs font-medium flex items-center justify-between border-b border-slate-800">
-          <div className="flex items-center gap-2 mx-auto sm:mx-0">
-            <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-400" />
-            <span>
-              <strong>KAABIL SECURE SESSION:</strong> Signed in as <strong>{currentUser.name}</strong> ({currentUser.role}). DPDP Act 2023 protections active.
-            </span>
-          </div>
-          <div className="hidden sm:flex items-center gap-4">
-            <Link
-              href="/"
-              className="text-slate-300 hover:text-white text-xs flex items-center gap-1 font-semibold transition-colors"
-            >
-              <ArrowLeft className="h-3 w-3" />
-              Public Site
-            </Link>
-            <button
-              onClick={handleLogout}
-              className="text-rose-400 hover:text-rose-300 text-xs font-semibold flex items-center gap-1 transition-colors"
-            >
-              <LogOut className="h-3 w-3" />
-              Sign Out
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="bg-amber-50 border-b border-amber-200 text-amber-900 px-4 py-2 text-xs font-semibold flex items-center justify-between">
-          <div className="flex items-center gap-2 mx-auto sm:mx-0">
-            <ShieldAlert className="h-4 w-4 shrink-0 text-amber-600" />
-            <span>
-              <strong>DEMONSTRATION PREVIEW MODE</strong> — Displaying interactive live system baseline.
-            </span>
-          </div>
-          <div className="hidden sm:flex items-center gap-3">
-            <Link
-              href="/"
-              className="text-amber-800 hover:text-amber-950 font-semibold text-xs flex items-center gap-1"
-            >
-              <ArrowLeft className="h-3 w-3" /> Landing Page
-            </Link>
-            <Link
-              href="/login"
-              className="text-primary font-bold hover:underline text-xs"
-            >
-              Sign In &rarr;
-            </Link>
-          </div>
-        </div>
-      )}
-
+    <div className="min-h-screen bg-[#FAF8FD] flex flex-col antialiased text-text-primary">
       <div className="flex flex-1 overflow-hidden">
         {/* Desktop Sidebar */}
         <aside
@@ -381,7 +341,7 @@ export function PortalLayout({
               </button>
 
               {/* Global Search Bar */}
-              <div className="relative w-full max-w-xs sm:max-w-md">
+              <form onSubmit={handleSearchSubmit} className="relative w-full max-w-xs sm:max-w-md">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <input
                   type="text"
@@ -390,11 +350,35 @@ export function PortalLayout({
                   placeholder="Search careers, skills, courses, jobs..."
                   className="w-full pl-9 pr-4 py-2 text-xs rounded-full border border-slate-200/90 bg-slate-50/70 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-800 placeholder:text-slate-400"
                 />
-              </div>
+              </form>
             </div>
 
-            {/* Right: Notifications, Streak, User Profile Dropdown */}
-            <div className="flex items-center gap-3">
+            {/* Right: Security Pill, Notifications, Trilingual switcher, Streak, User Profile Dropdown */}
+            <div className="flex items-center gap-2.5">
+              {/* Compact Security Indicator (Task 1) */}
+              {currentUser ? (
+                <div
+                  className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50/90 border border-emerald-200/80 text-[11px] font-semibold text-emerald-800"
+                  title={`KAABIL Secure Session: Signed in as ${currentUser.name} (${currentUser.role}). DPDP Act 2023 protections active.`}
+                >
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </span>
+                  <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                  <span className="hidden xl:inline">DPDP Protected</span>
+                  <span className="xl:hidden">Secure</span>
+                </div>
+              ) : (
+                <div
+                  className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50/90 border border-amber-200/80 text-[11px] font-semibold text-amber-800"
+                  title="Demonstration Preview Mode Active"
+                >
+                  <ShieldAlert className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+                  <span>Preview</span>
+                </div>
+              )}
+
               {/* Notification Bell with unread dot */}
               <button
                 aria-label="Notifications"
@@ -487,6 +471,14 @@ export function PortalLayout({
                       >
                         <Sparkles className="h-3.5 w-3.5 text-slate-400" />
                         Student Portfolio
+                      </Link>
+                      <Link
+                        href="/"
+                        onClick={() => setProfileDropdownOpen(false)}
+                        className="flex items-center gap-2 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+                      >
+                        <ArrowLeft className="h-3 w-3 text-slate-400" />
+                        Public Website
                       </Link>
                     </div>
 
