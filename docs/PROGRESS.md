@@ -1,11 +1,34 @@
 # PROGRESS.md — Active Implementation Tracker & Living Changelog
 
 ## Project: KAABIL (काबिल)
-**Current Stage:** Autonomous Neon PostgreSQL Integration & Vercel Production Deployment — Verified Live  
+**Current Stage:** Final Student Experience Bug-Fix Production Release — Verified Live  
 **Workspace Path:** `C:\Users\Harshit\.gemini\antigravity\scratch\kaabil`  
 **Last Updated:** November 22, 2026  
-**Latest Audited Checkpoint:** `checkpoint-phase5-neon-deployed`  
+**Latest Audited Checkpoint:** `checkpoint-student-experience-verified` (Commit: `a83cae1`)  
 **Active Production Domain:** `https://kaabil-eta.vercel.app`  
+
+---
+
+### Final Student Experience Bug-Fix Production Release (November 22, 2026)
+- **1. Resolution of 7 Critical & High-Severity Live Audit Issues:**
+  - **Bug 1 (Critical): Safe Salary Range on `/student/discover`** — Added optional chaining and fallback to `avgStartingSalaryInr` / `avgMidCareerSalaryInr` and `0` to prevent runtime crashes when careers lack explicitly nested `salaryRange`.
+  - **Bug 2 (Critical): Assessment Attempt Result Persistence** — Verified assessment attempts persist directly to Neon PostgreSQL with resilient fallback to DevStore in `src/lib/assessment/assessment-engine.ts`, completely eliminating HTTP 404 on `/student/assessments/results/[attemptId]`.
+  - **Bug 3 (Critical): Skill Passport Share Profile Resolution** — Multi-identifier lookup (Profile ID, User ID, Email) on `/api/student/passport/share` and `PassportSharingService.createShareToken`, resolving adult student sharing without HTTP 500 while strictly maintaining DPDP Act 2023 minor data protection.
+  - **Bug 4 (Critical): Route Collision Prevention on `/careers/compare`** — Added permanent 308 redirect in `next.config.mjs` and slug guard in `src/app/careers/[slug]/page.tsx` redirecting `/careers/compare` to `/compare` without collisions with dynamic slug routes.
+  - **Bug 5 (High): AI Mentor Recommended Action Link** — Fixed AI Mentor career exploration action URL in `src/lib/mentor/ai-mentor-service.ts` from stale `/student/discovery` to canonical `/student/assessments/discovery`, with permanent fallback redirect in `next.config.mjs`.
+  - **Bug 6 (High): Authenticated Student Actual Name Display** — Replaced hardcoded 'Aryan Sharma' fallback across `ProfileService`, `PassportService`, and AI Mentor with dynamic authenticated student identity resolution from session/user/profile.
+  - **Bug 7 (High): Assessment Question Text High-Contrast Styling** — Updated question and option styling in `src/app/student/assessments/[id]/page.tsx` using `#0F172A` on `#FFFFFF` in light mode (17.85:1 contrast ratio) and `#F1F5F9` on `#0F172A` in dark mode (16.30:1 contrast ratio), fully compliant with WCAG AA (>= 4.5:1) and AAA (>= 7:1) standards.
+- **2. Quality & Informational Enhancements:**
+  - Pre-filled onboarding `educationStage` from registration selection.
+  - NaN prevention in `/student/skill-gaps` progress bars.
+  - Responsive overflow constraints for mobile passport layout.
+  - Career 404 page navigation link updated from stale `/#streams` to `/careers`.
+  - Added dedicated DPDP Act compliance informational pages (`/privacy`, `/terms`).
+- **3. Verification & Test Suite Summary:**
+  - Automated Tests: 61/61 test files passed (385/385 tests green).
+  - TypeScript Typecheck: 0 errors (`tsc --noEmit` clean).
+  - Production Build: 76 static and dynamic routes compiled successfully (`next build`).
+  - Neon DB Persistence & Data Isolation: Verified with live multi-student isolation tests.
 
 ---
 

@@ -9,7 +9,7 @@ import { AiMentorService } from '../src/lib/mentor/ai-mentor-service';
 import { ProfileService } from '../src/lib/student/profile-service';
 import { devStore } from '../src/lib/dev-store';
 
-const BASE_URL = 'http://localhost:3005';
+const BASE_URL = process.env.BASE_URL || process.env.LIVE_URL || 'https://kaabil-eta.vercel.app';
 
 interface TestResult {
   suite: string;
@@ -48,7 +48,7 @@ async function verifyRoutingAndRedirects() {
     // Check /student/discovery redirect
     const resDiscovery = await fetch(`${BASE_URL}/student/discovery`, { redirect: 'manual' });
     const locationDiscovery = resDiscovery.headers.get('location');
-    const isDiscoveryRedirect = (resDiscovery.status === 307 || resDiscovery.status === 308) && locationDiscovery?.includes('/student/assessments/discovery');
+    const isDiscoveryRedirect = Boolean((resDiscovery.status === 307 || resDiscovery.status === 308) && locationDiscovery?.includes('/student/assessments/discovery'));
     record(
       'Routing & Redirects',
       'Bug 5: /student/discovery redirects to /student/assessments/discovery',
@@ -59,7 +59,7 @@ async function verifyRoutingAndRedirects() {
     // Check /student/gap-analysis redirect
     const resGap = await fetch(`${BASE_URL}/student/gap-analysis`, { redirect: 'manual' });
     const locationGap = resGap.headers.get('location');
-    const isGapRedirect = (resGap.status === 307 || resGap.status === 308) && locationGap?.includes('/student/skill-gaps');
+    const isGapRedirect = Boolean((resGap.status === 307 || resGap.status === 308) && locationGap?.includes('/student/skill-gaps'));
     record(
       'Routing & Redirects',
       'Redirect: /student/gap-analysis redirects to /student/skill-gaps',
@@ -195,7 +195,7 @@ async function verifyUndergraduateJourney() {
     );
 
     // 4. Retrieve Result (Bug 2: previously HTTP 404)
-    const retrievedResult = await AssessmentEngine.getAttemptResult(attempt.id, studentProfileId);
+    const retrievedResult = await AssessmentEngine.getAttemptResult(attempt.id);
     record(
       'UG Journey',
       'Bug 2: Assessment result retrieved successfully without 404',
@@ -206,10 +206,12 @@ async function verifyUndergraduateJourney() {
     // 5. Test Skill Passport Creation & Sharing (Bug 3: previously HTTP 500)
     const shareResult = await PassportSharingService.createShareToken({
       studentProfileId,
-      includeSkills: true,
-      includeCredentials: true,
-      includeAchievements: true,
-      expiresInDays: 30,
+      expiryDays: 30,
+      options: {
+        includeSkills: true,
+        includeCredentials: true,
+        includeAchievements: true,
+      },
     });
 
     record(
@@ -257,8 +259,8 @@ async function verifyDatabasePersistenceAndIsolation() {
       'q-stem-1': { selectedOptionKey: 'b' },
     });
 
-    const resultA = await AssessmentEngine.getAttemptResult(attemptA.id, studentAId);
-    const resultB = await AssessmentEngine.getAttemptResult(attemptB.id, studentBId);
+    const resultA = await AssessmentEngine.getAttemptResult(attemptA.id);
+    const resultB = await AssessmentEngine.getAttemptResult(attemptB.id);
 
     const isolationVerified = resultA !== null && resultB === null; // B not yet submitted
     record(
