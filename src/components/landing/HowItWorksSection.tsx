@@ -6,106 +6,91 @@ import {
   Compass,
   ClipboardCheck,
   BookOpenCheck,
-  ShieldCheck,
+  Award,
   Sparkles,
-  Briefcase,
   ArrowRight,
   CheckCircle2,
+  GraduationCap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-const JOURNEY_STEPS = [
-  {
-    step: "01",
-    id: "discover",
-    title: "Discover",
-    subtitle: "Explore 13 Streams",
-    description:
-      "Uncover real aptitude across all 13 educational streams without societal bias. Find where your strengths meet market demand.",
-    icon: Compass,
-    cta: "Explore Careers",
-    href: "/careers",
-    badge: "Diagnostic",
-  },
-  {
-    step: "02",
-    id: "assess",
-    title: "Assess",
-    subtitle: "Calibrated Diagnostics",
-    description:
-      "Take domain-specific checkpoint evaluations to measure your genuine baseline against national industry benchmarks.",
-    icon: ClipboardCheck,
-    cta: "Take Assessment",
-    href: "/student/assessments",
-    badge: "Evaluation",
-  },
-  {
-    step: "03",
-    id: "learn",
-    title: "Learn",
-    subtitle: "Adaptive Roadmap",
-    description:
-      "Follow a personalized 12-week roadmap with bite-sized daily AI micro-missions and vetted learning resources.",
-    icon: BookOpenCheck,
-    cta: "View Roadmap",
-    href: "/student/roadmap",
-    badge: "Personalized",
-  },
-  {
-    step: "04",
-    id: "verify",
-    title: "Verify",
-    subtitle: "Tamper-Evident Passport",
-    description:
-      "Mint your cryptographic Digital Skill Passport. Turn tested abilities into verifiable HMAC-SHA256 credentials.",
-    icon: ShieldCheck,
-    cta: "Skill Passport",
-    href: "/student/passport",
-    badge: "Verified Proof",
-  },
-  {
-    step: "05",
-    id: "match",
-    title: "Match",
-    subtitle: "Explainable AI Match",
-    description:
-      "Connect with opportunities using deterministic skill matching. Understand exact fit scores with zero algorithmic rejection.",
-    icon: Sparkles,
-    cta: "See Matches",
-    href: "/student/opportunities",
-    badge: "Merit Matching",
-  },
-  {
-    step: "06",
-    id: "hire",
-    title: "Get Hired",
-    subtitle: "Direct Placement",
-    description:
-      "Step directly into campus placement drives and verified employer pipelines with audited evidence that speeds up hiring.",
-    icon: Briefcase,
-    cta: "Browse Jobs",
-    href: "/student/opportunities",
-    badge: "Employability",
-  },
-];
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export function HowItWorksSection() {
   const [activeStep, setActiveStep] = useState(0);
+  const { t } = useLanguage();
+
+  const journeySteps = [
+    {
+      step: "01",
+      id: "discover",
+      title: t.step1Title,
+      subtitle: "Discover Your Strengths",
+      description: t.step1Desc,
+      icon: Compass,
+      cta: "Find My Career",
+      href: "/careers",
+      badge: "Easy 5-Min Quiz",
+    },
+    {
+      step: "02",
+      id: "choose",
+      title: t.step2Title,
+      subtitle: "Explore 100+ Careers",
+      description: t.step2Desc,
+      icon: GraduationCap,
+      cta: "Explore Pathways",
+      href: "/careers",
+      badge: "All 13 Streams",
+    },
+    {
+      step: "03",
+      id: "roadmap",
+      title: t.step3Title,
+      subtitle: "Step-by-Step Roadmaps",
+      description: t.step3Desc,
+      icon: BookOpenCheck,
+      cta: "View Roadmap",
+      href: "/student/roadmap",
+      badge: "Personalized",
+    },
+    {
+      step: "04",
+      id: "learn",
+      title: t.step4Title,
+      subtitle: "Check My Skills",
+      description: t.step4Desc,
+      icon: ClipboardCheck,
+      cta: "Check Skills",
+      href: "/student/assessments",
+      badge: "Bite-Sized",
+    },
+    {
+      step: "05",
+      id: "unlock",
+      title: t.step5Title,
+      subtitle: "My Achievements",
+      description: t.step5Desc,
+      icon: Award,
+      cta: "View Achievements",
+      href: "/student/passport",
+      badge: "Verified Proof",
+    },
+  ];
 
   return (
-    <section id="how-it-works" className="py-20 lg:py-28 bg-[#FAF8FC] border-t border-border">
+    <section id="student-journey" className="py-20 lg:py-28 bg-[#FAF8FC] border-t border-border">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
           <div className="inline-flex items-center gap-2 rounded-full border border-purple-200 bg-purple-50 px-4 py-1 text-xs font-bold text-purple-900">
-            <span className="flex h-2 w-2 rounded-full bg-amber-500" />
-            The Universal Journey
+            <span className="flex h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+            Clear Guidance • Zero Confusion
           </div>
           <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900">
-            How KAABIL Works
+            {t.journeyTitle}
           </h2>
           <p className="text-base sm:text-lg text-slate-600 leading-relaxed font-normal">
-            From initial discovery to verified employment: a transparent, evidence-based closed loop for every stream.
+            {t.journeySubtitle}
           </p>
         </div>
 
@@ -116,8 +101,8 @@ export function HowItWorksSection() {
           {/* Connector Line */}
           <div className="absolute top-7 left-12 right-12 h-0.5 bg-gradient-to-r from-purple-200 via-amber-200 to-emerald-200 -z-0" />
 
-          <div className="grid grid-cols-6 gap-4 relative z-10">
-            {JOURNEY_STEPS.map((step, idx) => {
+          <div className="grid grid-cols-5 gap-4 relative z-10">
+            {journeySteps.map((step, idx) => {
               const Icon = step.icon;
               const isActive = activeStep === idx;
 
@@ -159,39 +144,36 @@ export function HowItWorksSection() {
                         isActive ? "text-[#FFC66B]" : "text-purple-700"
                       }`}
                     >
-                      {step.subtitle}
+                      {step.badge}
                     </span>
 
-                    <h3
-                      className={`font-heading text-lg font-bold mb-2 ${
-                        isActive ? "text-white" : "text-slate-900"
-                      }`}
-                    >
+                    <h3 className="font-heading text-base font-bold mb-2">
                       {step.title}
                     </h3>
 
                     <p
-                      className={`text-xs leading-relaxed mb-4 ${
-                        isActive ? "text-slate-200" : "text-slate-600"
+                      className={`text-xs leading-relaxed ${
+                        isActive ? "text-slate-300" : "text-slate-600"
                       }`}
                     >
                       {step.description}
                     </p>
                   </div>
 
-                  <Link href={step.href}>
-                    <Button
-                      size="sm"
-                      className={`w-full h-8 text-xs font-bold rounded-xl transition-all gap-1.5 ${
-                        isActive
-                          ? "bg-[#FFC66B] hover:bg-[#FFA94D] text-[#1E0F2B]"
-                          : "bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200/60"
-                      }`}
-                    >
-                      <span>{step.cta}</span>
-                      <ArrowRight className="h-3 w-3" />
-                    </Button>
-                  </Link>
+                  <div className="pt-4 mt-4 border-t border-white/10">
+                    <Link href={step.href}>
+                      <span
+                        className={`text-xs font-bold inline-flex items-center gap-1.5 transition-colors ${
+                          isActive
+                            ? "text-[#FFC66B] hover:text-[#FFA94D]"
+                            : "text-purple-700 hover:text-purple-900"
+                        }`}
+                      >
+                        <span>{step.cta}</span>
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </span>
+                    </Link>
+                  </div>
                 </div>
               );
             })}
@@ -199,51 +181,74 @@ export function HowItWorksSection() {
         </div>
 
         {/* ==============================================================
-            MOBILE & TABLET VERTICAL TIMELINE (Visible below lg)
+            MOBILE VERTICAL TIMELINE (Visible on mobile/tablet)
            ============================================================== */}
-        <div className="lg:hidden relative pl-6 border-l-2 border-purple-200 space-y-6">
-          {JOURNEY_STEPS.map((step) => {
+        <div className="lg:hidden space-y-4">
+          {journeySteps.map((step) => {
             const Icon = step.icon;
+
             return (
               <div
                 key={step.id}
-                className="relative p-5 rounded-2xl bg-white border border-slate-200/90 shadow-soft-xs"
+                className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-soft-xs space-y-3"
               >
-                {/* Timeline Node Marker */}
-                <div className="absolute -left-[37px] top-4 h-7 w-7 rounded-full bg-[#1E0F2B] border-2 border-[#FFC66B] flex items-center justify-center text-[10px] font-bold text-[#FFC66B]">
-                  {step.step}
-                </div>
-
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <div className="flex items-center gap-2">
-                    <div className="p-1.5 rounded-lg bg-purple-50 text-purple-700">
-                      <Icon className="h-4 w-4" />
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-purple-50 text-purple-800 flex items-center justify-center font-bold">
+                      <Icon className="h-5 w-5" />
                     </div>
-                    <h3 className="font-heading text-base font-bold text-slate-900">
-                      {step.title}
-                    </h3>
+                    <div>
+                      <span className="text-[10px] font-bold text-purple-700 uppercase tracking-wider block">
+                        {step.badge}
+                      </span>
+                      <h3 className="font-heading text-sm font-bold text-slate-900">
+                        {step.title}
+                      </h3>
+                    </div>
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-100 text-purple-800">
-                    {step.badge}
+                  <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">
+                    {step.step}
                   </span>
                 </div>
 
-                <p className="text-xs text-slate-600 leading-relaxed mb-3">
+                <p className="text-xs text-slate-600 leading-relaxed">
                   {step.description}
                 </p>
 
-                <Link href={step.href}>
-                  <Button
-                    size="sm"
-                    className="h-8 px-3 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-900 font-bold text-xs gap-1 border border-purple-200"
+                <div className="pt-2 border-t border-slate-100">
+                  <Link
+                    href={step.href}
+                    className="text-xs font-bold text-purple-700 flex items-center gap-1"
                   >
                     <span>{step.cta}</span>
                     <ArrowRight className="h-3 w-3" />
-                  </Button>
-                </Link>
+                  </Link>
+                </div>
               </div>
             );
           })}
+        </div>
+
+        {/* Bottom Banner Call to Action */}
+        <div className="mt-12 p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-[#251336] via-[#2F1944] to-[#1E0F2B] text-white shadow-xl flex flex-col sm:flex-row items-center justify-between gap-6">
+          <div className="space-y-1.5 text-center sm:text-left">
+            <h4 className="font-heading text-lg sm:text-xl font-bold text-[#FFF5E9]">
+              Ready to take your first confident step?
+            </h4>
+            <p className="text-xs sm:text-sm text-slate-300 max-w-xl">
+              100% Free for students. No paid subscriptions, no ads, and full privacy protection under the DPDP Act.
+            </p>
+          </div>
+          <Link href="/register" className="shrink-0">
+            <Button
+              size="lg"
+              className="bg-gradient-to-r from-[#FFC66B] to-[#FFA94D] text-[#1E0F2B] font-extrabold text-xs sm:text-sm h-11 px-6 rounded-xl hover:opacity-95 shadow-md gap-2"
+            >
+              <Sparkles className="h-4 w-4" />
+              <span>Get Started Free</span>
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </Link>
         </div>
       </div>
     </section>

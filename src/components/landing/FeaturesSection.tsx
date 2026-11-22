@@ -52,25 +52,25 @@ export function FeaturesSection() {
     },
     {
       id: "skill-gaps",
-      title: "Skill Gap Analyzer",
-      badge: "Benchmark Diagnostics",
+      title: "What Should I Learn?",
+      badge: "Skill Clarity",
       icon: SlidersHorizontal,
       iconColor: "text-purple-600 bg-purple-600/10 border-purple-600/20",
       description:
-        "Deterministic gap analysis comparing your genuine capabilities against official Indian industry benchmarks (AICTE, NMC, ICAI, BCI).",
+        "Understand exactly which skills you already have, and which ones you need for your dream career without confusing industry jargon.",
       href: "/student/skill-gaps",
-      cta: "Analyze My Gaps",
+      cta: "Explore Skills",
       visualization: (
         <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-2">
           <div className="flex justify-between text-[11px]">
-            <span className="font-semibold text-slate-700">Python Systems Architecture</span>
-            <span className="font-bold text-amber-600">Gap: 18%</span>
+            <span className="font-semibold text-slate-700">Core Problem Solving</span>
+            <span className="font-bold text-emerald-600">On Track: 85%</span>
           </div>
           <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
-            <div className="bg-purple-600 h-full rounded-full" style={{ width: "82%" }} />
+            <div className="bg-purple-600 h-full rounded-full" style={{ width: "85%" }} />
           </div>
           <div className="flex justify-between text-[10px] text-slate-500">
-            <span>Current: 82%</span>
+            <span>Current: 85%</span>
             <span>Target: 100%</span>
           </div>
         </div>
@@ -78,53 +78,53 @@ export function FeaturesSection() {
     },
     {
       id: "roadmap",
-      title: "Personalized Career Roadmap",
-      badge: "Adaptive Milestones",
+      title: "My Career Roadmap",
+      badge: "Step-by-Step",
       icon: Map,
       iconColor: "text-blue-600 bg-blue-600/10 border-blue-600/20",
       description:
-        "Dynamic 4 to 12-week action plans with bite-sized daily micro-learning missions and milestone quizzes tailored to your target role.",
+        "Clear, bite-sized weekly milestones tailored to your current grade—so you always know your exact next step.",
       href: "/student/roadmap",
       cta: "View Roadmap",
       visualization: (
         <div className="p-3.5 rounded-xl bg-blue-50/60 border border-blue-100 text-xs space-y-1.5">
           <div className="flex items-center justify-between text-[10px] font-bold text-blue-900">
-            <span>Week 3 of 12: Core Foundations</span>
+            <span>Week 3: Core Foundations</span>
             <span className="text-emerald-700 flex items-center gap-0.5">
               <CheckCircle2 className="h-3 w-3" /> 2/3 Complete
             </span>
           </div>
           <div className="flex items-center gap-2 text-[11px] text-slate-700">
             <input type="checkbox" checked readOnly className="rounded text-blue-600" />
-            <span className="line-through text-slate-400">Model Containerization Basics</span>
+            <span className="line-through text-slate-400">Foundation Concepts</span>
           </div>
           <div className="flex items-center gap-2 text-[11px] text-slate-700">
             <input type="checkbox" readOnly className="rounded text-blue-600" />
-            <span className="font-semibold text-slate-800">FastAPI Async Endpoint Serving</span>
+            <span className="font-semibold text-slate-800">Hands-on Mini Practice</span>
           </div>
         </div>
       ),
     },
     {
       id: "assessments",
-      title: "Assessments & Skill Verification",
-      badge: "Cryptographic Evidence",
+      title: "Check My Skills & Achievements",
+      badge: "Verified Proof",
       icon: ShieldCheck,
       iconColor: "text-emerald-600 bg-emerald-600/10 border-emerald-600/20",
       description:
-        "Timed rubric evaluations and practical work trials that mint tamper-evident Digital Skill Evidence with HMAC-SHA256 signatures.",
+        "Fun, pressure-free skill checkpoints that award verifiable digital achievement badges you can share with pride.",
       href: "/student/assessments",
-      cta: "Start Assessment",
+      cta: "Check My Skills",
       visualization: (
         <div className="p-3.5 rounded-xl bg-emerald-50/60 border border-emerald-100 text-xs space-y-2">
           <div className="flex items-center justify-between">
-            <span className="font-bold text-emerald-950 text-[11px]">Algorithmic Evaluation</span>
+            <span className="font-bold text-emerald-950 text-[11px]">Skill Checkpoint</span>
             <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">
               Verified 92%
             </span>
           </div>
-          <div className="font-mono text-[9px] text-slate-500 truncate">
-            sig: sha256:7f83b1657ff1fc53b92dc181...
+          <div className="text-[10px] text-emerald-800 flex items-center gap-1">
+            <Award className="h-3 w-3 text-emerald-600" /> Recognized Certificate &amp; Digital Badge
           </div>
         </div>
       ),

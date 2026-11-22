@@ -13,14 +13,18 @@ import {
   Compass,
   Sparkles,
   ChevronRight,
+  Globe,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { KaabilLogo } from "@/components/shared/KaabilLogo";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { Language } from "@/lib/i18n/translations";
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const pathname = usePathname();
+  const { language, setLanguage, t } = useLanguage();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -32,9 +36,9 @@ export function Navbar() {
 
   const navLinks = [
     { label: "Home", href: "/" },
-    { label: "Explore Careers", href: "/careers", icon: <Compass className="h-3.5 w-3.5 text-[#FFC66B]" /> },
-    { label: "Features", href: "/#features", icon: <Sparkles className="h-3.5 w-3.5 text-[#E68AAB]" /> },
-    { label: "For Students", href: "/#portals", icon: <GraduationCap className="h-3.5 w-3.5 text-emerald-400" /> },
+    { label: t.findMyCareer, href: "/careers", icon: <Compass className="h-3.5 w-3.5 text-[#FFC66B]" /> },
+    { label: "Student Journey", href: "/#student-journey", icon: <Sparkles className="h-3.5 w-3.5 text-[#E68AAB]" /> },
+    { label: "Compare Courses", href: "/compare", icon: <GraduationCap className="h-3.5 w-3.5 text-emerald-400" /> },
     { label: "For Institutions", href: "/institution/dashboard", icon: <Building2 className="h-3.5 w-3.5 text-purple-300" /> },
     { label: "For Employers", href: "/employer/dashboard", icon: <Briefcase className="h-3.5 w-3.5 text-[#FFA94D]" /> },
   ];
@@ -44,7 +48,7 @@ export function Navbar() {
       className={`sticky top-0 z-40 w-full transition-all duration-300 ${
         isScrolled
           ? "bg-[#1E0F2B]/95 backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.35)] border-b border-[#56316F]/40"
-          : "bg-[#251336]/80 backdrop-blur-md border-b border-white/10"
+          : "bg-[#251336]/85 backdrop-blur-md border-b border-white/10"
       }`}
     >
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -52,7 +56,7 @@ export function Navbar() {
         <KaabilLogo variant="sidebar-dark" size="md" href="/" />
 
         {/* Desktop Navigation Links */}
-        <nav className="hidden xl:flex items-center gap-6">
+        <nav className="hidden xl:flex items-center gap-5">
           {navLinks.map((link) => {
             const isExact = pathname === link.href;
             return (
@@ -72,8 +76,28 @@ export function Navbar() {
           })}
         </nav>
 
-        {/* Right Action Buttons */}
+        {/* Right Action Buttons & Language Switcher */}
         <div className="hidden sm:flex items-center gap-3">
+          {/* Language Toggle Pill */}
+          <div className="flex items-center p-1 rounded-xl bg-white/10 border border-white/15 text-xs text-[#FFF5E9]">
+            <span className="px-1.5 py-0.5 text-[10px] text-[#FFC66B] flex items-center gap-1">
+              <Globe className="h-3 w-3" />
+            </span>
+            {(["en", "hi", "hinglish"] as Language[]).map((lang) => (
+              <button
+                key={lang}
+                onClick={() => setLanguage(lang)}
+                className={`px-2 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                  language === lang
+                    ? "bg-[#FFC66B] text-[#1E0F2B] shadow-xs"
+                    : "text-[#FFF5E9]/75 hover:text-white"
+                }`}
+              >
+                {lang === "en" ? "EN" : lang === "hi" ? "हिन्दी" : "Hinglish"}
+              </button>
+            ))}
+          </div>
+
           <Link href="/login">
             <Button
               variant="ghost"
@@ -88,7 +112,7 @@ export function Navbar() {
               size="sm"
               className="bg-gradient-to-r from-[#FFC66B] via-[#FFA94D] to-[#F59E0B] hover:from-[#FFD285] hover:to-[#E08D07] text-[#1E0F2B] font-extrabold text-xs h-10 px-5 rounded-xl shadow-[0_4px_16px_rgba(255,198,107,0.35)] hover:scale-[1.02] transition-all gap-1.5 active:scale-95"
             >
-              <span>Get Started</span>
+              <span>{t.primaryCta}</span>
               <ArrowRight className="h-3.5 w-3.5 text-[#1E0F2B]" />
             </Button>
           </Link>
@@ -96,11 +120,22 @@ export function Navbar() {
 
         {/* Mobile Menu Toggle Button */}
         <div className="flex xl:hidden items-center gap-2">
+          {/* Mobile Language selector */}
+          <button
+            onClick={() => {
+              const next = language === "en" ? "hi" : language === "hi" ? "hinglish" : "en";
+              setLanguage(next);
+            }}
+            className="text-[10px] font-bold px-2 py-1 rounded-lg bg-white/10 text-[#FFC66B] border border-white/10"
+          >
+            {language === "en" ? "EN" : language === "hi" ? "हिन्दी" : "Hinglish"}
+          </button>
+
           <Link href="/login" className="sm:hidden">
             <Button
               variant="ghost"
               size="sm"
-              className="text-xs font-bold text-[#FFF5E9]/80 h-9 px-2.5 rounded-lg"
+              className="text-xs font-bold text-[#FFF5E9]/80 h-9 px-2 rounded-lg"
             >
               Sign In
             </Button>
@@ -149,7 +184,7 @@ export function Navbar() {
               onClick={() => setMobileMenuOpen(false)}
               className="w-full text-center py-2.5 rounded-xl bg-gradient-to-r from-[#FFC66B] to-[#FFA94D] text-[#1E0F2B] text-xs font-extrabold shadow-md flex items-center justify-center gap-2"
             >
-              <span>Get Started</span>
+              <span>{t.primaryCta}</span>
               <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>

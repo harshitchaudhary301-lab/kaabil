@@ -9,12 +9,14 @@ import {
   BookOpen,
   Map,
   CheckCircle2,
-  ShieldCheck,
+  Award,
   FileText,
   Mic,
   Briefcase,
   Trophy,
   Settings,
+  Scale,
+  GraduationCap,
 } from "lucide-react";
 import { NavItem } from "@/components/shared/PortalLayout";
 
@@ -30,99 +32,91 @@ export const STUDENT_NAV_ITEMS: NavItem[] = [
   {
     title: "AI Career Mentor",
     href: "/student/mentor",
-    icon: <Bot className="h-4 w-4" />,
-    badge: "AI",
+    icon: <Bot className="h-4 w-4 text-purple-600" />,
+    badge: "Trilingual",
     category: "Main",
   },
-  // 3. Explore Careers
+  // 3. Find My Career (Simplified from Explore Careers)
   {
-    title: "Explore Careers",
+    title: "Find My Career",
     href: "/student/discover",
-    icon: <Compass className="h-4 w-4" />,
+    icon: <Compass className="h-4 w-4 text-amber-500" />,
     category: "Explore",
   },
-  // 4. Career Readiness
+  // 4. Compare Courses & Degrees
   {
-    title: "Career Readiness",
-    href: "/student/readiness",
-    icon: <TrendingUp className="h-4 w-4" />,
-    badge: "CRI",
+    title: "Compare Courses",
+    href: "/compare",
+    icon: <Scale className="h-4 w-4 text-indigo-500" />,
     category: "Explore",
   },
-  // 5. Skill Assessment
+  // 5. Check My Skills (Simplified from Skill Assessment)
   {
-    title: "Skill Assessment",
+    title: "Check My Skills",
     href: "/student/assessments",
-    icon: <ClipboardCheck className="h-4 w-4" />,
+    icon: <ClipboardCheck className="h-4 w-4 text-emerald-600" />,
     category: "Competence",
   },
-  // 6. Skill Gap Analyzer
+  // 6. What Should I Learn? (Simplified from Skill Gap Analyzer)
   {
-    title: "Skill Gap Analyzer",
+    title: "What Should I Learn?",
     href: "/student/skill-gaps",
-    icon: <SlidersHorizontal className="h-4 w-4" />,
+    icon: <SlidersHorizontal className="h-4 w-4 text-blue-600" />,
     category: "Competence",
   },
-  // 7. My Learning
+  // 7. Learn New Skills (Simplified from My Learning)
   {
-    title: "My Learning",
+    title: "Learn New Skills",
     href: "/student/academy",
-    icon: <BookOpen className="h-4 w-4" />,
+    icon: <BookOpen className="h-4 w-4 text-cyan-600" />,
     category: "Competence",
   },
-  // 8. Career Roadmap
+  // 8. My Career Roadmap (Personalized roadmap)
   {
-    title: "Career Roadmap",
+    title: "My Career Roadmap",
     href: "/student/roadmap",
-    icon: <Map className="h-4 w-4" />,
+    icon: <Map className="h-4 w-4 text-purple-600" />,
     category: "Planning",
   },
-  // 9. Project Challenges
+  // 9. Practical Projects (Hands-on practice)
   {
-    title: "Project Challenges",
+    title: "Practical Projects",
     href: "/student/challenges",
-    icon: <CheckCircle2 className="h-4 w-4" />,
+    icon: <CheckCircle2 className="h-4 w-4 text-emerald-600" />,
     category: "Evidence",
   },
-  // 10. Digital Skill Passport
+  // 10. My Achievements (Simplified from Digital Skill Passport)
   {
-    title: "Digital Skill Passport",
+    title: "My Achievements",
     href: "/student/passport",
-    icon: <ShieldCheck className="h-4 w-4" />,
+    icon: <Award className="h-4 w-4 text-amber-500" />,
     badge: "Verified",
     category: "Evidence",
   },
-  // 11. Resume Studio
+  // 11. Resume Builder
   {
-    title: "Resume Studio",
+    title: "Resume Builder",
     href: "/student/resume",
-    icon: <FileText className="h-4 w-4" />,
+    icon: <FileText className="h-4 w-4 text-indigo-600" />,
     category: "Employability",
   },
-  // 12. Interview Lab
+  // 12. Interview Practice
   {
-    title: "Interview Lab",
+    title: "Interview Practice",
     href: "/student/interview-lab",
-    icon: <Mic className="h-4 w-4" />,
+    icon: <Mic className="h-4 w-4 text-pink-600" />,
     category: "Employability",
   },
-  // 13. Jobs & Internships
+  // 13. Internships & Opportunities
   {
-    title: "Jobs & Internships",
+    title: "Opportunities",
     href: "/student/opportunities",
-    icon: <Briefcase className="h-4 w-4" />,
+    icon: <Briefcase className="h-4 w-4 text-sky-600" />,
     category: "Employability",
   },
-  // 14. Achievements
+  // 14. Settings
   {
-    title: "Achievements",
-    href: "/student/portfolio",
-    icon: <Trophy className="h-4 w-4" />,
-    category: "Growth",
-  },
-  // 15. Settings
-  {
-    title: "Settings",
+    title: "Settings & Privacy",
     href: "/student/settings",
     icon: <Settings className="h-4 w-4" />,
     category: "Account",

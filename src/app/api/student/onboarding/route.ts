@@ -46,7 +46,9 @@ const onboardingSchema = z.object({
     "HOSPITALITY_TOURISM",
     "INTERDISCIPLINARY",
     "UNDECIDED",
-  ]),
+  ]).optional().default("UNDECIDED"),
+  goalClarity: z.string().optional(),
+  primaryNeed: z.string().optional(),
   selectedStreams: z.array(
     z.enum([
       "MEDICAL_PCB",

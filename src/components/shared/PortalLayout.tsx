@@ -23,10 +23,13 @@ import {
   Bell,
   PanelLeftClose,
   PanelLeftOpen,
+  Globe,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { KaabilLogo } from "@/components/shared/KaabilLogo";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { Language } from "@/lib/i18n/translations";
 
 export interface NavItem {
   title: string;
@@ -53,6 +56,7 @@ export function PortalLayout({
 }: PortalLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const { language, setLanguage } = useLanguage();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -399,6 +403,26 @@ export function PortalLayout({
                 <Bell className="h-4 w-4" />
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white" />
               </button>
+
+              {/* Trilingual Switcher Pill */}
+              <div className="flex items-center p-0.5 rounded-full bg-slate-100 border border-slate-200/80 text-[11px] font-bold">
+                <span className="px-1 text-slate-400">
+                  <Globe className="h-3 w-3" />
+                </span>
+                {(["en", "hi", "hinglish"] as Language[]).map((lang) => (
+                  <button
+                    key={lang}
+                    onClick={() => setLanguage(lang)}
+                    className={`px-2 py-0.5 rounded-full transition-all ${
+                      language === lang
+                        ? "bg-purple-700 text-white shadow-xs font-bold"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    {lang === "en" ? "EN" : lang === "hi" ? "हिन्दी" : "Hing"}
+                  </button>
+                ))}
+              </div>
 
               {/* 7 Day Streak Pill */}
               <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200/80 text-amber-800 text-xs font-semibold select-none">
