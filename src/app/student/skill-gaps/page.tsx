@@ -196,14 +196,14 @@ export default function SkillGapAnalyzerPage() {
                   </div>
                   <div className="flex items-baseline gap-2">
                     <span className="text-3xl font-extrabold text-slate-900">
-                      {analysis.overallCoveragePercent}%
+                      {analysis.overallCoveragePercent ?? 0}%
                     </span>
                     <span className="text-xs text-slate-500 font-medium">Weighted</span>
                   </div>
                   <div className="w-full bg-slate-100 rounded-full h-2 mt-3 overflow-hidden">
                     <div
                       className="bg-primary h-full rounded-full transition-all duration-500"
-                      style={{ width: `${analysis.overallCoveragePercent}%` }}
+                      style={{ width: `${analysis.overallCoveragePercent ?? 0}%` }}
                     />
                   </div>
                 </CardContent>
@@ -217,14 +217,14 @@ export default function SkillGapAnalyzerPage() {
                   </div>
                   <div className="flex items-baseline gap-2">
                     <span className="text-3xl font-extrabold text-slate-900">
-                      {analysis.mandatoryCoveragePercent}%
+                      {analysis.mandatoryCoveragePercent ?? 0}%
                     </span>
                     <span className="text-xs text-slate-500 font-medium">Core Requirements</span>
                   </div>
                   <div className="w-full bg-slate-100 rounded-full h-2 mt-3 overflow-hidden">
                     <div
                       className="bg-emerald-500 h-full rounded-full transition-all duration-500"
-                      style={{ width: `${analysis.mandatoryCoveragePercent}%` }}
+                      style={{ width: `${analysis.mandatoryCoveragePercent ?? 0}%` }}
                     />
                   </div>
                 </CardContent>

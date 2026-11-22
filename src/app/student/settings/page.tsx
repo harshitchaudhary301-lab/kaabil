@@ -169,7 +169,7 @@ export default function StudentSettingsPage() {
             <div className="p-3.5 rounded-2xl bg-slate-50 border border-border">
               <span className="text-[10px] text-text-muted uppercase font-bold block">Full Name</span>
               <span className="text-sm font-semibold text-text-primary">
-                {user?.name || "Aryan Sharma"}
+                {user?.name || "Student"}
               </span>
             </div>
 

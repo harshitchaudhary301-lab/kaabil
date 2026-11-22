@@ -101,7 +101,7 @@ export default function StudentAcademyPage() {
           [resItem.id]: {
             ...prev[resItem.id],
             id: prev[resItem.id]?.id || `prog-${resItem.id}`,
-            studentId: "aryan-sharma-pcm",
+            studentId: prev[resItem.id]?.studentId || "student",
             resourceId: resItem.id,
             status: nextStatus,
             progressPct: nextPct,

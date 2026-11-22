@@ -53,6 +53,11 @@ export default function CareerDetailPage() {
   const [eligibilityResult, setEligibilityResult] = useState<any>(null);
 
   useEffect(() => {
+    if (slug === "compare") {
+      router.replace("/compare");
+      return;
+    }
+
     async function fetchCareer() {
       setLoading(true);
       try {
@@ -147,7 +152,7 @@ export default function CareerDetailPage() {
           <p className="text-xs text-text-secondary">
             The requested career slug &quot;{slug}&quot; does not match any published record in the KAABIL intelligence registry.
           </p>
-          <Link href="/#streams">
+          <Link href="/careers">
             <Button variant="gradient" className="w-full">
               Back to Career Explorer
             </Button>

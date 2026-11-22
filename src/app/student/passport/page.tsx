@@ -303,7 +303,7 @@ export default function DigitalSkillPassportPage() {
                   {/* Passport Integrity Checksum */}
                   <div className="pt-1 flex items-center gap-2 text-[11px] text-purple-300/80 font-mono">
                     <Lock className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
-                    <span className="truncate max-w-xs sm:max-w-md">
+                    <span className="truncate max-w-[200px] sm:max-w-md">
                       Checksum: {passport.passportIntegrityChecksum}
                     </span>
                     <button
@@ -317,7 +317,7 @@ export default function DigitalSkillPassportPage() {
                 </div>
 
                 {/* Right Actions & Readiness Badge */}
-                <div className="flex flex-col sm:flex-row md:flex-col items-start md:items-end gap-3 shrink-0">
+                <div className="flex flex-wrap sm:flex-row md:flex-col items-start md:items-end gap-3 w-full sm:w-auto">
                   <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-white/10">
                     <span className="text-xs text-purple-200 font-medium">Career Readiness:</span>
                     {passport.summary.currentCRI !== null ? (

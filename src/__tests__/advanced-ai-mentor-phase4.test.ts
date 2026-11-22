@@ -298,7 +298,7 @@ describe("Phase 4: Advanced AI Career Mentor & Personalization", () => {
       // Ensures parity across diverse streams
       expect(reply.content).toMatch(/PCB|PCM|Commerce|Arts|Design/i);
       expect(reply.actionProposal?.type).toBe("CAREER_EXPLORATION");
-      expect(reply.actionProposal?.actionUrl).toBe("/student/discovery");
+      expect(reply.actionProposal?.actionUrl).toBe("/student/assessments/discovery");
     });
   });
 

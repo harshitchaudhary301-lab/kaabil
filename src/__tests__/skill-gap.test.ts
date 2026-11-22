@@ -11,7 +11,8 @@ describe("Intelligent Skill Gap Analyzer Engine", () => {
   const profileId = "demo-profile-id";
 
   beforeEach(() => {
-    // Ensure demo student profile exists
+    // Ensure demo student profile exists with default skills
+    devStore.reset();
     const profile = devStore.getProfile(profileId);
     expect(profile).toBeDefined();
   });

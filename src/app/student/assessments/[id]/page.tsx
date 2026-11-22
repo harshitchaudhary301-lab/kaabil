@@ -211,24 +211,24 @@ export default function AssessmentTakingPage() {
         </div>
 
         {/* Active Question Card */}
-        <Card className="border-slate-200 shadow-xs dark:border-slate-800">
+        <Card className="border-slate-200 shadow-xs dark:border-slate-800 bg-white dark:bg-slate-900">
           <CardHeader className="p-6 pb-4 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center justify-between">
-              <Badge variant="outline" className="text-xs">
+              <Badge variant="outline" className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                 Question {currentQuestionIndex + 1} of {totalQuestions}
               </Badge>
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="secondary" className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                 {currentQ.points} Points
               </Badge>
             </div>
 
-            <CardTitle className="mt-4 text-base sm:text-lg font-semibold leading-relaxed text-slate-900 dark:text-slate-100 whitespace-pre-wrap">
+            <CardTitle className="mt-4 text-base sm:text-lg font-bold leading-relaxed text-slate-900 dark:text-slate-100 whitespace-pre-wrap">
               {currentQ.questionText}
             </CardTitle>
           </CardHeader>
 
           <CardContent className="p-6 space-y-3">
-            <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+            <div className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2">
               Select one correct option:
             </div>
 
@@ -241,19 +241,21 @@ export default function AssessmentTakingPage() {
                   className={`flex w-full items-start gap-3.5 rounded-xl border p-4 text-left transition-all ${
                     isSelected
                       ? "border-primary bg-primary/5 text-primary shadow-xs ring-1 ring-primary dark:bg-primary/10"
-                      : "border-slate-200 bg-white text-slate-800 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800/60"
+                      : "border-slate-300 bg-white text-slate-900 hover:border-slate-400 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800/60"
                   }`}
                 >
                   <span
                     className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-colors ${
                       isSelected
                         ? "bg-primary text-white"
-                        : "border border-slate-300 bg-slate-100 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                        : "border border-slate-400 bg-slate-100 text-slate-800 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200"
                     }`}
                   >
                     {opt.optionKey}
                   </span>
-                  <span className="text-xs sm:text-sm leading-relaxed mt-0.5">{opt.optionText}</span>
+                  <span className="text-xs sm:text-sm leading-relaxed mt-0.5 text-slate-900 dark:text-slate-100 font-medium">
+                    {opt.optionText}
+                  </span>
                 </button>
               );
             })}

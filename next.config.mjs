@@ -21,6 +21,16 @@ const nextConfig = {
         destination: '/student/skill-gaps',
         permanent: true,
       },
+      {
+        source: '/careers/compare',
+        destination: '/compare',
+        permanent: true,
+      },
+      {
+        source: '/student/discovery',
+        destination: '/student/assessments/discovery',
+        permanent: true,
+      },
     ];
   },
   async headers() {

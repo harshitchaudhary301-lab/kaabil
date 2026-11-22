@@ -43,7 +43,9 @@ interface Recommendation {
     stream: string;
     domain: string;
     description: string;
-    salaryRange: { entry: number; median: number; senior: number };
+    salaryRange?: { entry: number; median: number; senior: number };
+    avgStartingSalaryInr?: number;
+    avgMidCareerSalaryInr?: number;
     growthOutlook: string;
     automationRisk: string;
     regulatoryBody: string;
@@ -522,13 +524,13 @@ export default function StudentDiscoverPage() {
                           <div className="flex justify-between">
                             <span className="text-text-secondary">Entry Salary:</span>
                             <span className="font-semibold text-text-primary">
-                              ₹{(rec.career.salaryRange.entry / 100000).toFixed(1)} L/yr
+                              ₹{(((rec.career.salaryRange?.entry ?? rec.career.avgStartingSalaryInr ?? 0)) / 100000).toFixed(1)} L/yr
                             </span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-text-secondary">Median (5 Yrs):</span>
                             <span className="font-semibold text-emerald-700">
-                              ₹{(rec.career.salaryRange.median / 100000).toFixed(1)} L/yr
+                              ₹{(((rec.career.salaryRange?.median ?? rec.career.avgMidCareerSalaryInr ?? 0)) / 100000).toFixed(1)} L/yr
                             </span>
                           </div>
                           <div className="flex justify-between">

@@ -1,11 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth/session";
+import { prisma } from "@/lib/db";
 import { PassportSharingService } from "@/lib/passport/sharing-service";
 
 export async function POST(req: NextRequest) {
   try {
     const user = await getSessionUser();
-    const profileId = user?.studentProfile?.id || "demo-profile-id";
+    let profileId = user?.studentProfile?.id;
+    if (!profileId && user?.id) {
+      try {
+        const dbProfile = await prisma.studentProfile.findFirst({
+          where: { userId: user.id },
+          select: { id: true },
+        });
+        profileId = dbProfile?.id || user.id;
+      } catch {}
+    }
+    if (!profileId) profileId = "demo-profile-id";
     const isMinor = user?.isMinor ?? false;
 
     const body = await req.json().catch(() => ({}));

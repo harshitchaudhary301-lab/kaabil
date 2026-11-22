@@ -57,6 +57,30 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DISCOVERY_QUESTIONS, DiscoveryQuestion } from "@/data/discoveryQuestions";
 
+const STREAM_LABELS: Record<string, string> = {
+  MEDICAL_PCB: "Medical & Healthcare (PCB)",
+  NON_MEDICAL_PCM: "Non-Medical / STEM (PCM)",
+  COMMERCE: "Commerce & Finance",
+  ARTS_HUMANITIES: "Arts & Humanities",
+  LAW: "Law & Legal Studies",
+  MANAGEMENT: "Management & Business",
+  CREATIVE_DESIGN: "Creative Arts & Design",
+  CREATIVE_ARTS_DESIGN: "Creative Arts & Design",
+  AGRICULTURE: "Agriculture & Food Tech",
+  VOCATIONAL_TRADES: "Vocational & Technical Trades",
+  VOCATIONAL_SKILLED: "Vocational & Technical Trades",
+  SPORTS_PHYSICAL_ED: "Sports & Physical Education",
+  SPORTS: "Sports & Physical Education",
+  HOSPITALITY_TOURISM: "Hospitality & Tourism",
+  INTERDISCIPLINARY: "Interdisciplinary & Emerging",
+  UNDECIDED: "Undecided / Exploring",
+};
+
+function formatStreamLabel(stream?: string): string {
+  if (!stream) return "General Stream";
+  return STREAM_LABELS[stream] || stream.replace(/_/g, " ");
+}
+
 // Icon mapping helper
 const ICON_MAP: Record<string, React.ElementType> = {
   Stethoscope,
@@ -513,11 +537,11 @@ export default function DiscoveryAssessmentPage() {
                   </h4>
                   <div className="flex flex-wrap gap-2">
                     <Badge className="bg-primary text-white text-xs px-3 py-1 font-semibold">
-                      {result.assessmentResult?.primaryStream}
+                      {formatStreamLabel(result.assessmentResult?.primaryStream)}
                     </Badge>
                     {result.assessmentResult?.topStreams?.map((st: string) => (
-                      <Badge key={st} variant="outline" className="bg-white border-slate-200 text-slate-700 text-xs">
-                        {st}
+                      <Badge key={st} variant="outline" className="bg-white border-slate-200 text-slate-700 text-xs font-medium">
+                        {formatStreamLabel(st)}
                       </Badge>
                     ))}
                   </div>

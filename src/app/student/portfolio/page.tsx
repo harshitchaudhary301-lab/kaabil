@@ -48,7 +48,10 @@ export default function StudentPortfolioPage() {
   }, []);
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText("https://kaabil.in/p/aryan-sharma");
+    const slug = studentData?.personalInfo?.fullName
+      ? studentData.personalInfo.fullName.toLowerCase().replace(/\s+/g, "-")
+      : "student";
+    navigator.clipboard.writeText(`https://kaabil.in/p/${slug}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -120,7 +123,7 @@ export default function StudentPortfolioPage() {
               <div>
                 <div className="flex items-center gap-2">
                   <h2 className="font-heading text-xl md:text-2xl font-bold text-text-primary">
-                    {studentData?.personalInfo?.fullName || "Aryan Sharma"}
+                    {studentData?.personalInfo?.fullName || "Student"}
                   </h2>
                   <span title="KAABIL Identity Verified">
                     <ShieldCheck className="h-5 w-5 text-emerald-600" />

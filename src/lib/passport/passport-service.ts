@@ -162,8 +162,13 @@ export class PassportService {
     try {
       const conn = await checkDatabaseConnection();
       if (conn.connected && db?.studentProfile) {
-        profile = await db.studentProfile.findUnique({
-          where: { id: studentProfileId },
+        profile = await db.studentProfile.findFirst({
+          where: {
+            OR: [
+              { id: studentProfileId },
+              { userId: studentProfileId },
+            ],
+          },
           include: {
             user: true,
             userSkills: { include: { skill: true } },
@@ -492,8 +497,8 @@ export class PassportService {
     return {
       passportId,
       studentProfileId: pid,
-      studentName: profile.user?.name || "Aryan Sharma",
-      studentEmail: profile.user?.email || "demo.student@kaabil.in",
+      studentName: profile.user?.name || profile.name || "Student",
+      studentEmail: profile.user?.email || profile.email || "student@kaabil.in",
       generatedAt,
       passportIntegrityChecksum,
       education: {

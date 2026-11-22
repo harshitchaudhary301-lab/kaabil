@@ -99,16 +99,16 @@ export default function AssessmentResultPage() {
         navItems={STUDENT_NAV}
         breadcrumbs={["Dashboard", "Skill Assessments", "Results"]}
       >
-        <div className="rounded-2xl border border-dashed border-slate-300 p-12 text-center dark:border-slate-800">
-          <Award className="mx-auto h-10 w-10 text-slate-400" />
-          <h3 className="mt-3 text-base font-semibold text-slate-800 dark:text-slate-200">
+        <div className="rounded-2xl border border-dashed border-slate-300 p-12 text-center bg-white dark:bg-slate-900 dark:border-slate-800">
+          <Award className="mx-auto h-10 w-10 text-slate-500 dark:text-slate-400" />
+          <h3 className="mt-3 text-base font-bold text-slate-900 dark:text-slate-100">
             Assessment Result Not Found
           </h3>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
             The attempt record could not be located.
           </p>
           <Link href="/student/assessments" className="mt-4 inline-block">
-            <Button size="sm" className="bg-primary hover:bg-primary/90">
+            <Button size="sm" className="bg-primary hover:bg-primary/90 text-white font-semibold">
               Return to Assessments
             </Button>
           </Link>

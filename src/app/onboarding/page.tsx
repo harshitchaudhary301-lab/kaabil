@@ -170,6 +170,18 @@ export default function SmartOnboardingPage() {
             }
           }
         }
+
+        // Pre-fill educationStage from user profile if not set in stepData
+        try {
+          const profRes = await fetch("/api/student/profile");
+          if (profRes.ok) {
+            const profData = await profRes.json();
+            const stage = profData?.profile?.academic?.stage || profData?.profile?.educationStage;
+            if (stage) {
+              setEducationStage(stage);
+            }
+          }
+        } catch {}
       } catch {
         // Ignore offline or initial state
       }

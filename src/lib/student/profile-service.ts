@@ -37,7 +37,11 @@ export class ProfileService {
         try {
           dbUser = await prisma.user.findFirst({
             where: {
-              OR: [{ id: userIdOrEmail }, { email: userIdOrEmail }],
+              OR: [
+                { id: userIdOrEmail },
+                { email: userIdOrEmail },
+                { studentProfile: { id: userIdOrEmail } },
+              ],
             },
             include: {
               studentProfile: {
@@ -63,6 +67,35 @@ export class ProfileService {
 
         if (dbUser && dbUser.studentProfile) {
           return this.mapPrismaToProfileView(dbUser, dbUser.studentProfile);
+        }
+
+        if (!dbUser) {
+          try {
+            const dbProf = await prisma.studentProfile.findFirst({
+              where: {
+                OR: [{ id: userIdOrEmail }, { userId: userIdOrEmail }],
+              },
+              include: {
+                user: true,
+                educationalHistory: true,
+                interests: true,
+                careerGoals: { include: { careerPath: true } },
+                userSkills: { include: { skill: true } },
+                skillEvidences: true,
+                privacyPreference: true,
+                assessmentAttempts: {
+                  include: { assessment: true, result: true },
+                  orderBy: { completedAt: "desc" },
+                  take: 5,
+                },
+              },
+            });
+            if (dbProf && dbProf.user) {
+              return this.mapPrismaToProfileView(dbProf.user, dbProf);
+            }
+          } catch {
+            // fallback
+          }
         }
       }
 
@@ -286,14 +319,16 @@ export class ProfileService {
     if (!user) {
       user = devStore.getUser(userIdOrEmail);
     }
-    // Default to demo student if not found
+    // Default to demo student if not found and demo identifier was requested
     if (!user && !profile) {
-      user = devStore.getUserByEmail("demo.student@kaabil.in");
+      if (!userIdOrEmail || userIdOrEmail === "demo-profile-id" || userIdOrEmail === "demo.student@kaabil.in" || userIdOrEmail === "demo-student-id") {
+        user = devStore.getUserByEmail("demo.student@kaabil.in");
+      }
     }
 
-    const email = user?.email || profile?.user?.email || "demo.student@kaabil.in";
-    const name = user?.name || profile?.name || "Aryan Sharma";
-    const userId = user?.id || profile?.userId || "demo-student-id";
+    const email = user?.email || profile?.user?.email || (userIdOrEmail.includes("@") ? userIdOrEmail : "student@kaabil.test");
+    const name = user?.name || profile?.user?.name || profile?.name || (user ? user.name : (profile ? "Student" : (userIdOrEmail.includes("@") ? userIdOrEmail.split("@")[0] : "Student")));
+    const userId = user?.id || profile?.userId || userIdOrEmail || "demo-student-id";
 
     // Locate profile in devStore: strictly check user.studentProfile.id first
     if (!profile) {

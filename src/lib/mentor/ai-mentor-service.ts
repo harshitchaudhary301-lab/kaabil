@@ -1622,7 +1622,7 @@ You can ask me about statutory eligibility, side-by-side career comparisons, alt
         type: "CAREER_EXPLORATION",
         title: "Take Universal Career Discovery Assessment",
         description: "Answer 20 structured scenario questions to identify your strongest aptitude and career streams.",
-        actionUrl: "/student/discovery",
+        actionUrl: "/student/assessments/discovery",
         actionText: "Begin Career Discovery",
         payload: {
           actionId: "start-discovery",

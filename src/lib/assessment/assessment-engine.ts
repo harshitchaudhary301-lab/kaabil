@@ -7,7 +7,7 @@
 import crypto from "crypto";
 import { KAABIL_ASSESSMENTS, AssessmentData } from "@/data/assessmentsData";
 import { devStore } from "@/lib/dev-store";
-import { db } from "@/lib/db";
+import { db, checkDatabaseConnection } from "@/lib/db";
 import { CareerReadinessEngine } from "@/lib/readiness/cri-engine";
 import { PassportService } from "@/lib/passport/passport-service";
 
@@ -41,6 +41,13 @@ export interface AssessmentSubmissionResult {
     maxPoints: number;
     explanation: string;
   }[];
+}
+
+function toDbStream(stream: string): any {
+  if (stream === "CREATIVE_ARTS_DESIGN") return "CREATIVE_DESIGN";
+  if (stream === "SPORTS") return "SPORTS_PHYSICAL_ED";
+  if (stream === "VOCATIONAL_SKILLED" || stream === "VOCATIONAL") return "VOCATIONAL_TRADES";
+  return stream;
 }
 
 export class AssessmentEngine {
@@ -180,6 +187,51 @@ export class AssessmentEngine {
     };
 
     devStore.saveAssessmentAttempt(attempt);
+
+    try {
+      const conn = await checkDatabaseConnection();
+      if (conn.connected && db) {
+        await db.assessment.upsert({
+          where: { slug: asm.slug },
+          update: {},
+          create: {
+            id: asm.id,
+            title: asm.title,
+            slug: asm.slug,
+            description: asm.description,
+            stream: toDbStream(asm.stream),
+            category: asm.category,
+            targetSkillName: asm.targetSkillName,
+            difficultyLevel: asm.difficultyLevel,
+            durationMinutes: asm.durationMinutes,
+            passingPercentage: asm.passingPercentage,
+          },
+        }).catch(() => {});
+
+        const sp = await db.studentProfile.findFirst({
+          where: {
+            OR: [{ id: studentProfileId }, { userId: studentProfileId }],
+          },
+        });
+
+        if (sp) {
+          await db.assessmentAttempt.upsert({
+            where: { id: attemptId },
+            update: {},
+            create: {
+              id: attemptId,
+              assessmentId: asm.id,
+              studentProfileId: sp.id,
+              status: "IN_PROGRESS",
+              startedAt: new Date(),
+            },
+          }).catch(() => {});
+        }
+      }
+    } catch (err) {
+      console.warn("[AssessmentEngine.startAttempt] DB note:", err);
+    }
+
     return attempt;
   }
 
@@ -323,6 +375,92 @@ export class AssessmentEngine {
     };
 
     devStore.saveAssessmentResult(resultRecord);
+
+    // Persist to PostgreSQL Prisma if database is connected
+    try {
+      const conn = await checkDatabaseConnection();
+      if (conn.connected && db) {
+        // 1. Ensure Assessment exists in Prisma
+        await db.assessment.upsert({
+          where: { slug: asm.slug },
+          update: {},
+          create: {
+            id: asm.id,
+            title: asm.title,
+            slug: asm.slug,
+            description: asm.description,
+            stream: toDbStream(asm.stream),
+            category: asm.category,
+            targetSkillName: asm.targetSkillName,
+            difficultyLevel: asm.difficultyLevel,
+            durationMinutes: asm.durationMinutes,
+            passingPercentage: asm.passingPercentage,
+          },
+        }).catch(() => {});
+
+        // 2. Resolve StudentProfile in Prisma
+        const sp = await db.studentProfile.findFirst({
+          where: {
+            OR: [
+              { id: studentProfileId },
+              { userId: studentProfileId },
+            ],
+          },
+        });
+
+        if (sp) {
+          // 3. Upsert AssessmentAttempt in Prisma
+          await db.assessmentAttempt.upsert({
+            where: { id: attemptId },
+            update: {
+              status: "EVALUATED",
+              completedAt: new Date(),
+              scorePercentage,
+              passed,
+              feedbackSummary: attempt.feedbackSummary,
+            },
+            create: {
+              id: attemptId,
+              assessmentId: asm.id,
+              studentProfileId: sp.id,
+              status: "EVALUATED",
+              completedAt: new Date(),
+              scorePercentage,
+              passed,
+              feedbackSummary: attempt.feedbackSummary,
+            },
+          }).catch(() => {});
+
+          // 4. Upsert AssessmentResult in Prisma
+          await db.assessmentResult.upsert({
+            where: { attemptId },
+            update: {
+              totalScore: totalPointsAwarded,
+              maxScore: maxPoints,
+              percentage: scorePercentage,
+              passed,
+              strengths,
+              improvements,
+              skillEvidenceId: evidenceId || null,
+            },
+            create: {
+              attemptId,
+              studentProfileId: sp.id,
+              totalScore: totalPointsAwarded,
+              maxScore: maxPoints,
+              percentage: scorePercentage,
+              passed,
+              strengths,
+              improvements,
+              skillEvidenceId: evidenceId || null,
+            },
+          }).catch(() => {});
+        }
+      }
+    } catch (dbErr) {
+      console.warn("[AssessmentEngine.submitAttempt] DB persistence note:", dbErr);
+    }
+
     return resultRecord;
   }
 
@@ -330,10 +468,99 @@ export class AssessmentEngine {
    * Retrieves results for a completed attempt.
    */
   public static async getAttemptResult(attemptId: string): Promise<AssessmentSubmissionResult | null> {
+    // 1. Check in-memory/local devStore first
     const res = devStore.getAssessmentResult(attemptId);
     if (res) return res;
 
-    // Fallback: build from attempt if result object was not stored
+    // 2. Query Prisma PostgreSQL
+    try {
+      const conn = await checkDatabaseConnection();
+      if (conn.connected && db) {
+        const dbResult = await db.assessmentResult.findUnique({
+          where: { attemptId },
+          include: {
+            attempt: {
+              include: {
+                assessment: true,
+              },
+            },
+          },
+        });
+
+        if (dbResult) {
+          const asm =
+            KAABIL_ASSESSMENTS.find(
+              (a) => a.id === dbResult.attempt?.assessmentId || a.slug === dbResult.attempt?.assessment?.slug
+            ) ||
+            devStore.getAssessmentById(dbResult.attempt?.assessmentId || "") || {
+              id: dbResult.attempt?.assessment?.id || "asm-default",
+              title: dbResult.attempt?.assessment?.title || "Universal Skill Assessment",
+              targetSkillName: dbResult.attempt?.assessment?.targetSkillName || "Skill Competency",
+              passingPercentage: dbResult.attempt?.assessment?.passingPercentage || 70,
+              questions: [],
+            };
+
+          const reconstructed: AssessmentSubmissionResult = {
+            attemptId: dbResult.attemptId,
+            assessmentId: asm.id,
+            assessmentTitle: asm.title,
+            targetSkillName: asm.targetSkillName,
+            totalScore: dbResult.totalScore,
+            maxScore: dbResult.maxScore,
+            scorePercentage: dbResult.percentage,
+            passed: dbResult.passed,
+            passingPercentage: asm.passingPercentage,
+            strengths: dbResult.strengths?.length > 0 ? dbResult.strengths : ["Completed all sections."],
+            improvements: dbResult.improvements?.length > 0 ? dbResult.improvements : ["Great job! All questions answered accurately."],
+            evidenceGenerated: !!dbResult.skillEvidenceId,
+            evidenceId: dbResult.skillEvidenceId || undefined,
+            criImpactSummary: dbResult.passed
+              ? `+ Verified Skill Added: "${asm.targetSkillName}" is now confirmed. Career Readiness Index (CRI) updated.`
+              : "No penalty incurred. Self-reported skills remain intact. Re-attempt anytime after revision.",
+            detailedQuestionResults: [],
+          };
+
+          devStore.saveAssessmentResult(reconstructed);
+          return reconstructed;
+        }
+
+        // Also check if attempt exists in Prisma
+        const dbAttempt = await db.assessmentAttempt.findUnique({
+          where: { id: attemptId },
+          include: { assessment: true },
+        });
+
+        if (dbAttempt && dbAttempt.status === "EVALUATED") {
+          const asm =
+            KAABIL_ASSESSMENTS.find((a) => a.id === dbAttempt.assessmentId) ||
+            KAABIL_ASSESSMENTS[0];
+          const reconstructed: AssessmentSubmissionResult = {
+            attemptId: dbAttempt.id,
+            assessmentId: asm.id,
+            assessmentTitle: asm.title,
+            targetSkillName: asm.targetSkillName,
+            totalScore: ((dbAttempt.scorePercentage || 0) / 100) * 60,
+            maxScore: 60,
+            scorePercentage: dbAttempt.scorePercentage || 0,
+            passed: !!dbAttempt.passed,
+            passingPercentage: asm.passingPercentage,
+            strengths: ["Completed all required sections."],
+            improvements: ["Review individual questions below."],
+            evidenceGenerated: !!dbAttempt.passed,
+            criImpactSummary: dbAttempt.passed
+              ? `Skill "${asm.targetSkillName}" is verified in your Career Digital Twin.`
+              : "Re-take the assessment once you have revised the foundational material.",
+            detailedQuestionResults: [],
+          };
+          devStore.saveAssessmentResult(reconstructed);
+          return reconstructed;
+        }
+      }
+    } catch (err) {
+      console.warn("[AssessmentEngine.getAttemptResult] Prisma query note:", err);
+    }
+
+    // 3. Fallback: build from attempt if result object was not stored in devStore
     const attempt = devStore.getAssessmentAttempt(attemptId);
     if (!attempt || attempt.status !== "EVALUATED") return null;
 

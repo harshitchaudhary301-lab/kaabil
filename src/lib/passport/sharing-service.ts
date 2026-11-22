@@ -6,6 +6,7 @@
 
 import crypto from "crypto";
 import { devStore } from "@/lib/dev-store";
+import { db, checkDatabaseConnection } from "@/lib/db";
 import { PassportService, DigitalSkillPassport } from "./passport-service";
 import { CredentialService, KaabilCredential } from "./credential-service";
 
@@ -87,9 +88,48 @@ export class PassportSharingService {
     };
   }): Promise<{ token: string; shareUrl: string; expiresAt: string }> {
     // 1. Fetch Profile to verify age / stage
-    const profile =
+    let profile =
       devStore.getProfile(params.studentProfileId) ||
-      devStore.getProfileByUserId(params.studentProfileId);
+      devStore.getProfileByUserId(params.studentProfileId) ||
+      devStore.getProfileByEmail(params.studentProfileId);
+
+    if (!profile) {
+      try {
+        const conn = await checkDatabaseConnection();
+        if (conn.connected && db) {
+          const dbProfile = await db.studentProfile.findFirst({
+            where: {
+              OR: [
+                { id: params.studentProfileId },
+                { userId: params.studentProfileId },
+              ],
+            },
+            include: { user: true },
+          });
+
+          if (dbProfile) {
+            profile = {
+              id: dbProfile.id,
+              userId: dbProfile.userId,
+              educationStage: dbProfile.educationStage,
+              currentStream: dbProfile.currentStream,
+              isMinor: dbProfile.user?.isMinor ?? false,
+              user: dbProfile.user
+                ? {
+                    id: dbProfile.user.id,
+                    name: dbProfile.user.name,
+                    email: dbProfile.user.email,
+                    isMinor: dbProfile.user.isMinor,
+                  }
+                : undefined,
+            };
+            devStore.saveProfile(profile);
+          }
+        }
+      } catch (err) {
+        console.warn("[PassportSharingService] DB lookup error:", err);
+      }
+    }
 
     if (!profile) {
       throw new Error("Student profile not found.");
