@@ -271,6 +271,27 @@ All 18 architectural modules and portals are 100% complete, verified with 235 au
   - `docs/FINAL_ACCEPTANCE_REPORT.md` — 18-module feature matrix and acceptance sign-off.
   - `docs/DEPLOYMENT_GUIDE.md` — Cloud, serverless (Vercel + Neon), and Docker operations guide.
   - `docs/KNOWN_ISSUES.md` — Operational boundaries and legal assessment notices.
+- **Phase 2 Comprehensive Real Student Experience Audit & Bug Fixes (November 22, 2026):**
+  - Tested 7 independent student profiles through end-to-end user journeys:
+    1. *Class 12 PCM Student with No Clear Goal* (`pcm.confused@kaabil.test`): Tested exploratory discovery, analytical matching (Aerospace Engineer, AI Scientist, Robotics), roadmap milestone persistence, and AI mentor starter queries.
+    2. *Class 12 PCB Student Who Did Not Qualify for NEET* (`pcb.nonneet@kaabil.test`): Tested healthcare pathways beyond MBBS (BMLT, Clinical Research, Food Tech, Biomedical), side-by-side comparison, and non-NEET queries to AI mentor.
+    3. *Class 12 Commerce Student Interested in Business* (`commerce.business@kaabil.test`): Tested CA, Banking, FinTech PM, and Equity Research recommendations with ICAI foundation prerequisites and Articleship milestones.
+    4. *Class 12 Arts Student with Creative Interests* (`arts.creative@kaabil.test`): Tested Graphic Design, UI/UX Interaction Design, Media & Journalism, and NID DAT/UCEED entrance prerequisites.
+    5. *First-Year Engineering Student with No Coding Experience* (`eng.noncoder@kaabil.test`): Tested foundational technology recommendations, college accelerator view (no DPDP minor gate), beginner-friendly roadmap actions, and mentor queries.
+    6. *UG Student with a Clear Goal* (`ug.cleargoal@kaabil.test`): Tested `/student/skill-gaps` analyzer, roadmap milestone toggling (progress update from 44% to 50%), and state survival across hard page reloads.
+    7. *Student with Limited Education & Learning Budget* (`budget.learner@kaabil.test`): Tested vocational/ITI trades, low-cost certifications (DGCA Drone Pilot, Solar PV, HVAC, Green Building), and open-source/government skill resources.
+  - **Identified & Resolved 5 Student Experience Problems:**
+    1. *Fixed Runtime Crash on `/student/discover`*: Added defensive optional chaining and adapters for recommendation explanations, breakdown scores, and regulatory badges.
+    2. *Fixed Broken Link on Dashboard*: Replaced 404 `/student/gap-analysis` with `/student/skill-gaps` and added a permanent server-side redirect in `next.config.mjs`.
+    3. *Synchronized AI Mentor Context State*: Prevented mentor from defaulting to PCM / AI Systems Engineer; dynamically binds the active student's registered stream and career focus across all 13 streams.
+    4. *Resolved Prerequisite Stage Mismatch for College Students*: Corrected Discovery Assessment initialization so college students are not evaluated against Class 11 prerequisite rules.
+    5. *Fixed Roadmap Activity API Method Handling*: Exported both POST and PATCH methods on `/api/student/roadmap/activity` with full support for offline store updates and reliable completion toggling.
+  - **Verification & Test Sign-off:**
+    - Vitest: 52/52 test files and 265/265 unit/integration tests passed.
+    - Typecheck: Zero TypeScript errors (`tsc --noEmit`).
+    - Next.js Production Build: 100% successful compile across all 71 routes.
+    - Visual Verification: 14 primary screenshots archived in `screenshots/` covering all key student screens.
+
 - **Final Packaging:**
   - Created distributable ZIP package `KAABIL_Final_FullStack_Project.zip` excluding build caches and sensitive keys.
   - Created final checkpoint `checkpoints/kaabil-final-release`.
