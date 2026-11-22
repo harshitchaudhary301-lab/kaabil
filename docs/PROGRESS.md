@@ -1,10 +1,39 @@
 # PROGRESS.md — Active Implementation Tracker & Living Changelog
 
 ## Project: KAABIL (काबिल)
-**Current Stage:** Phase 5: Production Readiness, Security & Deployment Preparation Complete (Audited & Checkpointed)  
+**Current Stage:** Autonomous Neon PostgreSQL Integration & Vercel Production Deployment  
 **Workspace Path:** `C:\Users\Harshit\.gemini\antigravity\scratch\kaabil`  
 **Last Updated:** November 22, 2026  
 **Latest Audited Checkpoint:** `checkpoint-phase5-production-ready`  
+**Active Production Domain:** `https://kaabil-eta.vercel.app`  
+
+---
+
+### Autonomous Neon Database Integration & Vercel Production Deployment (November 22, 2026)
+- **1. Neon PostgreSQL Discovery & Association:**
+  - Organization ID: `org-odd-sound-91134138`
+  - Project ID: `icy-heart-79451826`
+  - Project Name: `KAABIL`
+  - Database Name: `neondb` (Role: `neondb_owner`)
+  - Pooled Host: `ep-bitter-pine-bba6u2pw-pooler.c-15.us-east-1.aws.neon.tech`
+  - Direct Host: `ep-bitter-pine-bba6u2pw.c-15.us-east-1.aws.neon.tech`
+  - Region: AWS US East 1 (N. Virginia), PostgreSQL 18.
+- **2. Schema Push & Benchmark Seeding:**
+  - Synchronized all 77 Prisma models to Neon PostgreSQL via `npx prisma db push`.
+  - Populated all 13 educational domains, 13 canonical careers, 52 benchmark skills, and 8 national entrance exams via `node prisma/seed.js`.
+  - Multi-session write/read persistence independently verified across disconnected sessions.
+- **3. Hardened Production Security & RBAC:**
+  - Strict tenant boundary isolation and student-to-student data boundary verified.
+  - Public registration disallows administrative roles (`SUPER_ADMIN`, `CONTENT_ADMIN`).
+  - DPDP Act (2023) minor consent enforcement verified.
+  - Server-side rate limiting on registration and authentication endpoints verified.
+- **4. Vercel Production Environment Configuration:**
+  - Linked GitHub Repository: `harshitchaudhary301-lab/kaabil` on `main`.
+  - `DATABASE_URL`: Configured as Secret for Production & Preview.
+  - `DIRECT_URL`: Configured as Secret for Production & Preview.
+  - `NEXT_PUBLIC_DEMO_MODE`: Configured as `"false"` (Config type) for Production & Preview.
+  - `NEXT_PUBLIC_APP_ENV`: `"production"`.
+  - `AUTH_SECRET` & `CREDENTIAL_SIGNING_SECRET`: Configured for Production & Preview.
 
 ---
 
