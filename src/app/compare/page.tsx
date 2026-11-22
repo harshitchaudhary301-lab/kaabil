@@ -76,7 +76,7 @@ function CompareContent() {
         .split(",")
         .map((s) => s.trim())
         .filter((s) => ALL_CAREERS.some((c) => c.slug === s))
-        .slice(0, 4);
+        .slice(0, 3);
       setSelectedSlugs(parsed);
     } else {
       // Default to 2 careers
@@ -99,7 +99,7 @@ function CompareContent() {
   };
 
   const addSlug = (slugToAdd: string) => {
-    if (selectedSlugs.length >= 4) return;
+    if (selectedSlugs.length >= 3) return;
     if (selectedSlugs.includes(slugToAdd)) return;
     const updated = [...selectedSlugs, slugToAdd];
     updateUrlSlugs(updated);
@@ -189,7 +189,7 @@ function CompareContent() {
                 Side-by-Side Career Comparison
               </h1>
               <p className="text-text-secondary text-sm sm:text-base mt-2 max-w-2xl">
-                Compare salary trajectories, regulatory certifications, entrance exams, and work conditions across up to 4 careers simultaneously.
+                Compare education requirements, relevant subjects, verified costs, skill benchmarks, and career progression across up to 3 careers side by side.
               </p>
             </div>
 
@@ -216,7 +216,7 @@ function CompareContent() {
                 {isSaving ? "Saving..." : "Save Comparison"}
               </Button>
 
-              {selectedSlugs.length < 4 && (
+              {selectedSlugs.length < 3 && (
                 <Button
                   size="sm"
                   onClick={() => setIsSearchOpen(true)}
@@ -323,7 +323,7 @@ function CompareContent() {
                     </p>
                   </div>
 
-                  {comparedCareers.length < 4 && (
+                  {comparedCareers.length < 3 && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -331,7 +331,7 @@ function CompareContent() {
                       className="mt-4 gap-1.5 text-xs w-full border-dashed border-primary/40 text-primary hover:bg-primary/5"
                     >
                       <Plus className="h-3.5 w-3.5" />
-                      Add Another ({4 - comparedCareers.length} remaining)
+                      Add Another ({3 - comparedCareers.length} remaining)
                     </Button>
                   )}
                 </div>
@@ -391,7 +391,7 @@ function CompareContent() {
               <div className="bg-slate-50 px-6 py-3.5 border-b border-border flex items-center gap-2">
                 <GraduationCap className="h-4 w-4 text-primary" />
                 <h3 className="font-heading font-bold text-sm text-text-primary uppercase tracking-wide">
-                  Academic Prerequisites & Entrance Exams
+                  Academic Prerequisites & Relevant Subjects
                 </h3>
               </div>
               <div className="overflow-x-auto">
@@ -411,21 +411,38 @@ function CompareContent() {
                     </tr>
                     <tr className="border-b border-border/60">
                       <td className="p-4 font-semibold text-text-primary bg-slate-50/50">
-                        Educational Pathways / Steps
+                        Formal Education Required
                       </td>
                       {comparedCareers.map((c) => (
                         <td key={c.slug} className="p-4 text-text-secondary">
-                          <div className="space-y-1">
-                            {c.educationalPathways && c.educationalPathways.length > 0 ? (
-                              c.educationalPathways.map((p, idx) => (
-                                <div key={idx} className="flex items-start gap-1.5">
-                                  <span className="text-primary font-bold">{p.step}.</span>
-                                  <span><strong>{p.stage}:</strong> {p.description}</span>
-                                </div>
-                              ))
-                            ) : (
-                              <span>Direct qualification after {c.minEducationStage.replace(/_/g, " ")}</span>
-                            )}
+                          <span className="font-medium text-text-primary">
+                            {c.requiredEducation || `Graduate degree relevant to ${c.streamTitle}`}
+                          </span>
+                        </td>
+                      ))}
+                    </tr>
+                    <tr className="border-b border-border/60">
+                      <td className="p-4 font-semibold text-text-primary bg-slate-50/50">
+                        Eligibility Criteria
+                      </td>
+                      {comparedCareers.map((c) => (
+                        <td key={c.slug} className="p-4 text-text-secondary leading-relaxed">
+                          {c.eligibilityCriteria || "Class 12 with qualifying marks from a recognized board."}
+                        </td>
+                      ))}
+                    </tr>
+                    <tr className="border-b border-border/60">
+                      <td className="p-4 font-semibold text-text-primary bg-slate-50/50">
+                        Relevant Subjects
+                      </td>
+                      {comparedCareers.map((c) => (
+                        <td key={c.slug} className="p-4 text-text-secondary">
+                          <div className="flex flex-wrap gap-1.5">
+                            {(c.relevantSubjects || []).map((sub, idx) => (
+                              <Badge key={idx} variant="outline" className="text-[10px] bg-slate-50">
+                                {sub}
+                              </Badge>
+                            ))}
                           </div>
                         </td>
                       ))}
@@ -454,7 +471,7 @@ function CompareContent() {
                         </td>
                       ))}
                     </tr>
-                    <tr>
+                    <tr className="border-b border-border/60">
                       <td className="p-4 font-semibold text-text-primary bg-slate-50/50">
                         Total Training Duration
                       </td>
@@ -462,8 +479,21 @@ function CompareContent() {
                         <td key={c.slug} className="p-4 text-text-secondary">
                           <span className="font-bold text-text-primary">
                             {c.typicalDurationYears}
-                          </span>{" "}
-                          (Standard qualification + required residency/internship)
+                          </span>
+                        </td>
+                      ))}
+                    </tr>
+                    <tr>
+                      <td className="p-4 font-semibold text-text-primary bg-slate-50/50">
+                        Top Institutions in India
+                      </td>
+                      {comparedCareers.map((c) => (
+                        <td key={c.slug} className="p-4 text-text-secondary">
+                          <ul className="list-disc list-inside space-y-0.5 text-[11px]">
+                            {(c.topCollegesInIndia || []).slice(0, 4).map((col, idx) => (
+                              <li key={idx}>{col}</li>
+                            ))}
+                          </ul>
                         </td>
                       ))}
                     </tr>
@@ -472,7 +502,162 @@ function CompareContent() {
               </div>
             </div>
 
-            {/* MATRIX SECTION 2: Compensation & Market Outlook */}
+            {/* MATRIX SECTION 2: Verified Education Costs */}
+            <div className="rounded-2xl border border-border bg-white overflow-hidden shadow-soft-sm">
+              <div className="bg-slate-50 px-6 py-3.5 border-b border-border flex items-center gap-2">
+                <Building2 className="h-4 w-4 text-amber-600" />
+                <h3 className="font-heading font-bold text-sm text-text-primary uppercase tracking-wide">
+                  Verified Education Costs & Scholarships (India)
+                </h3>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs min-w-[750px]">
+                  <tbody>
+                    <tr className="border-b border-border/60">
+                      <td className="p-4 font-semibold text-text-primary bg-slate-50/50 w-[240px]">
+                        Government Institutions
+                      </td>
+                      {comparedCareers.map((c) => (
+                        <td key={c.slug} className="p-4 text-text-secondary">
+                          <span className="font-semibold text-emerald-700">
+                            {c.estimatedEducationCost?.govt || "Highly subsidized / statutory scales"}
+                          </span>
+                        </td>
+                      ))}
+                    </tr>
+                    <tr className="border-b border-border/60">
+                      <td className="p-4 font-semibold text-text-primary bg-slate-50/50">
+                        Private Institutions
+                      </td>
+                      {comparedCareers.map((c) => (
+                        <td key={c.slug} className="p-4 text-text-secondary">
+                          <span className="font-semibold text-slate-800">
+                            {c.estimatedEducationCost?.private || "Market tuition fees apply"}
+                          </span>
+                        </td>
+                      ))}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* MATRIX SECTION 3: Entry Pathways & Progression */}
+            <div className="rounded-2xl border border-border bg-white overflow-hidden shadow-soft-sm">
+              <div className="bg-slate-50 px-6 py-3.5 border-b border-border flex items-center gap-2">
+                <Layers className="h-4 w-4 text-indigo-600" />
+                <h3 className="font-heading font-bold text-sm text-text-primary uppercase tracking-wide">
+                  Entry Pathways, Career Opportunities & Progression
+                </h3>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs min-w-[750px]">
+                  <tbody>
+                    <tr className="border-b border-border/60">
+                      <td className="p-4 font-semibold text-text-primary bg-slate-50/50 w-[240px]">
+                        Degree & Diploma Pathways
+                      </td>
+                      {comparedCareers.map((c) => (
+                        <td key={c.slug} className="p-4 text-text-secondary">
+                          <div className="space-y-1.5">
+                            {(c.degreeAndDiplomaPathways || []).map((deg, idx) => (
+                              <div key={idx} className="p-2 rounded-lg bg-slate-50 border border-slate-100">
+                                <span className="font-semibold text-text-primary block">{deg.title} ({deg.duration})</span>
+                                <span className="text-[11px] text-text-secondary">{deg.description}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </td>
+                      ))}
+                    </tr>
+                    <tr className="border-b border-border/60">
+                      <td className="p-4 font-semibold text-text-primary bg-slate-50/50">
+                        Career Hierarchy Progression
+                      </td>
+                      {comparedCareers.map((c) => (
+                        <td key={c.slug} className="p-4 text-text-secondary">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {(c.careerProgression || []).map((role, idx) => (
+                              <React.Fragment key={idx}>
+                                <Badge variant="secondary" className="text-[10px] bg-purple-50 text-purple-900 border-purple-200">
+                                  {role}
+                                </Badge>
+                                {idx < (c.careerProgression || []).length - 1 && (
+                                  <ArrowRight className="h-3 w-3 text-slate-400" />
+                                )}
+                              </React.Fragment>
+                            ))}
+                          </div>
+                        </td>
+                      ))}
+                    </tr>
+                    <tr>
+                      <td className="p-4 font-semibold text-text-primary bg-slate-50/50">
+                        Alternative Pathways
+                      </td>
+                      {comparedCareers.map((c) => (
+                        <td key={c.slug} className="p-4 text-text-secondary">
+                          <div className="space-y-1">
+                            {(c.alternativePathways || []).map((alt, idx) => (
+                              <div key={idx} className="text-[11px]">
+                                <span className="font-medium text-text-primary">• {alt.title}: </span>
+                                <span>{alt.description}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </td>
+                      ))}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* MATRIX SECTION 4: Advantages & Challenges */}
+            <div className="rounded-2xl border border-border bg-white overflow-hidden shadow-soft-sm">
+              <div className="bg-slate-50 px-6 py-3.5 border-b border-border flex items-center gap-2">
+                <ShieldAlert className="h-4 w-4 text-orange-600" />
+                <h3 className="font-heading font-bold text-sm text-text-primary uppercase tracking-wide">
+                  Advantages & Practical Challenges
+                </h3>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs min-w-[750px]">
+                  <tbody>
+                    <tr className="border-b border-border/60">
+                      <td className="p-4 font-semibold text-emerald-800 bg-emerald-50/30 w-[240px]">
+                        Key Advantages & Rewards
+                      </td>
+                      {comparedCareers.map((c) => (
+                        <td key={c.slug} className="p-4 text-text-secondary">
+                          <ul className="list-disc list-inside space-y-1 text-[11px]">
+                            {(c.advantages || []).map((adv, idx) => (
+                              <li key={idx} className="text-slate-700">{adv}</li>
+                            ))}
+                          </ul>
+                        </td>
+                      ))}
+                    </tr>
+                    <tr>
+                      <td className="p-4 font-semibold text-amber-800 bg-amber-50/30">
+                        Real-World Challenges & Demands
+                      </td>
+                      {comparedCareers.map((c) => (
+                        <td key={c.slug} className="p-4 text-text-secondary">
+                          <ul className="list-disc list-inside space-y-1 text-[11px]">
+                            {(c.challenges || []).map((ch, idx) => (
+                              <li key={idx} className="text-slate-700">{ch}</li>
+                            ))}
+                          </ul>
+                        </td>
+                      ))}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* MATRIX SECTION 5: Compensation & Market Outlook */}
             <div className="rounded-2xl border border-border bg-white overflow-hidden shadow-soft-sm">
               <div className="bg-slate-50 px-6 py-3.5 border-b border-border flex items-center gap-2">
                 <TrendingUp className="h-4 w-4 text-emerald-600" />
@@ -573,7 +758,7 @@ function CompareContent() {
               </div>
             </div>
 
-            {/* MATRIX SECTION 3: Regulatory Authority & Licensure */}
+            {/* MATRIX SECTION 6: Regulatory Authority & Licensure */}
             <div className="rounded-2xl border border-border bg-white overflow-hidden shadow-soft-sm">
               <div className="bg-slate-50 px-6 py-3.5 border-b border-border flex items-center gap-2">
                 <Building2 className="h-4 w-4 text-purple-600" />
@@ -616,7 +801,7 @@ function CompareContent() {
                         </td>
                       ))}
                     </tr>
-                    <tr>
+                    <tr className="border-b border-border/60">
                       <td className="p-4 font-semibold text-text-primary bg-slate-50/50">
                         Official Verification Sources
                       </td>
@@ -635,25 +820,9 @@ function CompareContent() {
                         </td>
                       ))}
                     </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* MATRIX SECTION 4: Benchmark Skills */}
-            <div className="rounded-2xl border border-border bg-white overflow-hidden shadow-soft-sm">
-              <div className="bg-slate-50 px-6 py-3.5 border-b border-border flex items-center gap-2">
-                <BookOpen className="h-4 w-4 text-primary" />
-                <h3 className="font-heading font-bold text-sm text-text-primary uppercase tracking-wide">
-                  Top Benchmark Skills Required
-                </h3>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs min-w-[750px]">
-                  <tbody>
                     <tr>
-                      <td className="p-4 font-semibold text-text-primary bg-slate-50/50 w-[240px]">
-                        Core Competencies
+                      <td className="p-4 font-semibold text-text-primary bg-slate-50/50">
+                        Core Competencies & Skills
                       </td>
                       {comparedCareers.map((c) => (
                         <td key={c.slug} className="p-4 align-top">

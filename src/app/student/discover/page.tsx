@@ -243,6 +243,38 @@ export default function StudentDiscoverPage() {
           </div>
         </div>
 
+        {/* Discovery Assessment Feature Banner */}
+        <div className="rounded-2xl border border-purple-200 bg-gradient-to-r from-purple-500/10 via-indigo-500/5 to-purple-500/10 p-5 shadow-xs">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-start gap-3.5">
+              <div className="p-2.5 rounded-xl bg-primary text-white shadow-xs shrink-0">
+                <Compass className="h-6 w-6" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-primary uppercase tracking-wider">
+                    Smart Strengths Discovery
+                  </span>
+                  <Badge variant="outline" className="text-[10px] bg-purple-100 text-purple-800 border-purple-200">
+                    8 Situational Questions
+                  </Badge>
+                </div>
+                <h3 className="text-base font-bold text-slate-900 mt-0.5">
+                  Want more accurate, explainable recommendations?
+                </h3>
+                <p className="text-xs text-slate-600 mt-0.5">
+                  Take the adaptive discovery assessment to map your genuine interests, workstyle, and problem-solving strengths to top verified Indian career pathways.
+                </p>
+              </div>
+            </div>
+            <Link href="/student/assessments/discovery" className="shrink-0">
+              <Button className="bg-gradient-to-r from-primary to-indigo-600 text-white font-medium shadow-xs text-xs gap-1.5 h-9 px-4">
+                Take Discovery Assessment <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+
         {/* Filter & Search Bar */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           {/* Stream Filter Pills */}

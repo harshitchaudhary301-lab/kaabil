@@ -1,11 +1,12 @@
 // ==============================================================================
-// KAABIL (काबिल) — Hybrid Recommendation Engine (Layer 2)
+// KAABIL (काबिल) — Hybrid Recommendation Engine (Phase 2)
 // Transparent, explainable, and multi-factor career compatibility calculation
-// Provisional Product Heuristic — Not a black-box probability or aptitude score
+// Integrates Interest Alignment, Formal Regulatory Eligibility, and Explainability
 // ==============================================================================
 
 import { CareerPathData, EducationalStream, EducationStage } from "@/types";
 import { CAREER_PATHS_DATABASE } from "@/data/careersData";
+import { CareerEligibilityChecker, EligibilityResult } from "@/lib/eligibility/eligibility-checker";
 
 export interface StudentProfileContext {
   id: string;
@@ -14,6 +15,7 @@ export interface StudentProfileContext {
   primaryStream: EducationalStream | string;
   selectedStreams: (EducationalStream | string)[];
   interests: string[];
+  preferredSubjects?: string[];
   skills: {
     name: string;
     proficiency: "NOVICE" | "BEGINNER" | "INTERMEDIATE" | "PROFICIENT" | "EXPERT";
@@ -29,6 +31,7 @@ export interface StudentProfileContext {
     weeklyHoursAvailable?: number;
     primaryLanguage?: string;
   };
+  discoveryResponses?: Record<string, string | string[]>;
 }
 
 export interface CompatibilityReport {
@@ -48,6 +51,17 @@ export interface CompatibilityReport {
   isBridgePath: boolean;
   isSelfReportedSkillOnly: boolean;
   explanationPoints: string[];
+
+  // Phase 2 Explainable Extensions
+  whySuited: string;
+  alignedStrengths: string[];
+  skillsToImprove: string[];
+  eligibility: EligibilityResult;
+  additionalQualificationsRequired: string | null;
+  alternativePathways: { title: string; slug?: string; description: string }[];
+  recommendedNextAction: string;
+  dataSufficiency: "SUFFICIENT" | "INSUFFICIENT";
+  uncertaintyFollowUpQuestions?: string[];
 }
 
 export class CareerRecommendationEngine {
@@ -62,18 +76,24 @@ export class CareerRecommendationEngine {
 
   /**
    * Computes personalized recommendations across all career paths for a student profile.
+   * Default limit is 5 to return top 3–5 high-quality recommendations.
    */
   static getRecommendations(
     profile: StudentProfileContext,
     catalog: CareerPathData[] = CAREER_PATHS_DATABASE,
-    limit: number = 6
+    limit: number = 5
   ): CompatibilityReport[] {
     const scoredReports: CompatibilityReport[] = catalog.map((career) =>
       this.evaluateCareerCompatibility(profile, career)
     );
 
     // Sort by descending compatibility score, then title
-    scoredReports.sort((a, b) => b.compatibilityScore - a.compatibilityScore);
+    scoredReports.sort((a, b) => {
+      if (b.compatibilityScore !== a.compatibilityScore) {
+        return b.compatibilityScore - a.compatibilityScore;
+      }
+      return a.career.title.localeCompare(b.career.title);
+    });
 
     return scoredReports.slice(0, limit);
   }
@@ -115,6 +135,24 @@ export class CareerRecommendationEngine {
     else if (finalScore >= 65) scoreCategory = "GOOD_FIT";
     else if (isBridgePath) scoreCategory = "BRIDGE_REQUIRED";
 
+    // Formal Regulatory Eligibility Evaluation (Distinguished from interest alignment)
+    const eligibility = CareerEligibilityChecker.evaluate(
+      {
+        educationStage: profile.educationStage,
+        stream: profile.primaryStream,
+        subjects: profile.preferredSubjects || [],
+      },
+      {
+        slug: career.slug,
+        title: career.title,
+        minEducationStage: career.minEducationStage,
+        regulatoryBody: career.regulatoryBody,
+        stream: career.stream,
+        typicalDurationYears: career.typicalDurationYears,
+        keyEntranceExams: career.keyEntranceExams || [],
+      }
+    );
+
     const explanationPoints = this.buildExplanationPoints(
       profile,
       career,
@@ -122,6 +160,44 @@ export class CareerRecommendationEngine {
       matchedSkills,
       isBridgePath
     );
+
+    // Phase 2 Explainability fields
+    const whySuited = this.buildWhySuited(career, matchedInterests, isBridgePath, profile.primaryStream);
+    const alignedStrengths = [
+      ...matchedInterests.map((i) => `Interest in ${i}`),
+      ...matchedSkills.map((s) => `Demonstrated skill in ${s}`),
+    ];
+    if (alignedStrengths.length === 0) {
+      alignedStrengths.push(`Exploratory alignment with ${career.streamTitle}`);
+    }
+
+    const skillsToImprove = skillsToDevelop.length > 0
+      ? skillsToDevelop
+      : career.skills.slice(0, 3).map((s) => s.name);
+
+    const additionalQualificationsRequired =
+      eligibility.status === "ADDITIONAL_QUALIFICATION_REQUIRED"
+        ? eligibility.missingPrerequisites.join("; ") || `Prerequisite degree or qualifying exam required (${career.requiredEducation || career.minEducationStage}).`
+        : null;
+
+    const alternativePathways = (career.alternativePathways || []).map((ap) => ({
+      title: ap.title,
+      slug: ap.slug,
+      description: ap.description,
+    }));
+
+    const recommendedNextAction = this.buildNextAction(career, eligibility, profile.educationStage);
+
+    // Data Sufficiency check
+    const hasEnoughData = profile.interests.length > 0 || (profile.skills && profile.skills.length > 0);
+    const dataSufficiency: "SUFFICIENT" | "INSUFFICIENT" = hasEnoughData ? "SUFFICIENT" : "INSUFFICIENT";
+    const uncertaintyFollowUpQuestions = hasEnoughData
+      ? undefined
+      : [
+          "Which subjects did you find most engaging in your last academic year?",
+          "Do you prefer hands-on practical lab work, analytical problem-solving, or human interaction?",
+          "Are you looking to pursue an immediate professional entrance exam or an exploratory degree?",
+        ];
 
     return {
       career,
@@ -140,6 +216,15 @@ export class CareerRecommendationEngine {
       isBridgePath,
       isSelfReportedSkillOnly: isSelfReportedOnly,
       explanationPoints,
+      whySuited,
+      alignedStrengths,
+      skillsToImprove,
+      eligibility,
+      additionalQualificationsRequired,
+      alternativePathways,
+      recommendedNextAction,
+      dataSufficiency,
+      uncertaintyFollowUpQuestions,
     };
   }
 
@@ -155,7 +240,7 @@ export class CareerRecommendationEngine {
     }
 
     const matchedInterests: string[] = [];
-    const textBlob = `${career.title} ${career.overview} ${career.domainName} ${career.tagline}`.toLowerCase();
+    const textBlob = `${career.title} ${career.overview} ${career.domainName} ${career.tagline} ${career.streamTitle} ${(career.relevantSubjects || []).join(" ")}`.toLowerCase();
 
     for (const interest of interests) {
       const words = interest.toLowerCase().split(/\s+/).filter((w) => w.length > 3);
@@ -212,7 +297,7 @@ export class CareerRecommendationEngine {
     isSelfReportedOnly: boolean;
   } {
     if (!studentSkills || studentSkills.length === 0) {
-      const defaultToDevelop = careerSkills.slice(0, 3).map((s) => s.name);
+      const defaultToDevelop = (careerSkills || []).slice(0, 3).map((s) => s.name);
       return {
         skillScore: 10,
         matchedSkills: [],
@@ -225,7 +310,7 @@ export class CareerRecommendationEngine {
     let hasVerifiedMatch = false;
 
     for (const sk of studentSkills) {
-      const match = careerSkills.find(
+      const match = (careerSkills || []).find(
         (cs) => cs.name.toLowerCase().includes(sk.name.toLowerCase()) ||
                 sk.name.toLowerCase().includes(cs.name.toLowerCase())
       );
@@ -235,12 +320,12 @@ export class CareerRecommendationEngine {
       }
     }
 
-    const skillsToDevelop = careerSkills
+    const skillsToDevelop = (careerSkills || [])
       .filter((cs) => !matchedSkills.includes(cs.name))
       .slice(0, 3)
       .map((cs) => cs.name);
 
-    const matchRatio = Math.min(1.0, matchedSkills.length / Math.min(3, careerSkills.length));
+    const matchRatio = Math.min(1.0, matchedSkills.length / Math.min(3, (careerSkills || []).length || 1));
     const score = Math.max(8, matchRatio * this.WEIGHTS.SKILL);
 
     return {
@@ -329,5 +414,41 @@ export class CareerRecommendationEngine {
     }
 
     return points;
+  }
+
+  private static buildWhySuited(
+    career: CareerPathData,
+    matchedInterests: string[],
+    isBridgePath: boolean,
+    primaryStream: string
+  ): string {
+    if (matchedInterests.length > 0) {
+      return `This career closely matches your curiosity in ${matchedInterests.slice(0, 2).join(" & ")}. It allows you to build real-world capability in ${career.domainName} with strong Indian employment growth.`;
+    }
+    if (!isBridgePath) {
+      return `As a student in ${primaryStream}, this pathway represents a natural, high-impact progression with direct curricular continuity and recognized professional licensing.`;
+    }
+    return `An accessible cross-stream pathway in ${career.domainName} that welcomes diverse educational backgrounds with structured gateway qualifications.`;
+  }
+
+  private static buildNextAction(
+    career: CareerPathData,
+    eligibility: EligibilityResult,
+    educationStage: string
+  ): string {
+    const isSchool = educationStage === "CLASS_8" || educationStage === "CLASS_9" || educationStage === "CLASS_10" || educationStage === "CLASS_11" || educationStage === "CLASS_12";
+
+    if (isSchool) {
+      if (career.keyEntranceExams && career.keyEntranceExams.length > 0) {
+        return `Review the official eligibility and syllabus pattern for ${career.keyEntranceExams[0]}.`;
+      }
+      return `Select foundational Senior Secondary subjects aligned with ${career.streamTitle}.`;
+    }
+
+    if (eligibility.status === "KNOWN_PREREQUISITES_SATISFIED") {
+      return `Start your personalized 4-week learning roadmap and verify core skills in ${career.skills[0]?.name || "fundamental tools"}.`;
+    }
+
+    return `Review bridge entrance pathways and required prerequisite qualifications (${career.requiredEducation || "prerequisites"}).`;
   }
 }

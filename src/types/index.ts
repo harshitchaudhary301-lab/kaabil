@@ -90,6 +90,28 @@ export interface CareerPathData {
     focus: string;
   }[];
   isDemoData: boolean; // Explicit label as per instructions
+
+  // Phase 2 Enhanced Attributes
+  requiredEducation?: string;
+  eligibilityCriteria?: string;
+  relevantSubjects?: string[];
+  degreeAndDiplomaPathways?: {
+    title: string;
+    duration: string;
+    description: string;
+  }[];
+  careerProgression?: string[];
+  alternativePathways?: {
+    title: string;
+    slug?: string;
+    description: string;
+  }[];
+  advantages?: string[];
+  challenges?: string[];
+  estimatedEducationCost?: {
+    govt: string;
+    private: string;
+  };
 }
 
 export type CareerPath = CareerPathData;
