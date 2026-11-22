@@ -46,6 +46,7 @@ import { STUDENT_NAV } from "@/components/student/student-nav";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { resolveOfficialSourceUrl } from "@/lib/constants/official-sources";
 
 const STREAM_STARTER_QUESTIONS: Record<string, string[]> = {
   MEDICAL_PCB: [
@@ -115,6 +116,7 @@ export default function AiMentorPage() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [showDrawer, setShowDrawer] = useState(false);
+  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [activeProposal, setActiveProposal] = useState<any | null>(null);
   const [showEngineInfo, setShowEngineInfo] = useState(false);
@@ -416,11 +418,21 @@ export default function AiMentorPage() {
           {/* Chat Top Bar */}
           <div className="flex items-center justify-between border-b border-slate-200 px-4 py-2.5 dark:border-slate-800">
             <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowMobileSidebar(true)}
+                className="md:hidden h-8 px-2 text-xs gap-1 border-slate-200 text-slate-700 dark:border-slate-700 dark:text-slate-200"
+                title="View past consultations"
+              >
+                <MessageSquare className="h-3.5 w-3.5 text-primary" />
+                <span className="text-[11px]">Chats</span>
+              </Button>
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
                 <Bot className="h-4 w-4" />
               </div>
               <div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
                     KAABIL Universal AI Career Mentor
                   </h2>
@@ -428,36 +440,41 @@ export default function AiMentorPage() {
                   {aiEngineStatus?.liveAvailable ? (
                     <Badge
                       variant="outline"
-                      className="text-[10px] text-emerald-700 bg-emerald-50 border-emerald-200 gap-1 dark:bg-emerald-950/40 dark:text-emerald-400"
+                      className="text-[10px] text-emerald-700 bg-emerald-50 border-emerald-300 gap-1.5 font-medium dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
                     >
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                       Live Gemini 2.0 Flash AI
                     </Badge>
                   ) : (
                     <div className="relative inline-block">
-                      <Badge
+                      <button
                         onClick={() => setShowEngineInfo(!showEngineInfo)}
-                        variant="outline"
-                        className="cursor-pointer text-[10px] text-purple-700 bg-purple-50 border-purple-200 gap-1 hover:bg-purple-100 transition-colors dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800"
+                        className="inline-flex items-center gap-1.5 rounded-full border border-purple-200 bg-purple-50 px-2.5 py-0.5 text-[10px] font-medium text-purple-700 hover:bg-purple-100 transition-colors dark:border-purple-800 dark:bg-purple-950/40 dark:text-purple-300"
+                        title="Click to view verified knowledge engine details"
+                        aria-expanded={showEngineInfo}
                       >
-                        <ShieldCheck className="h-3 w-3 text-purple-600" />
-                        <span>Deterministic Knowledge Engine (Safe & Verified)</span>
-                      </Badge>
+                        <ShieldCheck className="h-3 w-3 text-purple-600 dark:text-purple-400" />
+                        <span>Verified Knowledge Engine (Fallback)</span>
+                        <Info className="h-2.5 w-2.5 text-purple-400" />
+                      </button>
                       {showEngineInfo && (
-                        <div className="absolute top-7 left-0 z-50 w-72 rounded-lg border border-slate-200 bg-white p-3 text-xs shadow-lg dark:border-slate-700 dark:bg-slate-800">
-                          <div className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                            <ShieldCheck className="h-3.5 w-3.5 text-purple-600" />
-                            <span>Zero-Hallucination Fallback</span>
+                        <div className="absolute top-7 left-0 z-50 w-80 rounded-xl border border-slate-200 bg-white p-3.5 text-xs shadow-xl dark:border-slate-700 dark:bg-slate-800">
+                          <div className="font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                            <ShieldCheck className="h-4 w-4 text-purple-600" />
+                            <span>Verified Knowledge Base Grounding</span>
                           </div>
-                          <p className="mt-1 text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
-                            Operating in deterministic mode using KAABIL&apos;s verified 134-stream career database. All regulatory criteria, entrance exams, and salary benchmarks are 100% verified and hallucination-free.
+                          <p className="mt-1.5 text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                            Operating in deterministic verified mode using KAABIL&apos;s audited 134-career taxonomy. All regulatory criteria (NMC, AICTE, BCI, ICAI), official national entrance exams, and 7th Central Pay Commission benchmarks are grounded in statutory curriculum data.
                           </p>
-                          <button
-                            onClick={() => setShowEngineInfo(false)}
-                            className="mt-2 text-[10px] text-primary hover:underline font-medium"
-                          >
-                            Close info
-                          </button>
+                          <div className="mt-2.5 flex items-center justify-between border-t border-slate-100 pt-2 dark:border-slate-700 text-[10px] text-slate-500">
+                            <span>SLA Response: ≤ 8s</span>
+                            <button
+                              onClick={() => setShowEngineInfo(false)}
+                              className="text-primary hover:underline font-semibold"
+                            >
+                              Close
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -556,41 +573,56 @@ export default function AiMentorPage() {
                     )}
 
                     <div
-                      className={`max-w-[85%] rounded-2xl px-4 py-3 text-xs sm:text-sm leading-relaxed ${
+                      className={`max-w-[88%] sm:max-w-[80%] md:max-w-[76%] rounded-2xl px-4 py-3.5 sm:px-5 sm:py-4 text-xs sm:text-sm leading-relaxed ${
                         isUser
-                          ? "bg-primary text-white"
-                          : "border border-slate-200 bg-slate-50/80 text-slate-800 shadow-xs dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200"
+                          ? "bg-primary text-white shadow-xs"
+                          : "border border-slate-200 bg-slate-50/90 text-slate-800 shadow-xs dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200"
                       }`}
                     >
                       {/* Message Content */}
                       <div className="whitespace-pre-wrap">{msg.content}</div>
 
-                      {/* Verified Source Badges if available */}
+                      {/* Verified Source Citations with Official Authority Links */}
                       {!isUser && msg.verifiedSources && msg.verifiedSources.length > 0 && (
-                        <div className="mt-3 flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
+                        <div className="mt-3.5 flex flex-wrap items-center gap-1.5 pt-2.5 border-t border-slate-200/60 dark:border-slate-700/60">
                           <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                             Verified Citations:
                           </span>
-                          {msg.verifiedSources.map((source: string, sIdx: number) => (
-                            <Badge
-                              key={sIdx}
-                              variant="outline"
-                              className="text-[10px] bg-white border-slate-200 text-slate-600 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300"
-                            >
-                              {source}
-                            </Badge>
-                          ))}
+                          {msg.verifiedSources.map((source: string, sIdx: number) => {
+                            const resolved = resolveOfficialSourceUrl(source);
+                            return resolved ? (
+                              <a
+                                key={sIdx}
+                                href={resolved.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-medium border border-purple-200 bg-purple-50/80 text-purple-700 hover:bg-purple-100 hover:border-purple-300 transition-colors dark:border-purple-800 dark:bg-purple-950/40 dark:text-purple-300"
+                                title={`Open official statutory portal: ${resolved.url}`}
+                              >
+                                <span>{source}</span>
+                                <ExternalLink className="h-2.5 w-2.5 shrink-0 opacity-70" />
+                              </a>
+                            ) : (
+                              <Badge
+                                key={sIdx}
+                                variant="outline"
+                                className="text-[10px] bg-white border-slate-200 text-slate-600 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300"
+                              >
+                                {source}
+                              </Badge>
+                            );
+                          })}
                         </div>
                       )}
 
                       {/* Action Proposal Card if present */}
                       {!isUser && msg.actionProposal && (
-                        <div className="mt-3 rounded-lg border border-primary/20 bg-primary/5 p-3 dark:bg-primary/10">
-                          <div className="flex items-center gap-1.5 font-semibold text-primary">
-                            <Target className="h-3.5 w-3.5" />
+                        <div className="mt-3.5 rounded-xl border border-primary/20 bg-primary/5 p-3.5 dark:bg-primary/10">
+                          <div className="flex items-center gap-1.5 font-semibold text-primary text-xs sm:text-sm">
+                            <Target className="h-4 w-4 shrink-0" />
                             <span>Actionable Proposal: {msg.actionProposal.title}</span>
                           </div>
-                          <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
+                          <p className="mt-1 text-xs text-slate-600 dark:text-slate-300 leading-normal">
                             {msg.actionProposal.description}
                           </p>
                           <div className="mt-2.5 flex items-center gap-2">
@@ -619,12 +651,23 @@ export default function AiMentorPage() {
 
                       {/* Message Footer */}
                       {!isUser && (
-                        <div className="mt-2.5 flex items-center justify-between border-t border-slate-200/60 pt-1.5 text-[10px] text-slate-400 dark:border-slate-700/60">
-                          <span className="flex items-center gap-1">
-                            <ShieldCheck className="h-3 w-3 text-emerald-500" />
-                            {msg.source === "gemini_2_flash"
-                              ? "Live Gemini 2.0 Flash AI"
-                              : "KAABIL Deterministic Knowledge Engine"}
+                        <div className="mt-3 flex items-center justify-between border-t border-slate-200/60 pt-2 text-[10px] text-slate-400 dark:border-slate-700/60">
+                          <span className="flex items-center gap-1.5">
+                            {msg.source === "gemini_2_flash" ? (
+                              <>
+                                <Sparkles className="h-3 w-3 text-emerald-500" />
+                                <span className="text-emerald-700 font-medium dark:text-emerald-400">
+                                  Live Gemini 2.0 Flash AI
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <ShieldCheck className="h-3 w-3 text-purple-600 dark:text-purple-400" />
+                                <span className="text-purple-700 font-medium dark:text-purple-300">
+                                  Verified Knowledge Base (Fallback)
+                                </span>
+                              </>
+                            )}
                           </span>
                           <button
                             onClick={() => copyToClipboard(msg.content, msg.id)}
@@ -703,9 +746,9 @@ export default function AiMentorPage() {
             </div>
             <div className="mt-1.5 flex items-center justify-between px-1 text-[11px] text-slate-400">
               <span>Press Enter to send, Shift + Enter for new line</span>
-              <span className="flex items-center gap-1">
-                <ShieldCheck className="h-3 w-3 text-emerald-500" />
-                Zero-hallucination verified records
+              <span className="flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400">
+                <ShieldCheck className="h-3 w-3 text-purple-600 dark:text-purple-400" />
+                Grounded in statutory guidelines & verified curriculum standards
               </span>
             </div>
           </div>
@@ -713,19 +756,25 @@ export default function AiMentorPage() {
 
         {/* RIGHT DRAWER: Live Student Context */}
         {showDrawer && context && (
-          <div className="w-80 border-l border-slate-200 bg-slate-50/50 p-4 overflow-y-auto dark:border-slate-800 dark:bg-slate-900/50">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
-              <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider dark:text-slate-300 flex items-center gap-1.5">
-                <BrainCircuit className="h-3.5 w-3.5 text-primary" />
-                <span>Live Student Context</span>
-              </h3>
-              <button
-                onClick={() => setShowDrawer(false)}
-                className="text-slate-400 hover:text-slate-600"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
+          <>
+            {/* Mobile backdrop */}
+            <div
+              className="fixed inset-0 z-40 bg-black/40 md:hidden"
+              onClick={() => setShowDrawer(false)}
+            />
+            <div className="fixed inset-y-0 right-0 z-50 w-80 max-w-[85vw] border-l border-slate-200 bg-white p-4 overflow-y-auto shadow-2xl md:relative md:z-auto md:w-80 md:bg-slate-50/50 md:shadow-none dark:border-slate-800 dark:bg-slate-900/90">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+                <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider dark:text-slate-300 flex items-center gap-1.5">
+                  <BrainCircuit className="h-3.5 w-3.5 text-primary" />
+                  <span>Live Student Context</span>
+                </h3>
+                <button
+                  onClick={() => setShowDrawer(false)}
+                  className="text-slate-400 hover:text-slate-600 p-1"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
 
             {/* Target Career & Readiness Meter */}
             <div className="mt-4 rounded-xl border border-slate-200 bg-white p-3 shadow-xs dark:border-slate-800 dark:bg-slate-800">
@@ -884,8 +933,111 @@ export default function AiMentorPage() {
               </Link>
             </div>
           </div>
-        )}
-      </div>
+        </>
+      )}
+    </div>
+
+    {/* Mobile Consultations Sidebar Drawer */}
+    {showMobileSidebar && (
+      <>
+        <div
+          className="fixed inset-0 z-50 bg-black/50 md:hidden"
+          onClick={() => setShowMobileSidebar(false)}
+        />
+        <div className="fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] flex flex-col border-r border-slate-200 bg-white p-3.5 shadow-2xl md:hidden dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex items-center justify-between pb-2.5 border-b border-slate-200 dark:border-slate-800 mb-3">
+            <span className="text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+              <MessageSquare className="h-4 w-4 text-primary" />
+              Past Consultations
+            </span>
+            <button
+              onClick={() => setShowMobileSidebar(false)}
+              className="text-slate-400 hover:text-slate-600 p-1 rounded"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          <Button
+            onClick={() => {
+              handleNewConversation();
+              setShowMobileSidebar(false);
+            }}
+            className="mb-3 w-full justify-start gap-2 bg-primary hover:bg-primary/90 text-xs"
+          >
+            <Plus className="h-4 w-4" />
+            <span>New Consultation</span>
+          </Button>
+
+          {/* Language Selector */}
+          <div className="mb-3 rounded-lg border border-slate-200 bg-slate-50 p-2 dark:border-slate-800 dark:bg-slate-800">
+            <div className="mb-1.5 flex items-center justify-between text-xs font-semibold text-slate-500">
+              <span className="flex items-center gap-1.5">
+                <Globe className="h-3.5 w-3.5 text-primary" />
+                <span>Language / भाषा</span>
+              </span>
+            </div>
+            <div className="grid grid-cols-3 gap-1">
+              {(["en", "hi", "hinglish"] as const).map((lang) => (
+                <button
+                  key={lang}
+                  onClick={() => setLanguage(lang)}
+                  className={`rounded py-1 text-xs font-medium transition-colors ${
+                    language === lang
+                      ? "bg-primary text-white shadow-xs"
+                      : "text-slate-600 hover:bg-slate-200 dark:text-slate-300 dark:hover:bg-slate-700"
+                  }`}
+                >
+                  {lang === "en" ? "English" : lang === "hi" ? "हिन्दी" : "Hinglish"}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="mb-1 text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
+            Recent Consultations
+          </div>
+
+          <div className="flex-1 space-y-1 overflow-y-auto">
+            {conversations.length === 0 ? (
+              <div className="py-6 text-center text-xs text-slate-400">
+                No past consultations yet.
+              </div>
+            ) : (
+              conversations.map((conv) => {
+                const isActive = conv.id === activeConvId;
+                return (
+                  <div
+                    key={conv.id}
+                    onClick={() => {
+                      setActiveConvId(conv.id);
+                      setShowMobileSidebar(false);
+                    }}
+                    className={`group flex cursor-pointer items-center justify-between rounded-lg px-2.5 py-2 text-xs transition-colors ${
+                      isActive
+                        ? "bg-primary/10 font-medium text-primary dark:bg-primary/20"
+                        : "text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 truncate">
+                      <MessageSquare className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                      <span className="truncate">{conv.title || "Career Consultation"}</span>
+                    </div>
+                    <button
+                      onClick={(e) => handleDeleteConversation(conv.id, e)}
+                      className="hover:text-red-500 p-0.5"
+                      title="Delete consultation"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      </>
+    )}
 
       {/* Action Proposal Modal */}
       {activeProposal && (

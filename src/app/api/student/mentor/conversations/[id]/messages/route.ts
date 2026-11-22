@@ -3,6 +3,7 @@ import { getSessionUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 import { devStore } from "@/lib/dev-store";
 import { AiMentorService } from "@/lib/mentor/ai-mentor-service";
+import { checkApiRateLimit } from "@/lib/auth/rate-limiter";
 
 export const dynamic = "force-dynamic";
 
@@ -49,6 +50,18 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }
 
     let studentProfileId = resolveStudentProfileId(user);
+
+    // Enforce rate limiting: 20 messages per minute per student
+    const rateStatus = checkApiRateLimit(`mentor:${studentProfileId}`, 20, 60);
+    if (!rateStatus.isAllowed) {
+      return NextResponse.json(
+        {
+          error: `Rate limit reached. Please wait ${rateStatus.resetInSeconds} seconds before sending another message.`,
+          resetInSeconds: rateStatus.resetInSeconds,
+        },
+        { status: 429 }
+      );
+    }
 
     const body = await req.json();
     const { content, language } = body;

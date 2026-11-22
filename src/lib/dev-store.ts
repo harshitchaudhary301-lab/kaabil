@@ -942,7 +942,11 @@ class DevStore {
       }
       if (!fs.existsSync(STORE_FILE)) {
         const init = getInitialStore();
-        fs.writeFileSync(STORE_FILE, JSON.stringify(init, null, 2), "utf-8");
+        try {
+          fs.writeFileSync(STORE_FILE, JSON.stringify(init, null, 2), "utf-8");
+        } catch {
+          // Read-only filesystem or serverless cold-start: proceed with in-memory init
+        }
         this.memoryCache = init;
         return init;
       }
@@ -996,8 +1000,11 @@ class DevStore {
         fs.mkdirSync(STORE_DIR, { recursive: true });
       }
       fs.writeFileSync(STORE_FILE, JSON.stringify(this.memoryCache, null, 2), "utf-8");
-    } catch (e) {
-      console.error("[DevStore] Failed to write store to disk:", e);
+    } catch (e: any) {
+      // Graceful degradation: in serverless / read-only production environments, memoryCache continues in-memory
+      if (process.env.NODE_ENV !== "test") {
+        console.warn("[DevStore] Read-only / serverless environment (in-memory state preserved):", e?.message || e);
+      }
     }
   }
 

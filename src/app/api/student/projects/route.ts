@@ -14,9 +14,34 @@ import {
 } from "@/data/careerProjectsData";
 import { ProfileService } from "@/lib/student/profile-service";
 import { devStore } from "@/lib/dev-store";
+import { checkApiRateLimit } from "@/lib/auth/rate-limiter";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
+
+function isValidDeliverableUrl(urlStr: string): boolean {
+  try {
+    const parsed = new URL(urlStr);
+    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return false;
+    const host = parsed.hostname.toLowerCase();
+    // Disallow loopback, private RFC1918, and metadata service IP addresses
+    if (
+      host === "localhost" ||
+      host === "127.0.0.1" ||
+      host === "::1" ||
+      host === "169.254.169.254" ||
+      host.startsWith("192.168.") ||
+      host.startsWith("10.") ||
+      host.endsWith(".internal") ||
+      host.endsWith(".local")
+    ) {
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 const projectActionSchema = z.discriminatedUnion("action", [
   z.object({
@@ -32,7 +57,13 @@ const projectActionSchema = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("SUBMIT"),
     projectId: z.string().min(1),
-    submissionUrl: z.string().url("A valid deliverable URL is required"),
+    submissionUrl: z
+      .string()
+      .url("A valid deliverable URL is required")
+      .refine(isValidDeliverableUrl, {
+        message:
+          "Deliverable URL must be a valid public web link (e.g., GitHub repo, Google Drive, Figma, Notion, or portfolio link).",
+      }),
     submissionNotes: z.string().max(1000).optional(),
     selfAssessedReflection: z.string().max(1000).optional(),
   }),
@@ -47,7 +78,16 @@ export async function GET(req: NextRequest) {
       // Non-cookie environment fallback
     }
 
-    const identifier = sessionUser?.email || sessionUser?.id || "demo.student@kaabil.in";
+    const isDemoAllowed = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+    const identifier = sessionUser?.email || sessionUser?.id || (isDemoAllowed ? "demo.student@kaabil.in" : null);
+
+    if (!identifier) {
+      return NextResponse.json(
+        { success: false, error: "Authentication required to view projects." },
+        { status: 401 }
+      );
+    }
+
     const profile = await ProfileService.getStudentProfile(identifier);
     const profileId = profile?.id || "demo-profile-id";
     const stream = profile?.academic?.stream || "NON_MEDICAL_PCM";
@@ -88,7 +128,27 @@ export async function POST(req: NextRequest) {
       // Non-cookie environment fallback
     }
 
-    const identifier = sessionUser?.email || sessionUser?.id || "demo.student@kaabil.in";
+    const isDemoAllowed = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+    const identifier = sessionUser?.email || sessionUser?.id || (isDemoAllowed ? "demo.student@kaabil.in" : null);
+
+    if (!identifier) {
+      return NextResponse.json(
+        { success: false, error: "Authentication required to submit or update projects." },
+        { status: 401 }
+      );
+    }
+
+    // Rate limiting: max 15 project actions per minute
+    const rateStatus = checkApiRateLimit(`project:${identifier}`, 15, 60);
+    if (!rateStatus.isAllowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Project submission rate limit reached. Please wait ${rateStatus.resetInSeconds} seconds.`,
+        },
+        { status: 429 }
+      );
+    }
     const body = await req.json();
     const validated = projectActionSchema.safeParse(body);
 

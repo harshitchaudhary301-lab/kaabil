@@ -162,6 +162,7 @@ export interface AiEngineStatus {
   modelName: string;
   deterministicFallbackReady: boolean;
   zeroHallucinationGuaranteed: boolean;
+  verifiedFallbackDescription?: string;
   slaLimitSeconds: number;
 }
 
@@ -176,6 +177,8 @@ export class AiMentorService {
       modelName: liveAvailable ? GEMINI_MODEL : "KAABIL Deterministic Knowledge Engine v2.0",
       deterministicFallbackReady: true,
       zeroHallucinationGuaranteed: true,
+      verifiedFallbackDescription:
+        "Operating in verified knowledge mode using curated statutory guidelines, regulatory criteria, and official national curriculum data.",
       slaLimitSeconds: TIMEOUT_MS / 1000,
     };
   }
@@ -541,17 +544,17 @@ ${
     : "Respond in clear, encouraging, structured English."
 }
 
-MANDATORY RESPONSE STRUCTURE & ZERO-HALLUCINATION RULES:
+MANDATORY RESPONSE STRUCTURE & VERIFIED KNOWLEDGE GROUNDING RULES:
 1. Ground every fact strictly in the verified context provided above.
 2. Structure your reply in 3 clearly separated sections using clean Markdown:
-   - Conversational response tailored to their question and current learning status.
+   - Conversational response tailored to their question and current learning status. Keep it concise, accessible, and friendly.
    - ### 📌 Verified Information / प्रमाणित तथ्य: Cite verified regulatory body, official exam names, and government salary benchmarks with exact source.
    - ### 📊 Market Estimates & Range / अनुमानित सीमा: Label all private market packages, preparation timelines, or competition ratios explicitly as market estimates.
-   - ### 🎯 Actionable Next Step / अगला कदम: Tie directly to their active sprint task, top skill gap, or diagnostic assessment.
+   - ### 🎯 Actionable Next Step / अगला कदम: Provide 1-2 concrete, immediate next steps tied directly to their active sprint task, top skill gap, or diagnostic assessment.
 3. NEVER fabricate admission eligibility, entrance exam dates (always remind to check official NTA / UPSC / State portals), salaries, or job guarantees.
 4. Explain WHY a career may fit the student based on their profile, without guaranteeing admission or success.
 5. Provide career comparisons or alternative pathways if asked.
-6. Keep the response concise (250-350 words), structured, and warm.`;
+6. Keep the response concise (200-280 words), well-spaced, student-friendly, and encouraging. Avoid overwhelming walls of text.`;
 
           const result = await model.generateContent([
             { text: systemPrompt },
