@@ -279,7 +279,15 @@ export class CareerRepository {
         });
 
         if (record) {
-          return { data: record, source: "database", isDbConnected: true };
+          const stream = record.subDomain?.domain?.stream || record.streams?.[0]?.stream;
+          return {
+            data: {
+              ...record,
+              stream,
+            },
+            source: "database",
+            isDbConnected: true,
+          };
         }
       } catch (err: unknown) {
         console.error("CareerRepository getCareerBySlug DB query failed:", err);

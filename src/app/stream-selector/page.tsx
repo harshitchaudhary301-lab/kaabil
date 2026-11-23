@@ -81,7 +81,7 @@ const QUESTIONS: Question[] = [
         id: "design-creative",
         label: "Visual Arts, UI/UX, Architecture & Creative Direction",
         description: "Crafting visual identities, 3D animations, digital interfaces, and spatial aesthetics.",
-        streamAffinity: "CREATIVE_ARTS_DESIGN",
+        streamAffinity: "CREATIVE_DESIGN",
       },
       {
         id: "agriculture-nature",
@@ -125,7 +125,7 @@ const QUESTIONS: Question[] = [
         id: "creative-synthesis",
         label: "Visual Storytelling, Aesthetics & Empathy Mapping",
         description: "Sketching concepts, user research, wireframing, and creating emotional visual impact.",
-        streamAffinity: "CREATIVE_ARTS_DESIGN",
+        streamAffinity: "CREATIVE_DESIGN",
       },
       {
         id: "hands-on",
@@ -169,7 +169,7 @@ const QUESTIONS: Question[] = [
         id: "studios",
         label: "Creative Design Studios, Animation Bays & Media Sets",
         description: "Collaborative open design spaces with dual monitors, prototyping gear, and pin boards.",
-        streamAffinity: "CREATIVE_ARTS_DESIGN",
+        streamAffinity: "CREATIVE_DESIGN",
       },
       {
         id: "outdoors-farms",
@@ -207,13 +207,13 @@ const QUESTIONS: Question[] = [
         id: "flexible-design",
         label: "4 Years: Design / Fine Arts portfolio-centric degree (B.Des / B.Arch)",
         description: "Hands-on studio projects, juried critiques, and industry portfolio development.",
-        streamAffinity: "CREATIVE_ARTS_DESIGN",
+        streamAffinity: "CREATIVE_DESIGN",
       },
       {
         id: "rapid-vocational",
         label: "1 to 2 Years: Accelerated vocational diploma or ITI apprentice pathway",
         description: "Focused technical mastery for direct workforce entry with minimal academic theory overhead.",
-        streamAffinity: "VOCATIONAL",
+        streamAffinity: "VOCATIONAL_TRADES",
       },
     ],
   },
@@ -479,7 +479,7 @@ export default function StreamSelectorPage() {
         ],
         governingBodies: ["Bar Council of India (BCI)", "Consortium of NLUs"],
       },
-      CREATIVE_ARTS_DESIGN: {
+      CREATIVE_DESIGN: {
         streamName: "Creative Arts, UI/UX & Design",
         description: "Designed for visual visionaries eager to shape digital interfaces, 3D worlds, consumer hardware aesthetics, and storytelling.",
         keySubjects: ["Design Thinking", "Digital Illustration", "Visual Ergonomics", "Typography"],
@@ -498,6 +498,47 @@ export default function StreamSelectorPage() {
           "Fewer government job avenues compared to engineering or civil services",
         ],
         governingBodies: ["National Institute of Design (NID)", "Council of Architecture (CoA)"],
+      },
+      ARTS_HUMANITIES: {
+        streamName: "Arts, Humanities & Social Sciences",
+        description: "Ideal for empathetic, socially conscious thinkers passionate about public policy, civil governance, literature, psychology, and social impact.",
+        keySubjects: ["History", "Political Science", "Psychology", "Sociology", "English Literature"],
+        topCareers: [
+          { title: "Civil Services Officer (IAS/IPS)", slug: "civil-services-ias", entrySalary: "₹10.5 Lakhs/yr" },
+          { title: "Clinical Psychologist & Counselor", slug: "clinical-psychologist", entrySalary: "₹6.2 Lakhs/yr" },
+          { title: "Public Policy Analyst & Researcher", slug: "public-policy-analyst", entrySalary: "₹8.5 Lakhs/yr" },
+        ],
+        benefits: [
+          "Direct pathway to national civil governance, diplomacy, and administrative leadership",
+          "Deep development of critical thinking, rhetorical mastery, and human empathy",
+          "Diverse avenues in journalism, international relations, think tanks, and public policy",
+        ],
+        tradeOffs: [
+          "Intense multi-stage competition for premier government services (UPSC CSE)",
+          "Longer gestation period for private practice in clinical psychology without advanced licensure",
+          "Initial salaries in publishing and civil society vary significantly by organization",
+        ],
+        governingBodies: ["Union Public Service Commission (UPSC)", "Rehabilitation Council of India (RCI)"],
+      },
+      VOCATIONAL_TRADES: {
+        streamName: "Vocational & Technical Trades",
+        description: "Engineered for practical problem-solvers seeking rapid workforce entry through mechatronics, industrial automation, and hands-on technical trades.",
+        keySubjects: ["Workshop Technology", "Applied Mechanics", "Engineering Drawing", "Electrical Circuits"],
+        topCareers: [
+          { title: "Industrial Automation Technician", slug: "industrial-automation-technician", entrySalary: "₹4.5 Lakhs/yr" },
+          { title: "EV Powertrain Specialist", slug: "ev-powertrain-specialist", entrySalary: "₹5.2 Lakhs/yr" },
+        ],
+        benefits: [
+          "Accelerated workforce entry (1-2 years) with direct industry apprenticeship opportunities",
+          "High demand across industrial automation, robotics manufacturing, and electric mobility",
+          "Skill-backed qualifications recognized by NCVT and Ministry of Skill Development",
+        ],
+        tradeOffs: [
+          "Physical workshop environments with shift schedules and rigorous safety protocols",
+          "Perceived societal bias favoring conventional white-collar degrees",
+          "Continuous re-skilling required as manufacturing automation and CNC tooling evolve",
+        ],
+        governingBodies: ["National Council for Vocational Education and Training (NCVET)", "DGT"],
       },
       AGRICULTURE: {
         streamName: "Agricultural Sciences & Agri-Biotech",
@@ -520,6 +561,10 @@ export default function StreamSelectorPage() {
         governingBodies: ["Indian Council of Agricultural Research (ICAR)"],
       },
     };
+
+    // Aliases for backward compatibility
+    STREAM_INFO["CREATIVE_ARTS_DESIGN"] = STREAM_INFO["CREATIVE_DESIGN"];
+    STREAM_INFO["VOCATIONAL"] = STREAM_INFO["VOCATIONAL_TRADES"];
 
     const primaryData = STREAM_INFO[topStreamCode] || STREAM_INFO["NON_MEDICAL_PCM"];
     const secondData = STREAM_INFO[secondStreamCode] || STREAM_INFO["COMMERCE"];
@@ -560,7 +605,7 @@ export default function StreamSelectorPage() {
     };
   };
 
-  const handleSaveToProfile = async () => {
+  const handleSaveToProfile = async (confirmAcademicStream = false) => {
     if (!result) return;
     try {
       const res = await fetch("/api/student/stream-discovery", {
@@ -570,12 +615,23 @@ export default function StreamSelectorPage() {
           answers: selectedAnswers,
           preferredLanguage: selectedAnswers["language"] || "en",
           saveToProfile: true,
+          confirmStream: confirmAcademicStream ? result.primaryStream.stream : undefined,
+          confirmedStream: confirmAcademicStream ? result.primaryStream.stream : undefined,
         }),
       });
       if (res.ok) {
-        setSaveStatus("Diagnostic result successfully saved to your Student Passport!");
+        if (confirmAcademicStream) {
+          setSaveStatus("Academic stream successfully confirmed and saved to your Student Passport!");
+        } else {
+          setSaveStatus("Diagnostic result successfully saved to your Student Passport!");
+        }
       } else {
-        setSaveStatus("Saved locally. Sign in to sync across devices.");
+        const errData = await res.json().catch(() => ({}));
+        if (res.status === 401) {
+          setSaveStatus("Diagnostic saved locally. Sign in to sync across devices.");
+        } else {
+          setSaveStatus(errData.error || "Saved locally. Sign in to sync across devices.");
+        }
       }
     } catch {
       setSaveStatus("Diagnostic preserved in this browser session.");
@@ -893,15 +949,24 @@ export default function StreamSelectorPage() {
                 Retake Diagnostic
               </Button>
 
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={handleSaveToProfile}
+                  onClick={() => handleSaveToProfile(false)}
                   className="gap-1.5 text-xs text-primary border-primary/30"
                 >
                   <HeartHandshake className="h-3.5 w-3.5" />
-                  Save to My Passport
+                  Save Diagnostic
+                </Button>
+
+                <Button
+                  size="sm"
+                  onClick={() => handleSaveToProfile(true)}
+                  className="gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  Confirm as My Academic Stream
                 </Button>
 
                 <Link href="/careers">

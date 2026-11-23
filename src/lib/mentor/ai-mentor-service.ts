@@ -238,19 +238,37 @@ export class AiMentorService {
     const currentStream = profileView?.academic?.stream || devProf?.currentStream || "UNDECIDED";
     const streamLabel = profileView?.academic?.streamLabel || currentStream.replace(/_/g, " ");
 
+    const hasExplicitCareer = Boolean(
+      profileView?.targetCareer?.slug ||
+      devProf?.careerGoals?.[0]?.careerPath?.slug ||
+      devProf?.careerGoals?.[0]?.targetRole ||
+      devProf?.targetCareerPathId ||
+      devProf?.targetRoleSlug ||
+      devProf?.targetCareerSlug
+    );
+
     const targetCareerSlug =
       profileView?.targetCareer?.slug ||
       devProf?.careerGoals?.[0]?.careerPath?.slug ||
       devProf?.targetCareerPathId ||
+      devProf?.targetRoleSlug ||
+      devProf?.targetCareerSlug ||
+      (devProf?.careerGoals?.[0]?.targetRole ? devProf.careerGoals[0].targetRole.toLowerCase().replace(/[^a-z0-9]+/g, "-") : "") ||
       "exploring-paths";
 
-    const targetCareerTitle =
+    let targetCareerTitle =
       profileView?.targetCareer?.title ||
       devProf?.careerGoals?.[0]?.careerPath?.title ||
-      "Exploring Career Pathways";
+      devProf?.careerGoals?.[0]?.targetRole ||
+      (hasExplicitCareer ? targetCareerSlug.replace(/-/g, " ") : "Exploring Career Pathways");
 
     // 2. Find Verified Career Record from Database
-    const careerRecord = this.findCareerRecord(targetCareerSlug) || this.findCareerRecord(targetCareerTitle);
+    const careerRecord = hasExplicitCareer
+      ? (this.findCareerRecord(targetCareerSlug) || this.findCareerRecord(targetCareerTitle))
+      : undefined;
+    if (careerRecord) {
+      targetCareerTitle = careerRecord.title;
+    }
     let targetCareerVerified: VerifiedCareerContext | null = null;
     if (careerRecord) {
       targetCareerVerified = {
@@ -292,22 +310,24 @@ export class AiMentorService {
       milestoneProgress: 0,
     };
 
-    try {
-      const cri = await CareerReadinessEngine.calculateReadiness(studentProfileId, targetCareerSlug);
-      criScore = cri.overallScore;
-      criStatus = cri.status;
-      isUnassessed = cri.overallScore === null || cri.status === "UNASSESSED";
-      if (cri.dimensions) {
-        dimensionBreakdown = {
-          careerKnowledge: cri.dimensions.careerKnowledge?.score || 0,
-          educationalPreparation: cri.dimensions.educationalPreparation?.score || 0,
-          skillDevelopment: cri.dimensions.skillDevelopment?.score || 0,
-          practicalLearning: cri.dimensions.practicalLearning?.score || 0,
-          milestoneProgress: cri.dimensions.milestoneProgress?.score || 0,
-        };
+    if (hasExplicitCareer && targetCareerSlug !== "exploring-paths") {
+      try {
+        const cri = await CareerReadinessEngine.calculateReadiness(studentProfileId, targetCareerSlug);
+        criScore = cri.overallScore;
+        criStatus = cri.status;
+        isUnassessed = cri.overallScore === null || cri.status === "UNASSESSED";
+        if (cri.dimensions) {
+          dimensionBreakdown = {
+            careerKnowledge: cri.dimensions.careerKnowledge?.score || 0,
+            educationalPreparation: cri.dimensions.educationalPreparation?.score || 0,
+            skillDevelopment: cri.dimensions.skillDevelopment?.score || 0,
+            practicalLearning: cri.dimensions.practicalLearning?.score || 0,
+            milestoneProgress: cri.dimensions.milestoneProgress?.score || 0,
+          };
+        }
+      } catch (e) {
+        console.warn("[AiMentorService] CRI fetch note:", e);
       }
-    } catch (e) {
-      console.warn("[AiMentorService] CRI fetch note:", e);
     }
 
     // 4. Skills Breakdown (Assessed vs Self-Reported)

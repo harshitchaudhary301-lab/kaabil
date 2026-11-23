@@ -49,6 +49,7 @@ export interface CompatibilityReport {
   matchedSkills: string[];
   skillsToDevelop: string[];
   isBridgePath: boolean;
+  isInterdisciplinary: boolean;
   isSelfReportedSkillOnly: boolean;
   explanationPoints: string[];
 
@@ -62,6 +63,7 @@ export interface CompatibilityReport {
   recommendedNextAction: string;
   dataSufficiency: "SUFFICIENT" | "INSUFFICIENT";
   uncertaintyFollowUpQuestions?: string[];
+  scoreDisclaimer: string;
 }
 
 export class CareerRecommendationEngine {
@@ -214,6 +216,7 @@ export class CareerRecommendationEngine {
       matchedSkills,
       skillsToDevelop,
       isBridgePath,
+      isInterdisciplinary: career.stream === "INTERDISCIPLINARY",
       isSelfReportedSkillOnly: isSelfReportedOnly,
       explanationPoints,
       whySuited,
@@ -225,6 +228,8 @@ export class CareerRecommendationEngine {
       recommendedNextAction,
       dataSufficiency,
       uncertaintyFollowUpQuestions,
+      scoreDisclaimer:
+        "Compatibility score is an indicative multi-factor alignment index based on stated interests, academic stream, and skills. It is not an employability guarantee or success probability.",
     };
   }
 

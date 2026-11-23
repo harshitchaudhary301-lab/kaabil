@@ -7,7 +7,7 @@
 import { prisma, checkDatabaseConnection } from "@/lib/db";
 import { devStore } from "@/lib/dev-store";
 import { isMinorStage } from "@/lib/auth/rbac";
-import { getCareerBySlug } from "@/data/careersData";
+import { getCareerBySlug, ALL_CAREERS } from "@/data/careersData";
 import {
   StudentProfileViewData,
   UpdateStudentProfileInput,
@@ -415,8 +415,8 @@ export class ProfileService {
       }
     }
 
-    // 2. Profile userSkills
-    const profileSkills = profile?.userSkills || [
+    // 2. Profile userSkills (Demo default only for demo-profile-id)
+    const profileSkills = profile?.userSkills || (profileId === "demo-profile-id" ? [
       {
         skill: { name: "Python", category: "TECHNICAL" },
         isVerified: true,
@@ -450,7 +450,7 @@ export class ProfileService {
         proficiencyLevel: "BEGINNER",
         isVerified: false,
       },
-    ];
+    ] : []);
 
     for (const s of profileSkills) {
       const skillName = s.skill?.name || s.name;
@@ -478,41 +478,50 @@ export class ProfileService {
       }
     }
 
-    // Format target career
+    // Format target career (strictly optional; never fabricate for non-demo profiles)
     const targetGoal = profile?.careerGoals?.[0];
-    let targetCareer: TargetCareerGoal | null = null;
-    if (targetGoal) {
-      const slug =
-        targetGoal.careerPath?.slug ||
-        targetGoal.targetRoleSlug ||
-        targetGoal.slug ||
-        "ai-systems-engineer";
-      const meta = getCareerBySlug(slug);
-      const title =
-        meta?.title ||
-        targetGoal.careerPath?.title ||
-        targetGoal.targetRoleTitle ||
-        targetGoal.title ||
-        slug
-          .split("-")
-          .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
-          .join(" ");
+    const directSlug =
+      profile?.targetRoleSlug ||
+      profile?.targetCareerSlug ||
+      profile?.targetCareerPathId;
 
-      targetCareer = {
-        slug,
-        title,
-        stream: meta?.stream || profile?.currentStream || "NON_MEDICAL_PCM",
-        regulatoryBody:
-          meta?.regulatoryBody ||
-          targetGoal.careerPath?.regulatoryBody ||
-          "AICTE",
-        targetYear: targetGoal.targetYear || 2027,
-        priorityRank: targetGoal.priorityRank || 1,
-        notes:
-          targetGoal.notes ||
-          "Focused on autonomous robotics and applied machine learning.",
-      };
-    } else {
+    let targetCareer: TargetCareerGoal | null = null;
+    if (targetGoal || directSlug) {
+      const slug =
+        targetGoal?.careerPath?.slug ||
+        targetGoal?.targetRoleSlug ||
+        targetGoal?.slug ||
+        directSlug ||
+        (profileId === "demo-profile-id" ? "ai-systems-engineer" : null);
+      if (slug) {
+        const meta = getCareerBySlug(slug) || ALL_CAREERS.find((c) => c.slug === slug || c.id === slug);
+        const title =
+          meta?.title ||
+          targetGoal?.careerPath?.title ||
+          targetGoal?.targetRoleTitle ||
+          targetGoal?.title ||
+          profile?.targetRoleTitle ||
+          slug
+            .split("-")
+            .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
+            .join(" ");
+
+        targetCareer = {
+          slug,
+          title,
+          stream: meta?.stream || profile?.currentStream || "NON_MEDICAL_PCM",
+          regulatoryBody:
+            meta?.regulatoryBody ||
+            targetGoal?.careerPath?.regulatoryBody ||
+            "AICTE",
+          targetYear: targetGoal?.targetYear || 2027,
+          priorityRank: targetGoal?.priorityRank || 1,
+          notes:
+            targetGoal?.notes ||
+            (profileId === "demo-profile-id" ? "Focused on autonomous robotics and applied machine learning." : ""),
+        };
+      }
+    } else if (profileId === "demo-profile-id") {
       const fallbackCareer = getCareerBySlug("ai-systems-engineer");
       if (fallbackCareer) {
         targetCareer = {
@@ -527,19 +536,19 @@ export class ProfileService {
       }
     }
 
-    // Format interests
-    const rawInterests = profile?.interests || [
+    // Format interests (strictly optional; never fabricate for non-demo profiles)
+    const rawInterests = profile?.interests || (profileId === "demo-profile-id" ? [
       { domain: "Artificial Intelligence" },
       { domain: "Robotics Control" },
       { domain: "System Architecture" },
-    ];
+    ] : []);
     const interests = rawInterests.map(
       (i: any) => i.domain || i.interestName || i
     );
 
     // Format education details
     const stage = (profile?.educationStage || "UNDERGRADUATE") as EducationStage;
-    const stream = (profile?.currentStream || "NON_MEDICAL_PCM") as EducationalStream;
+    const stream = (profile?.currentStream || (profileId === "demo-profile-id" ? "NON_MEDICAL_PCM" : "UNDECIDED")) as EducationalStream;
 
     return {
       id: profileId,

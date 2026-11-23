@@ -847,10 +847,11 @@ function getInitialStore(): DevStoreData {
         competency: "Biochemistry Assays",
         difficulty: "INTERMEDIATE",
         resourceType: "VIDEO",
+        format: "VIDEO",
         estimatedMinutes: 25,
         url: "https://kaabil.in/academy/clinical-chem-calibration",
         summary: "Step-by-step methodology for setting up reference calibration curves on multi-channel clinical analyzers.",
-        provider: "Apex Medical Academy",
+        provider: "Apex Medical Academy / AIIMS Clinical Guidelines",
         isMandatoryForCRI: true,
       },
       {
@@ -860,10 +861,11 @@ function getInitialStore(): DevStoreData {
         competency: "Laboratory Safety",
         difficulty: "BEGINNER",
         resourceType: "ARTICLE",
+        format: "ARTICLE",
         estimatedMinutes: 15,
         url: "https://kaabil.in/academy/biosafety-level-2",
         summary: "Comprehensive guide to BSL-2 lab standards, sharps disposal, and biohazard isolation.",
-        provider: "National Health Science Standards",
+        provider: "National Health Science Standards / ICMR",
         isMandatoryForCRI: true,
       },
       {
@@ -873,10 +875,11 @@ function getInitialStore(): DevStoreData {
         competency: "PostgreSQL",
         difficulty: "ADVANCED",
         resourceType: "CASE_STUDY",
+        format: "CASE_STUDY",
         estimatedMinutes: 40,
         url: "https://kaabil.in/academy/postgresql-architecture",
         summary: "Production database modeling with foreign keys, constraints, and index optimizations.",
-        provider: "KAABIL Engineering Faculty",
+        provider: "KAABIL Engineering Faculty & NPTEL",
         isMandatoryForCRI: false,
       },
       {
@@ -886,10 +889,249 @@ function getInitialStore(): DevStoreData {
         competency: "GST Compliance",
         difficulty: "INTERMEDIATE",
         resourceType: "DOCUMENT",
+        format: "DOCUMENTATION",
         estimatedMinutes: 30,
         url: "https://kaabil.in/academy/gst-itc-computation",
         summary: "Practical computations of GSTR-3B filings, reconciliations, and eligible input tax credits.",
         provider: "Institute of Chartered Accountants (ICAI Syllabus)",
+        isMandatoryForCRI: true,
+      },
+      {
+        id: "acad-res-05",
+        title: "Constitutional Law & Fundamental Rights Jurisprudence",
+        stream: "LAW",
+        competency: "Constitutional Law",
+        difficulty: "ADVANCED",
+        resourceType: "CASE_STUDY",
+        format: "CASE_STUDY",
+        estimatedMinutes: 45,
+        url: "https://kaabil.in/academy/constitutional-law",
+        summary: "In-depth case analysis of Article 14, 19, 21 jurisprudence, basic structure doctrine, and Supreme Court precedent.",
+        provider: "e-PG Pathshala / UGC / NLU Delhi",
+        isMandatoryForCRI: true,
+      },
+      {
+        id: "acad-res-06",
+        title: "Commercial Contract Drafting & Arbitration Clauses",
+        stream: "LAW",
+        competency: "Contract Law",
+        difficulty: "INTERMEDIATE",
+        resourceType: "DOCUMENT",
+        format: "DOCUMENTATION",
+        estimatedMinutes: 35,
+        url: "https://kaabil.in/academy/commercial-contracts",
+        summary: "Drafting warranties, representations, indemnity caps, dispute resolution, and arbitration agreements.",
+        provider: "NLSIU Bengaluru / Swayam",
+        isMandatoryForCRI: true,
+      },
+      {
+        id: "acad-res-07",
+        title: "Principles of Agronomy & Sustainable Soil Science",
+        stream: "AGRICULTURE",
+        competency: "Soil Science",
+        difficulty: "BEGINNER",
+        resourceType: "ARTICLE",
+        format: "ARTICLE",
+        estimatedMinutes: 25,
+        url: "https://kaabil.in/academy/agronomy-soil-science",
+        summary: "Soil chemistry, macro and micronutrient management, conservation tillage, and soil health card metrics.",
+        provider: "Indian Council of Agricultural Research (ICAR)",
+        isMandatoryForCRI: true,
+      },
+      {
+        id: "acad-res-08",
+        title: "Precision Farming & Protected Cultivation Systems",
+        stream: "AGRICULTURE",
+        competency: "Precision Agriculture",
+        difficulty: "INTERMEDIATE",
+        resourceType: "VIDEO",
+        format: "VIDEO",
+        estimatedMinutes: 30,
+        url: "https://kaabil.in/academy/precision-farming",
+        summary: "IoT sensor telemetry, automated fertigation scheduling, greenhouse climate control, and yield analytics.",
+        provider: "Swayam / ICAR-IARI Pusa",
+        isMandatoryForCRI: false,
+      },
+      {
+        id: "acad-res-09",
+        title: "Sports Biomechanics & Video Motion Analysis",
+        stream: "SPORTS_PHYSICAL_ED",
+        competency: "Sports Biomechanics",
+        difficulty: "INTERMEDIATE",
+        resourceType: "VIDEO",
+        format: "VIDEO",
+        estimatedMinutes: 35,
+        url: "https://kaabil.in/academy/sports-biomechanics",
+        summary: "Kinematic joint angle tracking, force-plate telemetry, ground reaction forces, and athletic kinetic chain optimization.",
+        provider: "IIT Madras CESSA / LNIPE Gwalior",
+        isMandatoryForCRI: true,
+      },
+      {
+        id: "acad-res-10",
+        title: "Acute Athletic Injury Triage & Return-to-Play Protocols",
+        stream: "SPORTS_PHYSICAL_ED",
+        competency: "Sports Physiotherapy",
+        difficulty: "ADVANCED",
+        resourceType: "CASE_STUDY",
+        format: "CASE_STUDY",
+        estimatedMinutes: 30,
+        url: "https://kaabil.in/academy/athletic-triage",
+        summary: "Pitch-side acute injury triage, SCAT5 concussion assessment, ligament sprain evaluation, and rehabilitation milestones.",
+        provider: "Sports Authority of India (SAI) / NIS Patiala",
+        isMandatoryForCRI: true,
+      },
+      {
+        id: "acad-res-11",
+        title: "Hotel Operations, Room Yield & RevPAR Management",
+        stream: "HOSPITALITY_TOURISM",
+        competency: "Hotel Operations",
+        difficulty: "INTERMEDIATE",
+        resourceType: "CASE_STUDY",
+        format: "CASE_STUDY",
+        estimatedMinutes: 35,
+        url: "https://kaabil.in/academy/hotel-revpar",
+        summary: "Dynamic room pricing models, channel manager distribution, GOPPAR calculations, and guest experience audits.",
+        provider: "NCHMCT / IHM Pusa New Delhi",
+        isMandatoryForCRI: true,
+      },
+      {
+        id: "acad-res-12",
+        title: "Classical Culinary Arts & Kitchen Brigade Management",
+        stream: "HOSPITALITY_TOURISM",
+        competency: "Culinary Arts",
+        difficulty: "BEGINNER",
+        resourceType: "VIDEO",
+        format: "VIDEO",
+        estimatedMinutes: 30,
+        url: "https://kaabil.in/academy/culinary-brigade",
+        summary: "Classical French brigade hierarchy, regional Indian flavor balancing, mis-en-place, and FSSAI sanitation.",
+        provider: "Ministry of Tourism / Swayam",
+        isMandatoryForCRI: false,
+      },
+      {
+        id: "acad-res-13",
+        title: "Bioinformatics Sequence Alignment & Protein Modeling",
+        stream: "INTERDISCIPLINARY",
+        competency: "Bioinformatics",
+        difficulty: "ADVANCED",
+        resourceType: "INTERACTIVE",
+        format: "INTERACTIVE",
+        estimatedMinutes: 40,
+        url: "https://kaabil.in/academy/bioinformatics-algorithms",
+        summary: "BLAST/FASTA pairwise sequence alignment, Hidden Markov Models, and computational structural biology.",
+        provider: "NPTEL / IIT Madras & IISc",
+        isMandatoryForCRI: true,
+      },
+      {
+        id: "acad-res-14",
+        title: "Geospatial Analysis, Remote Sensing & Digital Cartography",
+        stream: "INTERDISCIPLINARY",
+        competency: "GIS Mapping",
+        difficulty: "INTERMEDIATE",
+        resourceType: "CASE_STUDY",
+        format: "CASE_STUDY",
+        estimatedMinutes: 35,
+        url: "https://kaabil.in/academy/gis-remote-sensing",
+        summary: "Multi-spectral satellite image processing, NDVI vegetation indices, raster algebra, and QGIS spatial modeling.",
+        provider: "IIRS-ISRO / Swayam",
+        isMandatoryForCRI: false,
+      },
+      {
+        id: "acad-res-15",
+        title: "NCERT Career Cards & Multi-Stream Exploration Framework",
+        stream: "UNDECIDED",
+        competency: "Career Discovery",
+        difficulty: "BEGINNER",
+        resourceType: "DOCUMENT",
+        format: "DOCUMENTATION",
+        estimatedMinutes: 25,
+        url: "https://kaabil.in/academy/ncert-career-cards",
+        summary: "Diagnostic self-exploration cards covering sciences, commerce, humanities, vocational, and emerging professions.",
+        provider: "NCERT / CIET National Guidance",
+        isMandatoryForCRI: true,
+      },
+      {
+        id: "acad-res-16",
+        title: "National Career Service (NCS) Occupational Trajectory Directory",
+        stream: "UNDECIDED",
+        competency: "Occupational Mapping",
+        difficulty: "BEGINNER",
+        resourceType: "ARTICLE",
+        format: "ARTICLE",
+        estimatedMinutes: 20,
+        url: "https://kaabil.in/academy/ncs-occupations",
+        summary: "Comprehensive guide to National Classification of Occupations, entry eligibility, statutory councils, and career ladders.",
+        provider: "Ministry of Labour & Employment, Govt. of India",
+        isMandatoryForCRI: true,
+      },
+      {
+        id: "acad-res-17",
+        title: "First-Principles Systems Thinking & Cognitive Bias Mitigation",
+        stream: "UNDECIDED",
+        competency: "Problem Solving",
+        difficulty: "INTERMEDIATE",
+        resourceType: "CASE_STUDY",
+        format: "CASE_STUDY",
+        estimatedMinutes: 30,
+        url: "https://kaabil.in/academy/systems-thinking",
+        summary: "Deconstructing complex dilemmas using causal feedback loops, root-cause tree structures, and evidence matrices.",
+        provider: "NITI Aayog / Atal Innovation Mission",
+        isMandatoryForCRI: false,
+      },
+      {
+        id: "acad-res-18",
+        title: "UI/UX Design Systems, Prototyping & Accessibility Standards",
+        stream: "CREATIVE_DESIGN",
+        competency: "UI/UX Design",
+        difficulty: "INTERMEDIATE",
+        resourceType: "VIDEO",
+        format: "VIDEO",
+        estimatedMinutes: 25,
+        url: "https://kaabil.in/academy/ui-design-systems",
+        summary: "Auto-layout components, WCAG AAA color contrast ratios, tokenized typography, and micro-interaction prototypes.",
+        provider: "Interaction Design Foundation & NPTEL",
+        isMandatoryForCRI: true,
+      },
+      {
+        id: "acad-res-19",
+        title: "Industrial Mechatronics, Sensors & PLC Ladder Logic",
+        stream: "VOCATIONAL_TRADES",
+        competency: "PLC Automation",
+        difficulty: "ADVANCED",
+        resourceType: "VIDEO",
+        format: "VIDEO",
+        estimatedMinutes: 35,
+        url: "https://kaabil.in/academy/plc-ladder-logic",
+        summary: "Optocoupler signal conditioning, timer and counter instructions, relay ladder logic, and SCADA monitoring.",
+        provider: "NPTEL / IIT Kharagpur & Bharat Skills",
+        isMandatoryForCRI: true,
+      },
+      {
+        id: "acad-res-20",
+        title: "Supply Chain Operations, Logistics & Inventory Optimization",
+        stream: "MANAGEMENT",
+        competency: "Supply Chain",
+        difficulty: "INTERMEDIATE",
+        resourceType: "CASE_STUDY",
+        format: "CASE_STUDY",
+        estimatedMinutes: 35,
+        url: "https://kaabil.in/academy/supply-chain-operations",
+        summary: "Economic Order Quantity (EOQ), safety stock buffering, cold-chain distribution, and enterprise ERP integration.",
+        provider: "IIMBx / Swayam & IIT Roorkee",
+        isMandatoryForCRI: true,
+      },
+      {
+        id: "acad-res-21",
+        title: "Indian Society, Affirmative Action & Constitutional Governance",
+        stream: "ARTS_HUMANITIES",
+        competency: "Public Administration",
+        difficulty: "BEGINNER",
+        resourceType: "ARTICLE",
+        format: "ARTICLE",
+        estimatedMinutes: 25,
+        url: "https://kaabil.in/academy/indian-governance",
+        summary: "Panchayati Raj institutions, district administrative hierarchies, public policy formulation, and citizen welfare schemes.",
+        provider: "UGC / CEC / e-PG Pathshala",
         isMandatoryForCRI: true,
       },
     ],
@@ -978,7 +1220,10 @@ class DevStore {
       parsed.verificationRequests = parsed.verificationRequests || getInitialStore().verificationRequests;
       parsed.cmsContentItems = parsed.cmsContentItems || getInitialStore().cmsContentItems;
       parsed.aiGovernanceRecords = parsed.aiGovernanceRecords || getInitialStore().aiGovernanceRecords;
-      parsed.academyResources = parsed.academyResources || getInitialStore().academyResources;
+      parsed.academyResources =
+        parsed.academyResources && parsed.academyResources.length >= 15
+          ? parsed.academyResources
+          : getInitialStore().academyResources;
       parsed.resourceProgress = parsed.resourceProgress || {};
       parsed.studentResumes = parsed.studentResumes || getInitialStore().studentResumes;
       parsed.mockInterviewSessions = parsed.mockInterviewSessions || {};
@@ -1131,6 +1376,13 @@ class DevStore {
     return Object.values(store.roadmaps).find(
       (r) => r.studentProfileId === studentProfileId && r.status === "ACTIVE"
     ) || null;
+  }
+
+  getRoadmaps(studentProfileId: string): any[] {
+    const store = this.loadStore();
+    return Object.values(store.roadmaps).filter(
+      (r: any) => r.studentProfileId === studentProfileId
+    );
   }
 
   saveRoadmap(roadmap: any) {
@@ -2690,7 +2942,13 @@ class DevStore {
   }
 
   // --- Learning Academy ---
-  getAcademyResources(filters?: { stream?: string; competency?: string; difficulty?: string }): any[] {
+  getAcademyResources(filters?: {
+    stream?: string;
+    competency?: string;
+    difficulty?: string;
+    format?: string;
+    search?: string;
+  }): any[] {
     const store = this.loadStore();
     let list = store.academyResources || [];
     if (filters?.stream && filters.stream !== "ALL") {
@@ -2702,6 +2960,18 @@ class DevStore {
     }
     if (filters?.difficulty && filters.difficulty !== "ALL") {
       list = list.filter((r: any) => r.difficulty === filters.difficulty);
+    }
+    if (filters?.format && filters.format !== "ALL") {
+      list = list.filter((r: any) => r.resourceType === filters.format || r.format === filters.format);
+    }
+    if (filters?.search && filters.search.trim()) {
+      const q = filters.search.toLowerCase().trim();
+      list = list.filter((r: any) =>
+        (r.title && r.title.toLowerCase().includes(q)) ||
+        (r.summary && r.summary.toLowerCase().includes(q)) ||
+        (r.competency && r.competency.toLowerCase().includes(q)) ||
+        (r.provider && r.provider.toLowerCase().includes(q))
+      );
     }
     return list;
   }

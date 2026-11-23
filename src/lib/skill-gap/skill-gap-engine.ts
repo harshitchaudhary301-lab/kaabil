@@ -157,9 +157,24 @@ export class SkillGapEngine {
 
     // Dynamic synthesis fallback if career exists in careersData but not yet in requirements table
     if (!reqs) {
-      const dbCareer = CAREER_PATHS_DATABASE.find(
+      let dbCareer = CAREER_PATHS_DATABASE.find(
         (c) => c.slug === targetCareerSlug || c.id === targetCareerSlug
       );
+      if (!dbCareer) {
+        dbCareer = CAREER_PATHS_DATABASE.find(
+          (c) =>
+            c.slug.includes(targetCareerSlug) ||
+            targetCareerSlug.includes(c.slug) ||
+            c.title.toLowerCase().includes(targetCareerSlug.toLowerCase()) ||
+            targetCareerSlug.toLowerCase().includes(c.title.toLowerCase())
+        );
+      }
+      if (!dbCareer && profile.currentStream && profile.currentStream !== "UNDECIDED") {
+        dbCareer = CAREER_PATHS_DATABASE.find((c) => c.stream === profile.currentStream);
+      }
+      if (!dbCareer) {
+        dbCareer = CAREER_PATHS_DATABASE[0];
+      }
       if (dbCareer) {
         reqs = {
           careerSlug: dbCareer.slug,
@@ -321,28 +336,28 @@ export class SkillGapEngine {
         recommendedAction = "Competency verified. Ready for deployment in projects and challenges.";
         verifiedCount++;
       } else if (att && att.status === "COMPLETED") {
-        // Attempted but unverified or failed
+        // Attempted but unverified or failed: Demonstrated Skill Gap
         currentLevel = 2;
         gapStatus = "DEVELOPING";
-        evidenceSummary = "Assessment attempted. Developing competency identified.";
+        evidenceSummary = "Demonstrated Skill Gap: Assessment attempted; developing competency identified.";
         recommendedAction = matchingAsm
-          ? `Review study recommendations and re-take the '${matchingAsm.title}' assessment.`
+          ? `Review study recommendations and re-take the '${matchingAsm.title}' assessment to close gap.`
           : "Continue focused learning in this domain.";
       } else if (usk) {
-        // Self-reported by student
+        // Self-reported by student: Unassessed Skill Claim
         currentLevel = usk.proficiencyLevel || 2;
         gapStatus = "SELF_REPORTED";
-        evidenceSummary = "Skill self-reported on profile. No formal platform verification yet.";
+        evidenceSummary = "Unassessed Skill Claim: Self-reported on profile; no objective platform evaluation.";
         recommendedAction = matchingAsm
           ? `Verify this self-reported skill by taking the '${matchingAsm.title}' assessment.`
           : "Build project evidence to demonstrate competence.";
       } else {
-        // Missing evidence
+        // Missing evidence: Unassessed Requirement
         currentLevel = 0;
         gapStatus = isMandatory ? "MISSING_EVIDENCE" : "LEARNING_REQUIREMENT";
         evidenceSummary = isMandatory
-          ? "No documented skill evidence or self-report on record."
-          : "Recommended capability for career differentiation.";
+          ? "Unassessed Requirement: No documented skill evidence or assessment on record."
+          : "Recommended capability for career differentiation (unassessed).";
         recommendedAction = matchingAsm
           ? `Take the foundational '${matchingAsm.title}' assessment to verify competency.`
           : `Add '${req.skillName}' to your active Roadmap learning milestones.`;

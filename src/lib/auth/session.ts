@@ -87,8 +87,14 @@ export function removeFallbackSession(token: string): void {
  * Server-side only; safe to call in Server Components, Route Handlers, and Server Actions.
  */
 export async function getSessionUser(): Promise<AuthenticatedUser | null> {
-  const cookieStore = cookies();
-  const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+  let token: string | undefined;
+  try {
+    const cookieStore = cookies();
+    token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+  } catch {
+    // Outside of request scope or test environment
+    return null;
+  }
 
   if (!token) {
     return null;

@@ -88,12 +88,21 @@ const CLARITY_OPTIONS = [
   },
   {
     id: "CONFUSED",
-    title: "No, I am confused.",
+    title: "No, I am undecided.",
     subtitle: "Need Guidance",
     description: "I feel overwhelmed with choices and want friendly guidance to discover where I fit.",
     icon: HelpCircle,
     color: "from-amber-500/10 to-rose-500/10 text-amber-700 border-amber-200",
     activeColor: "ring-amber-500 border-amber-500 bg-amber-50/70 text-amber-950",
+  },
+  {
+    id: "EXPLORE_ALTERNATIVES",
+    title: "Explore alternative pathways.",
+    subtitle: "Alternative & Bridge Pathways",
+    description: "I want to explore backup options, allied careers, or interdisciplinary bridge routes.",
+    icon: Compass,
+    color: "from-cyan-500/10 to-blue-500/10 text-cyan-700 border-cyan-200",
+    activeColor: "ring-cyan-500 border-cyan-500 bg-cyan-50/70 text-cyan-950",
   },
 ];
 
@@ -146,6 +155,7 @@ export default function SmartOnboardingPage() {
 
   // Selections
   const [educationStage, setEducationStage] = useState<string>("CLASS_12");
+  const [academicStream, setAcademicStream] = useState<string>("UNDECIDED");
   const [goalClarity, setGoalClarity] = useState<string>("CONFUSED");
   const [primaryNeed, setPrimaryNeed] = useState<string>("DISCOVER_CAREER");
 
@@ -163,6 +173,7 @@ export default function SmartOnboardingPage() {
           if (data.stepData) {
             const d = data.stepData;
             if (d.educationStage) setEducationStage(d.educationStage);
+            if (d.academicStream) setAcademicStream(d.academicStream);
             if (d.goalClarity) setGoalClarity(d.goalClarity);
             if (d.primaryNeed) setPrimaryNeed(d.primaryNeed);
             if (data.currentStep && data.currentStep >= 1 && data.currentStep <= 3) {
@@ -171,7 +182,7 @@ export default function SmartOnboardingPage() {
           }
         }
 
-        // Pre-fill educationStage from user profile if not set in stepData
+        // Pre-fill educationStage and academicStream from user profile if not set in stepData
         try {
           const profRes = await fetch("/api/student/profile");
           if (profRes.ok) {
@@ -179,6 +190,10 @@ export default function SmartOnboardingPage() {
             const stage = profData?.profile?.academic?.stage || profData?.profile?.educationStage;
             if (stage) {
               setEducationStage(stage);
+            }
+            const stream = profData?.profile?.academic?.stream || profData?.profile?.currentStream;
+            if (stream && stream !== "UNDECIDED") {
+              setAcademicStream(stream);
             }
           }
         } catch {}
@@ -199,6 +214,7 @@ export default function SmartOnboardingPage() {
           currentStep: step,
           stepData: {
             educationStage,
+            academicStream,
             goalClarity,
             primaryNeed,
           },
@@ -240,28 +256,27 @@ export default function SmartOnboardingPage() {
     // Minor determination
     const isMinor = ["CLASS_10", "CLASS_12"].includes(educationStage);
 
-    // Map primaryStream cleanly
-    let primaryStream = "UNDECIDED";
-    if (educationStage === "CLASS_12") {
-      primaryStream = "NON_MEDICAL_PCM"; // sensible default, customizable in dashboard
-    } else if (educationStage === "UNDERGRADUATE") {
-      primaryStream = "NON_MEDICAL_PCM";
-    }
+    // Preserve explicitly confirmed academic stream; default to UNDECIDED only if not already confirmed
+    const primaryStream = (academicStream && academicStream !== "UNDECIDED") ? academicStream : "UNDECIDED";
+
+    // Career goals are completely optional. Only include goal if explicitly confirmed
+    const hasConfirmedGoal = goalClarity === "CLEAR";
 
     const payload = {
       educationStage,
       primaryStream,
-      selectedStreams: [primaryStream],
+      selectedStreams: primaryStream !== "UNDECIDED" ? [primaryStream] : ["UNDECIDED"],
       goalClarity,
       primaryNeed,
       guardianConsent: isMinor,
-      interests: [
-        primaryNeed === "DISCOVER_CAREER" ? "Career Exploration" : "Skill Development",
-      ],
-      careerGoal: {
-        goalType: goalClarity,
-        notes: `Focus: ${primaryNeed}`,
-      },
+      interests: [], // Do not assign fabricated interests; calibrated via diagnostic assessment
+      skills: [],    // Do not assign fabricated skills
+      careerGoal: hasConfirmedGoal
+        ? {
+            goalType: goalClarity,
+            notes: `Focus: ${primaryNeed}`,
+          }
+        : undefined,
       learningPreferences: {
         preferredPace: "BALANCED",
         preferredStyle: "PRACTICAL",

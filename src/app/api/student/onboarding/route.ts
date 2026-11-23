@@ -153,8 +153,14 @@ export async function POST(req: NextRequest) {
           where: { userId: user.id },
         });
 
+        // Preserve explicitly confirmed stream if incoming is UNDECIDED
+        const existingConfirmedStream = profile?.currentStream && profile.currentStream !== "UNDECIDED" ? profile.currentStream : null;
+        const resolvedStream = (existingConfirmedStream && data.primaryStream === "UNDECIDED"
+          ? existingConfirmedStream
+          : (data.primaryStream as EducationalStream) || EducationalStream.UNDECIDED);
+
         const allSelectedStreams = Array.from(
-          new Set([data.primaryStream, ...data.selectedStreams])
+          new Set([resolvedStream, ...data.selectedStreams])
         ) as EducationalStream[];
 
         if (!profile) {
@@ -162,7 +168,7 @@ export async function POST(req: NextRequest) {
             data: {
               userId: user.id,
               educationStage: data.educationStage as EducationStage,
-              currentStream: data.primaryStream as EducationalStream,
+              currentStream: resolvedStream,
               selectedStreams: allSelectedStreams,
               institutionName: data.institutionName || null,
               graduationYear: data.graduationYear || null,
@@ -179,7 +185,7 @@ export async function POST(req: NextRequest) {
             where: { id: profile.id },
             data: {
               educationStage: data.educationStage as EducationStage,
-              currentStream: data.primaryStream as EducationalStream,
+              currentStream: resolvedStream,
               selectedStreams: allSelectedStreams,
               institutionName: data.institutionName || profile.institutionName,
               graduationYear: data.graduationYear || profile.graduationYear,
@@ -330,51 +336,48 @@ export async function POST(req: NextRequest) {
     } else {
       // Offline fallback: Persist onboarding in devStore
       const profileId = user.studentProfile?.id || "fallback-prof-" + user.id;
-      const streamDefaultTitles: Record<string, string> = {
-        MEDICAL_PCB: "Clinical Healthcare & Medicine",
-        NON_MEDICAL_PCM: "Engineering & Applied Sciences",
-        COMMERCE: "Chartered Accountancy & Finance",
-        ARTS_HUMANITIES: "Humanities & Social Impact",
-        LAW: "Legal Studies & Judiciary",
-        MANAGEMENT: "Business Management",
-        CREATIVE_DESIGN: "Design & Creative Arts",
-        AGRICULTURE: "Agricultural Sciences",
-        VOCATIONAL_TRADES: "Vocational & Applied Technology",
-        SPORTS_PHYSICAL_ED: "Sports & Physical Education",
-        HOSPITALITY_TOURISM: "Hospitality & Tourism Management",
-        INTERDISCIPLINARY: "Interdisciplinary Studies",
-        UNDECIDED: "Exploring Career Pathways",
-      };
+      const existingDevProfile = devStore.getProfile(profileId);
 
-      const targetTitle = data.careerGoal?.targetRole || streamDefaultTitles[data.primaryStream] || "Exploring Career Pathways";
-      const targetSlug = targetTitle.toLowerCase().replace(/[^a-z0-9]/g, "-");
-      const targetYear = data.careerGoal?.targetYear || 2027;
+      // Preserve existing confirmed stream if incoming is UNDECIDED
+      const preservedStream =
+        existingDevProfile?.currentStream && existingDevProfile.currentStream !== "UNDECIDED" && (!data.primaryStream || data.primaryStream === "UNDECIDED")
+          ? existingDevProfile.currentStream
+          : data.primaryStream;
+
+      const targetRole = data.careerGoal?.targetRole?.trim();
+      const hasRealGoal = Boolean(targetRole);
+      const targetSlug = hasRealGoal ? targetRole!.toLowerCase().replace(/[^a-z0-9]/g, "-") : undefined;
+      const targetYear = data.careerGoal?.targetYear || undefined;
 
       devStore.saveProfile({
         id: profileId,
         userId: user.id,
         educationStage: data.educationStage,
-        currentStream: data.primaryStream,
-        selectedStreams: data.selectedStreams,
+        currentStream: preservedStream,
+        selectedStreams: data.selectedStreams.length > 0 ? data.selectedStreams : [preservedStream],
         targetCareerPathId: targetSlug,
         targetCompletionYear: targetYear,
         onboardingCompleted: true,
         careerReadinessIndex: calculatedCRI,
         user: { name: user.name, email: user.email },
         interests: data.interests.map((i) => ({ domain: i, interestName: i })),
-        careerGoals: [
-          {
-            careerPath: { slug: targetSlug, title: targetTitle, regulatoryBody: "Statutory Council" },
-            priorityRank: 1,
-          },
-        ],
+        careerGoals: hasRealGoal
+          ? [
+              {
+                careerPath: { slug: targetSlug!, title: targetRole!, regulatoryBody: "Statutory Council" },
+                priorityRank: 1,
+                targetYear,
+                notes: data.careerGoal?.notes || null,
+              },
+            ]
+          : [],
         userSkills: data.skills.map((s) => ({
           skill: { name: s.name, category: "TECHNICAL" },
           proficiencyLevel: s.proficiency,
           isVerified: false,
         })),
-        roadmaps: [],
-        dailyMissions: [],
+        roadmaps: existingDevProfile?.roadmaps || [],
+        dailyMissions: existingDevProfile?.dailyMissions || [],
       });
 
       // Update user in devStore
@@ -383,7 +386,7 @@ export async function POST(req: NextRequest) {
         if (!storedUser.studentProfile) storedUser.studentProfile = {};
         storedUser.studentProfile.id = profileId;
         storedUser.studentProfile.educationStage = data.educationStage;
-        storedUser.studentProfile.currentStream = data.primaryStream;
+        storedUser.studentProfile.currentStream = preservedStream;
         storedUser.studentProfile.onboardingCompleted = true;
         storedUser.studentProfile.careerReadinessIndex = calculatedCRI;
         devStore.saveUser(storedUser);

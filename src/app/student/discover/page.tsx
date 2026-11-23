@@ -81,6 +81,10 @@ interface Recommendation {
     entranceExamsRequired?: string[];
   };
   recommendedNextAction?: string;
+  isBridgePath?: boolean;
+  isInterdisciplinary?: boolean;
+  dataSufficiency?: string;
+  scoreDisclaimer?: string;
   aiReasoning?: string;
   aiExplanation?: string;
   aiProvider?: string;
@@ -95,12 +99,22 @@ export default function StudentDiscoverPage() {
   const [selectedStream, setSelectedStream] = useState<string>("ALL");
   const [language, setLanguage] = useState<string>("en");
   const [searchQuery, setSearchQuery] = useState("");
+  // Track request sequence to prevent stale responses from overwriting newer selections
+  const fetchSequenceRef = React.useRef(0);
 
-  const fetchRecommendations = async (lang = language) => {
+  const fetchRecommendations = async (stream = selectedStream, lang = language) => {
     setLoading(true);
     setError(null);
+    // Increment sequence; capture this request's sequence number
+    const seq = ++fetchSequenceRef.current;
     try {
-      const res = await fetch(`/api/student/recommendations?lang=${lang}`);
+      const params = new URLSearchParams({ lang });
+      if (stream && stream !== "ALL") {
+        params.set("stream", stream);
+      }
+      const res = await fetch(`/api/student/recommendations?${params.toString()}`);
+      // Drop stale responses from earlier stream selections
+      if (seq !== fetchSequenceRef.current) return;
       if (res.ok) {
         const data = await res.json();
         setRecommendations(data.recommendations || []);
@@ -109,14 +123,17 @@ export default function StudentDiscoverPage() {
         setError(err.error || "Failed to load personalized career recommendations.");
       }
     } catch {
+      if (seq !== fetchSequenceRef.current) return;
       setError("Network error fetching recommendations.");
     } finally {
-      setLoading(false);
+      if (seq === fetchSequenceRef.current) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
-    fetchRecommendations();
+    fetchRecommendations(selectedStream, language);
     // Fetch user's saved careers
     async function fetchSaved() {
       try {
@@ -132,11 +149,18 @@ export default function StudentDiscoverPage() {
       }
     }
     fetchSaved();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Refetch when stream changes — backend filters the full catalog before ranking
+  const handleStreamChange = (stream: string) => {
+    setSelectedStream(stream);
+    fetchRecommendations(stream, language);
+  };
 
   const handleLanguageChange = (newLang: string) => {
     setLanguage(newLang);
-    fetchRecommendations(newLang);
+    fetchRecommendations(selectedStream, newLang);
   };
 
   const handleToggleSave = async (slug: string) => {
@@ -183,19 +207,34 @@ export default function StudentDiscoverPage() {
     }
   };
 
+  // Backend already filters by stream before ranking; local filter only for search text.
+  // Stream labels shown are those actually returned (may be a subset when stream param was set).
   const filteredRecommendations = recommendations.filter((rec) => {
-    const matchesStream =
-      selectedStream === "ALL" || rec.career.stream === selectedStream;
     const matchesSearch =
       rec.career.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       rec.career.domain.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesStream && matchesSearch;
+    return matchesSearch;
   });
 
-  const availableStreams = [
+  // Build stream pills from canonical list rather than from results only,
+  // so selecting a stream that currently has 0 results still triggers a backend fetch.
+  const CANONICAL_STREAMS = [
     "ALL",
-    ...Array.from(new Set(recommendations.map((r) => r.career.stream))),
-  ];
+    "MEDICAL_PCB",
+    "NON_MEDICAL_PCM",
+    "COMMERCE",
+    "ARTS_HUMANITIES",
+    "LAW",
+    "MANAGEMENT",
+    "CREATIVE_DESIGN",
+    "AGRICULTURE",
+    "VOCATIONAL_TRADES",
+    "SPORTS_PHYSICAL_ED",
+    "HOSPITALITY_TOURISM",
+    "INTERDISCIPLINARY",
+    "UNDECIDED",
+  ] as const;
+  const availableStreams = CANONICAL_STREAMS;
 
   return (
     <PortalLayout
@@ -253,7 +292,7 @@ export default function StudentDiscoverPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => fetchRecommendations()}
+                onClick={() => fetchRecommendations(selectedStream, language)}
                 disabled={loading}
                 className="gap-1.5 text-xs"
               >
@@ -303,7 +342,7 @@ export default function StudentDiscoverPage() {
             {availableStreams.map((st) => (
               <button
                 key={st}
-                onClick={() => setSelectedStream(st)}
+                onClick={() => handleStreamChange(st)}
                 className={`px-3 py-1.5 rounded-full font-medium whitespace-nowrap text-xs transition-colors ${
                   selectedStream === st
                     ? "bg-primary text-white shadow-soft-sm"
@@ -375,8 +414,18 @@ export default function StudentDiscoverPage() {
                               #{index + 1}
                             </span>
                             <Badge variant="outline" className="text-[10px] bg-slate-50">
-                              {rec.career.stream}
+                              {rec.career.stream.replace(/_/g, " ")}
                             </Badge>
+                            {rec.career.stream === "INTERDISCIPLINARY" && (
+                              <Badge variant="outline" className="text-[10px] bg-cyan-50 text-cyan-800 border-cyan-200 font-bold">
+                                Interdisciplinary Pathway
+                              </Badge>
+                            )}
+                            {rec.isBridgePath && rec.career.stream !== "INTERDISCIPLINARY" && (
+                              <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-800 border-amber-200 font-bold">
+                                Alternative / Bridge Pathway
+                              </Badge>
+                            )}
                             <Badge variant="outline" className="text-[10px] text-primary border-primary/20 bg-primary/5">
                               {rec.career.domain}
                             </Badge>
@@ -387,6 +436,15 @@ export default function StudentDiscoverPage() {
                               {rec.career.regulatoryBody}
                             </Badge>
                           </div>
+
+                          {rec.dataSufficiency === "INSUFFICIENT" && (
+                            <div className="mb-2 p-2.5 rounded-xl bg-blue-50/70 border border-blue-200 text-xs text-blue-900 flex items-start gap-2">
+                              <AlertCircle className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
+                              <div>
+                                <span className="font-bold">Incomplete Profile Notice:</span> These exploratory recommendations are calibrated on educational stage. Take a skill diagnostic or set interests to refine compatibility.
+                              </div>
+                            </div>
+                          )}
 
                           <h3 className="text-xl font-bold font-heading text-text-primary">
                             {rec.career.title}
@@ -515,7 +573,10 @@ export default function StudentDiscoverPage() {
                             {rec.score ?? rec.compatibilityScore ?? 75}%
                           </span>
                           <span className="text-[11px] font-bold uppercase tracking-wider text-text-secondary block mt-0.5">
-                            Overall Match Score
+                            Profile Compatibility Indicator
+                          </span>
+                          <span className="text-[9px] text-text-secondary block mt-1 leading-tight">
+                            Formative alignment indicator; not an employability guarantee or success probability.
                           </span>
                         </div>
 

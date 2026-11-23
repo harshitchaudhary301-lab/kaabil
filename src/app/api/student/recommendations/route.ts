@@ -1,11 +1,13 @@
 // ==============================================================================
 // KAABIL (काबिल) — Hybrid AI Career Recommendations API Endpoint
-// Combines Layer 1 (PostgreSQL), Layer 2 (Deterministic Compatibility), Layer 3 (Gemini AI)
+// Combines Layer 1 (PostgreSQL / DevStore), Layer 2 (Deterministic Compatibility), Layer 3 (Gemini AI)
+// Strictly unbiased: zero fabricated profile data, multi-stream neutral exploration
 // ==============================================================================
 
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth/session";
 import { db, checkDatabaseConnection } from "@/lib/db";
+import { devStore } from "@/lib/dev-store";
 import {
   CareerRecommendationEngine,
   StudentProfileContext,
@@ -15,36 +17,87 @@ import { CAREER_PATHS_DATABASE } from "@/data/careersData";
 
 export const dynamic = "force-dynamic";
 
+// The 13 canonical educational streams recognized across KAABIL
+const CANONICAL_STREAMS = [
+  "ALL",
+  "MEDICAL_PCB",
+  "NON_MEDICAL_PCM",
+  "COMMERCE",
+  "ARTS_HUMANITIES",
+  "LAW",
+  "MANAGEMENT",
+  "CREATIVE_DESIGN",
+  "AGRICULTURE",
+  "VOCATIONAL_TRADES",
+  "SPORTS_PHYSICAL_ED",
+  "HOSPITALITY_TOURISM",
+  "INTERDISCIPLINARY",
+  "UNDECIDED",
+] as const;
+
+type CanonicalStream = (typeof CANONICAL_STREAMS)[number];
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const streamFilter = searchParams.get("stream") || "ALL";
 
+    // Validate explicit stream parameter against canonical stream identifiers
+    if (streamFilter !== "ALL" && !CANONICAL_STREAMS.includes(streamFilter as CanonicalStream)) {
+      return NextResponse.json(
+        {
+          error: `Invalid stream parameter '${streamFilter}'. Must be one of the canonical streams or 'ALL'.`,
+          validStreams: CANONICAL_STREAMS,
+        },
+        { status: 400 }
+      );
+    }
+
     const user = await getSessionUser();
     let studentContext: StudentProfileContext;
+    let isDegraded = false;
+    let degradedReason: string | null = null;
+    let requiresOnboarding = false;
 
     const conn = await checkDatabaseConnection();
 
     if (user && conn.connected) {
-      const profile = await db.studentProfile.findUnique({
-        where: { userId: user.id },
-        include: {
-          interests: true,
-          userSkills: { include: { skill: true } },
-          learningPreference: true,
-          careerGoals: { include: { careerPath: true } },
-        },
-      });
+      let profile: any = null;
+      try {
+        profile = await db.studentProfile.findUnique({
+          where: { userId: user.id },
+          include: {
+            interests: true,
+            userSkills: { include: { skill: true } },
+            learningPreference: true,
+            careerGoals: { include: { careerPath: true } },
+          },
+        });
+      } catch (dbErr: any) {
+        console.warn("[Recommendations] DB query failed, falling back to degraded mode:", dbErr);
+        isDegraded = true;
+        degradedReason = "Database query failed; degraded mode active.";
+      }
 
       if (profile) {
+        const effectivePrimaryStream =
+          streamFilter !== "ALL" ? streamFilter : profile.currentStream;
+        const selectedStreams =
+          profile.selectedStreams && profile.selectedStreams.length > 0
+            ? profile.selectedStreams
+            : (profile.currentStream && profile.currentStream !== "UNDECIDED" ? [profile.currentStream] : []);
+
         studentContext = {
           id: profile.id,
           name: user.name || "Student",
           educationStage: profile.educationStage,
-          primaryStream: profile.currentStream,
-          selectedStreams: profile.selectedStreams.length > 0 ? profile.selectedStreams : [profile.currentStream],
-          interests: profile.interests.map((i) => i.interestName),
-          skills: profile.userSkills.map((us) => ({
+          primaryStream: effectivePrimaryStream,
+          selectedStreams:
+            streamFilter !== "ALL" && !selectedStreams.includes(streamFilter)
+              ? [...selectedStreams, streamFilter]
+              : selectedStreams,
+          interests: profile.interests.map((i: any) => i.interestName),
+          skills: profile.userSkills.map((us: any) => ({
             name: us.skill.name,
             proficiency: us.proficiencyLevel as any,
             isVerified: us.isVerified,
@@ -62,16 +115,68 @@ export async function GET(req: NextRequest) {
             : undefined,
         };
       } else {
-        studentContext = buildDefaultContext(user.name);
+        // Authenticated user with no saved profile yet -> neutral onboarding state
+        requiresOnboarding = true;
+        studentContext = buildNeutralContext(
+          user.name || "Student",
+          streamFilter !== "ALL" ? streamFilter : "UNDECIDED",
+          false
+        );
       }
     } else if (user) {
-      studentContext = buildDefaultContext(user.name);
+      // Database is unavailable -> Graceful offline fallback via devStore
+      isDegraded = true;
+      degradedReason = "Database connection unavailable; degraded offline mode.";
+
+      const devProfile = devStore.getProfileByUserId(user.id);
+      if (devProfile) {
+        const effectivePrimaryStream =
+          streamFilter !== "ALL" ? streamFilter : devProfile.currentStream || "UNDECIDED";
+        const selectedStreams =
+          devProfile.selectedStreams && devProfile.selectedStreams.length > 0
+            ? devProfile.selectedStreams
+            : (effectivePrimaryStream !== "UNDECIDED" ? [effectivePrimaryStream] : []);
+
+        studentContext = {
+          id: devProfile.id,
+          name: user.name || devProfile.user?.name || "Student",
+          educationStage: devProfile.educationStage || "CLASS_12",
+          primaryStream: effectivePrimaryStream,
+          selectedStreams:
+            streamFilter !== "ALL" && !selectedStreams.includes(streamFilter)
+              ? [...selectedStreams, streamFilter]
+              : selectedStreams,
+          interests: (devProfile.interests || []).map((i: any) =>
+            typeof i === "string" ? i : i.interestName || i.domain || ""
+          ),
+          skills: (devProfile.userSkills || []).map((us: any) => ({
+            name: us.skill?.name || us.name,
+            proficiency: us.proficiencyLevel || "BEGINNER",
+            isVerified: us.isVerified || false,
+          })),
+          careerGoal: {
+            targetRole: devProfile.careerGoals?.[0]?.careerPath?.title || null,
+          },
+          learningPreferences: devProfile.learningPreference,
+        };
+      } else {
+        requiresOnboarding = true;
+        studentContext = buildNeutralContext(
+          user.name || "Student",
+          streamFilter !== "ALL" ? streamFilter : "UNDECIDED",
+          false
+        );
+      }
     } else {
-      // Guest demo preview context
-      studentContext = buildDefaultContext("Guest Learner");
+      // Guest demo preview context -> neutral exploration without fabricated profile
+      studentContext = buildNeutralContext(
+        "Guest Learner",
+        streamFilter !== "ALL" ? streamFilter : "UNDECIDED",
+        true
+      );
     }
 
-    // Filter catalog if stream filter is requested
+    // Filter complete catalog if stream filter is requested
     let catalog = CAREER_PATHS_DATABASE;
     if (streamFilter !== "ALL") {
       catalog = catalog.filter((c) => c.stream === streamFilter);
@@ -122,7 +227,7 @@ export async function GET(req: NextRequest) {
             breakdown: legacyBreakdown,
             reasons: rec.explanationPoints && rec.explanationPoints.length > 0
               ? rec.explanationPoints
-              : [rec.whySuited || `Well aligned with your interests and academic preparation.`],
+              : [rec.whySuited || `Well aligned with your chosen stream and academic preparation.`],
             aiReasoning: aiResult.explanation,
             aiExplanation: aiResult.explanation,
             aiProvider: aiResult.source === "gemini_ai" ? "GEMINI_2_FLASH" : "DETERMINISTIC_HYBRID",
@@ -161,7 +266,7 @@ export async function GET(req: NextRequest) {
           breakdown: legacyBreakdown,
           reasons: rec.explanationPoints && rec.explanationPoints.length > 0
             ? rec.explanationPoints
-            : [rec.whySuited || `Well aligned with your interests and academic preparation.`],
+            : [rec.whySuited || `Well aligned with your chosen stream and academic preparation.`],
           aiReasoning: deterministicExp,
           aiExplanation: deterministicExp,
           aiProvider: "DETERMINISTIC_HYBRID",
@@ -172,6 +277,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       success: true,
       recommendations: enrichedRecommendations,
+      isDegraded,
+      degradedReason,
+      requiresOnboarding,
       aiTelemetry: {
         source: aiSource,
         modelUsed: aiModel,
@@ -184,6 +292,8 @@ export async function GET(req: NextRequest) {
         primaryStream: studentContext.primaryStream,
         interestsCount: studentContext.interests.length,
         skillsCount: studentContext.skills.length,
+        hasCustomProfile: !requiresOnboarding && Boolean(user),
+        isGuest: !user,
       },
     });
   } catch (error: unknown) {
@@ -196,19 +306,25 @@ export async function GET(req: NextRequest) {
   }
 }
 
-function buildDefaultContext(name: string): StudentProfileContext {
+/**
+ * Builds an authentic, un-biased fallback context for guests or undecided students.
+ * Strictly avoids fabricating skills, interests, or career goals.
+ */
+function buildNeutralContext(
+  name: string,
+  stream: string = "UNDECIDED",
+  isGuest: boolean = false
+): StudentProfileContext {
+  const effectiveStream = stream !== "ALL" ? stream : "UNDECIDED";
   return {
-    id: "default-context",
+    id: isGuest ? "guest-preview" : "uncalibrated-student",
     name,
     educationStage: "CLASS_12",
-    primaryStream: "NON_MEDICAL_PCM",
-    selectedStreams: ["NON_MEDICAL_PCM", "COMMERCE"],
-    interests: ["Artificial Intelligence & Coding", "Data Science & Mathematics", "Financial Markets & Stock Trading"],
-    skills: [
-      { name: "Python Programming", proficiency: "INTERMEDIATE", isVerified: false },
-      { name: "Critical Thinking & Logic", proficiency: "INTERMEDIATE", isVerified: false },
-    ],
-    careerGoal: { targetRole: "AI Systems Engineer" },
+    primaryStream: effectiveStream,
+    selectedStreams: effectiveStream !== "UNDECIDED" ? [effectiveStream] : [],
+    interests: [],
+    skills: [],
+    careerGoal: { targetRole: null },
     learningPreferences: {
       preferredPace: "BALANCED",
       preferredStyle: "PRACTICAL",

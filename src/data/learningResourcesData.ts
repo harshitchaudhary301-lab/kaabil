@@ -1,14 +1,15 @@
 // ==============================================================================
 // KAABIL (काबिल) — Authentic Curated Learning Resources Database
 // Trustworthy, free, verified Indian and international public learning resources
-// (NPTEL, Swayam, MIT OCW, Khan Academy, ICAI BoS, ICAR, AICTE, MedlinePlus)
+// Across All 13 Canonical Streams:
+// (NPTEL, SWAYAM, NCERT, NCS, ICAR, LNIPE, NCHMCT, NLSIU, DGT/Bharat Skills, UGC e-PG Pathshala)
 // ==============================================================================
 
 import { CuratedLearningResource } from "@/types/learning-plan";
 import { EducationalStream } from "@/types";
 
 export const CURATED_LEARNING_RESOURCES: CuratedLearningResource[] = [
-  // --- NON_MEDICAL_PCM / Software / Engineering ---
+  // --- 1. NON_MEDICAL_PCM (STEM & Engineering) ---
   {
     id: "res-pcm-001",
     title: "Programming, Data Structures and Algorithms using Python",
@@ -62,7 +63,7 @@ export const CURATED_LEARNING_RESOURCES: CuratedLearningResource[] = [
     accreditedBy: "Massachusetts Institute of Technology (MIT)",
   },
 
-  // --- COMMERCE & FINANCE ---
+  // --- 2. COMMERCE & FINANCE ---
   {
     id: "res-com-001",
     title: "ICAI BoS Knowledge Portal: Foundation & Intermediate Financial Accounting",
@@ -103,7 +104,7 @@ export const CURATED_LEARNING_RESOURCES: CuratedLearningResource[] = [
     accreditedBy: "Reserve Bank of India",
   },
 
-  // --- MEDICAL & HEALTHCARE (PCB) ---
+  // --- 3. MEDICAL & HEALTHCARE (PCB) ---
   {
     id: "res-med-001",
     title: "Human Anatomy and Physiology Foundations",
@@ -144,7 +145,7 @@ export const CURATED_LEARNING_RESOURCES: CuratedLearningResource[] = [
     accreditedBy: "National Institutes of Health (NIH)",
   },
 
-  // --- LAW & LEGAL STUDIES ---
+  // --- 4. LAW & LEGAL STUDIES ---
   {
     id: "res-law-001",
     title: "Constitutional Law of India & Jurisprudence",
@@ -171,8 +172,34 @@ export const CURATED_LEARNING_RESOURCES: CuratedLearningResource[] = [
     description: "Formation of contracts, void agreements, breach remedies, indemnities, and commercial dispute resolution.",
     accreditedBy: "NLSIU Bengaluru / Swayam",
   },
+  {
+    id: "res-law-003",
+    title: "Corporate Mergers, Acquisitions & Companies Act 2013",
+    provider: "National Law University Delhi / Swayam",
+    url: "https://swayam.gov.in/explorer?searchText=Corporate+Law",
+    isFree: true,
+    estimatedHours: 30,
+    stream: "LAW",
+    targetSkillName: "Contract Drafting & Negotiation (SPA / SHA / JV)",
+    format: "VIDEO_SERIES",
+    description: "Statutory provisions of Companies Act 2013, drafting share purchase agreements, corporate restructuring, SEBI Takeover code, and merger filings.",
+    accreditedBy: "NLU Delhi / Bar Council of India",
+  },
+  {
+    id: "res-law-004",
+    title: "Criminal Law, Bharatiya Nyaya Sanhita & Trial Advocacy",
+    provider: "e-PG Pathshala / UGC (Prof. Ranbir Singh, NLU Delhi)",
+    url: "https://epgp.inflibnet.ac.in/",
+    isFree: true,
+    estimatedHours: 32,
+    stream: "LAW",
+    targetSkillName: "Litigation Strategy & Courtroom Cross-Examination",
+    format: "OFFICIAL_CURRICULUM",
+    description: "In-depth procedural analysis of criminal trials, FIR registration, bail jurisprudence, evidence appreciation, and trial cross-examination techniques under BNS.",
+    accreditedBy: "UGC / Bar Council of India",
+  },
 
-  // --- CREATIVE ARTS & DESIGN ---
+  // --- 5. CREATIVE ARTS & DESIGN ---
   {
     id: "res-des-001",
     title: "Interaction Design & User Research Fundamentals",
@@ -200,7 +227,7 @@ export const CURATED_LEARNING_RESOURCES: CuratedLearningResource[] = [
     accreditedBy: "Official Figma Education",
   },
 
-  // --- AGRICULTURE & FOOD TECH ---
+  // --- 6. AGRICULTURE & FOOD TECH ---
   {
     id: "res-agr-001",
     title: "ICAR e-Courses: Principles of Agronomy & Soil Science",
@@ -227,8 +254,34 @@ export const CURATED_LEARNING_RESOURCES: CuratedLearningResource[] = [
     description: "Sensory IoT devices, fertigation automation, greenhouse microclimate control, and yield analytics.",
     accreditedBy: "ICAR-IARI / Swayam",
   },
+  {
+    id: "res-agr-003",
+    title: "Post-Harvest Management and Food Processing Technology",
+    provider: "ICAR-CIPHET / Swayam",
+    url: "https://swayam.gov.in/explorer?searchText=Post+Harvest",
+    isFree: true,
+    estimatedHours: 25,
+    stream: "AGRICULTURE",
+    targetSkillName: "Food Chemistry & Nutritional Analysis",
+    format: "INTERACTIVE_COURSE",
+    description: "Grain storage thermodynamics, cold chain logistics, minimal processing, quality grading, and FSSAI packaging guidelines.",
+    accreditedBy: "Indian Council of Agricultural Research (ICAR)",
+  },
+  {
+    id: "res-agr-004",
+    title: "Farm Machinery, Precision Drones & Irrigation Engineering",
+    provider: "NPTEL / IIT Kharagpur (Prof. P. B. S. Bhadoria)",
+    url: "https://nptel.ac.in/courses/126105010",
+    isFree: true,
+    estimatedHours: 28,
+    stream: "AGRICULTURE",
+    targetSkillName: "AgTech Drone Flight Operations & DGCA SOPs",
+    format: "VIDEO_SERIES",
+    description: "Agricultural drone multispectral imaging, tractor powertrain mechanics, automated drip fertigation, and soil moisture telemetry.",
+    accreditedBy: "IIT Kharagpur / ICAR",
+  },
 
-  // --- VOCATIONAL & TECHNICAL TRADES ---
+  // --- 7. VOCATIONAL & TECHNICAL TRADES ---
   {
     id: "res-voc-001",
     title: "Industrial Automation: Sensors, Actuators & PLC Programming",
@@ -255,8 +308,21 @@ export const CURATED_LEARNING_RESOURCES: CuratedLearningResource[] = [
     description: "Official National Instructional Media Institute (NIMI) study materials, question banks, and trade practical blueprints.",
     accreditedBy: "Ministry of Skill Development & Entrepreneurship (MSDE)",
   },
+  {
+    id: "res-voc-003",
+    title: "Solar Photovoltaic Grid Installation & Safety Guidelines",
+    provider: "Skill India Digital Hub (SIDH / NSDC) & Bharat Skills",
+    url: "https://bharatskills.gov.in/",
+    isFree: true,
+    estimatedHours: 20,
+    stream: "VOCATIONAL_TRADES",
+    targetSkillName: "Solar PV Grid Installation & Diagnostics",
+    format: "OFFICIAL_CURRICULUM",
+    description: "Solar inverter sizing, grid-tie synchronization, string combiners, rooftop structural mounting, and MNRE electrical compliance.",
+    accreditedBy: "National Skill Development Corporation (NSDC)",
+  },
 
-  // --- MANAGEMENT & BUSINESS ---
+  // --- 8. MANAGEMENT & BUSINESS ---
   {
     id: "res-mgt-001",
     title: "Operations & Supply Chain Management",
@@ -270,8 +336,34 @@ export const CURATED_LEARNING_RESOURCES: CuratedLearningResource[] = [
     description: "Demand forecasting, inventory optimization (EOQ), logistics scheduling, and lean production paradigms.",
     accreditedBy: "IIT Roorkee / NPTEL",
   },
+  {
+    id: "res-mgt-002",
+    title: "Strategic Management and Enterprise Growth",
+    provider: "IIMBx / Swayam (Indian Institute of Management Bangalore)",
+    url: "https://swayam.gov.in/explorer?searchText=Strategic+Management",
+    isFree: true,
+    estimatedHours: 30,
+    stream: "MANAGEMENT",
+    targetSkillName: "Enterprise Strategy & Market Analysis",
+    format: "INTERACTIVE_COURSE",
+    description: "Competitive landscape analysis (Porter's Five Forces, VRIO), blue ocean strategy, corporate diversification, and business model canvas.",
+    accreditedBy: "IIM Bangalore / Ministry of Education",
+  },
+  {
+    id: "res-mgt-003",
+    title: "Product Management Fundamentals & User Metrics",
+    provider: "NPTEL / IIT Kharagpur",
+    url: "https://nptel.ac.in/courses/110105149",
+    isFree: true,
+    estimatedHours: 25,
+    stream: "MANAGEMENT",
+    targetSkillName: "Product Lifecycle Management & PRD Authoring",
+    format: "VIDEO_SERIES",
+    description: "Product requirement documents (PRD), user discovery sprints, MVP scoping, agile backlog grooming, and product analytics (AARRR funnel).",
+    accreditedBy: "IIT Kharagpur / NPTEL",
+  },
 
-  // --- ARTS & HUMANITIES ---
+  // --- 9. ARTS, HUMANITIES & SOCIAL SCIENCES ---
   {
     id: "res-art-001",
     title: "Introduction to Indian Society and Social Structure",
@@ -285,18 +377,272 @@ export const CURATED_LEARNING_RESOURCES: CuratedLearningResource[] = [
     description: "Sociological theory, demographic shifts, rural-urban dynamics, caste, gender, and affirmative policy frameworks in India.",
     accreditedBy: "UGC / CEC",
   },
+  {
+    id: "res-art-002",
+    title: "Public Administration, Public Policy & Indian Governance",
+    provider: "Swayam / CEC (Consortium for Educational Communication)",
+    url: "https://swayam.gov.in/explorer?searchText=Public+Administration",
+    isFree: true,
+    estimatedHours: 30,
+    stream: "ARTS_HUMANITIES",
+    targetSkillName: "Public Policy Formulation & Scheme Implementation",
+    format: "VIDEO_SERIES",
+    description: "Bureaucratic administrative structures, policy cycle evaluation, district administrative mechanisms, and constitutional governance frameworks.",
+    accreditedBy: "UGC / CEC",
+  },
+  {
+    id: "res-art-003",
+    title: "Foundations of Psychology and Human Behavior",
+    provider: "Swayam / NCERT (Prof. Prabhat Kumar Mishra)",
+    url: "https://swayam.gov.in/explorer?searchText=Psychology",
+    isFree: true,
+    estimatedHours: 26,
+    stream: "ARTS_HUMANITIES",
+    targetSkillName: "Cognitive Behavioral Therapy (CBT) Protocols",
+    format: "INTERACTIVE_COURSE",
+    description: "Cognitive development, sensory perception, memory models, personality theories, and mental health assessment foundations.",
+    accreditedBy: "NCERT / Ministry of Education",
+  },
+
+  // --- 10. SPORTS & PHYSICAL EDUCATION ---
+  {
+    id: "res-spo-001",
+    title: "Foundations of Physical Education and Sports Sciences",
+    provider: "Lakshmibai National Institute of Physical Education (LNIPE Gwalior) / Swayam",
+    url: "https://swayam.gov.in/explorer?searchText=Physical+Education",
+    isFree: true,
+    estimatedHours: 25,
+    stream: "SPORTS_PHYSICAL_ED",
+    targetSkillName: "Exercise Physiology & Energy System Conditioning",
+    format: "OFFICIAL_CURRICULUM",
+    description: "Comprehensive grounding in human kinesiology, cardiovascular conditioning, athletic endurance, and sports training theory.",
+    accreditedBy: "LNIPE Gwalior / UGC",
+  },
+  {
+    id: "res-spo-002",
+    title: "Sports Biomechanics and Kinematics of Human Movement",
+    provider: "NPTEL / IIT Madras (Prof. Vignesh Shanmugam)",
+    url: "https://nptel.ac.in/courses/112106296",
+    isFree: true,
+    estimatedHours: 30,
+    stream: "SPORTS_PHYSICAL_ED",
+    targetSkillName: "Sports Biomechanics & Video Motion Analysis",
+    format: "VIDEO_SERIES",
+    description: "Scientific motion capture analysis, joint angle mechanics, force-plate telemetry, and kinetic chain optimization.",
+    accreditedBy: "IIT Madras / Center of Excellence in Sports Science (CESSA)",
+  },
+  {
+    id: "res-spo-003",
+    title: "Sports Medicine, Athletic Triage & Rehabilitation Protocols",
+    provider: "Sports Authority of India (SAI) / Netaji Subhas National Institute of Sports (NIS Patiala)",
+    url: "https://swayam.gov.in/explorer?searchText=Sports+Medicine",
+    isFree: true,
+    estimatedHours: 28,
+    stream: "SPORTS_PHYSICAL_ED",
+    targetSkillName: "Acute Athletic Triage & Pitch-Side Emergency Care",
+    format: "OFFICIAL_CURRICULUM",
+    description: "Clinical sports physiotherapy guidelines for acute pitch-side injury triage, concussion assessment, and return-to-play criteria.",
+    accreditedBy: "Sports Authority of India (SAI) / Ministry of Youth Affairs and Sports",
+  },
+  {
+    id: "res-spo-004",
+    title: "Sports Management, Tournament Operations & Media Rights",
+    provider: "Swayam / National Sports University (NSU Imphal)",
+    url: "https://swayam.gov.in/explorer?searchText=Sports+Management",
+    isFree: true,
+    estimatedHours: 24,
+    stream: "SPORTS_PHYSICAL_ED",
+    targetSkillName: "Stadium Operations & Matchday Crisis Protocols",
+    format: "INTERACTIVE_COURSE",
+    description: "Multi-venue sports league administration, broadcast production scheduling, ticketing economics, and sports event crisis management.",
+    accreditedBy: "National Sports University (NSU) / Ministry of Youth Affairs and Sports",
+  },
+
+  // --- 11. HOSPITALITY & TOURISM ---
+  {
+    id: "res-hsp-001",
+    title: "Principles of Culinary Arts & Food Production Fundamentals",
+    provider: "National Council for Hotel Management and Catering Technology (NCHMCT) / Swayam",
+    url: "https://swayam.gov.in/explorer?searchText=Food+Production",
+    isFree: true,
+    estimatedHours: 35,
+    stream: "HOSPITALITY_TOURISM",
+    targetSkillName: "Classical Culinary Arts & Brigade Leadership",
+    format: "OFFICIAL_CURRICULUM",
+    description: "Classical French brigade organization, regional Indian cooking techniques, mise-en-place, kitchen sanitation, and sensory evaluation.",
+    accreditedBy: "NCHMCT / Ministry of Tourism, Govt. of India",
+  },
+  {
+    id: "res-hsp-002",
+    title: "Hospitality Operations, Front Office & Yield Management",
+    provider: "e-PG Pathshala / UGC (Hospitality & Tourism Studies)",
+    url: "https://epgp.inflibnet.ac.in/",
+    isFree: true,
+    estimatedHours: 28,
+    stream: "HOSPITALITY_TOURISM",
+    targetSkillName: "Hospitality Financials & Revenue Management (RevPAR / ADR)",
+    format: "OFFICIAL_CURRICULUM",
+    description: "Front office systems, RevPAR and ADR metrics, night audit reconciliation, channel management, and guest relationship management.",
+    accreditedBy: "University Grants Commission (UGC)",
+  },
+  {
+    id: "res-hsp-003",
+    title: "Sustainable Ecotourism, Heritage Conservation & Travel Operations",
+    provider: "IGNOU School of Tourism and Hospitality Services Management (SOTHSM) / Swayam",
+    url: "https://swayam.gov.in/explorer?searchText=Tourism+Hospitality",
+    isFree: true,
+    estimatedHours: 24,
+    stream: "HOSPITALITY_TOURISM",
+    targetSkillName: "Ecotourism Conservation & Wildlife Wilderness Ethics",
+    format: "DOCUMENTATION",
+    description: "Community-based ecotourism models, environmental impact of travel, carrying capacity calculations, and wilderness safety.",
+    accreditedBy: "Indira Gandhi National Open University (IGNOU)",
+  },
+  {
+    id: "res-hsp-004",
+    title: "Convention, Banquet & MICE Event Operations",
+    provider: "Swayam / CEC (Consortium for Educational Communication)",
+    url: "https://swayam.gov.in/explorer?searchText=Tourism+Hospitality",
+    isFree: true,
+    estimatedHours: 22,
+    stream: "HOSPITALITY_TOURISM",
+    targetSkillName: "MICE Event Production & Staging Architecture",
+    format: "INTERACTIVE_COURSE",
+    description: "Meetings, Incentives, Conferences, and Exhibitions (MICE) logistics, banquet event orders (BEO), stage acoustics, and VIP protocol.",
+    accreditedBy: "UGC / CEC",
+  },
+
+  // --- 12. INTERDISCIPLINARY & EMERGING ---
+  {
+    id: "res-int-001",
+    title: "Introduction to Bioinformatics and Computational Biology",
+    provider: "NPTEL / IIT Madras (Prof. M. Michael Gromiha)",
+    url: "https://nptel.ac.in/courses/102106065",
+    isFree: true,
+    estimatedHours: 30,
+    stream: "INTERDISCIPLINARY",
+    targetSkillName: "Hydrogel Formulation & Rheology",
+    format: "VIDEO_SERIES",
+    description: "Biological databases, sequence alignment algorithms (BLAST/FASTA), protein 3D structure prediction, and biological modeling.",
+    accreditedBy: "IIT Madras / NPTEL",
+  },
+  {
+    id: "res-int-002",
+    title: "Geographic Information Systems (GIS) and Remote Sensing Technologies",
+    provider: "Swayam / IIRS-ISRO (Indian Institute of Remote Sensing)",
+    url: "https://swayam.gov.in/explorer?searchText=Remote+Sensing",
+    isFree: true,
+    estimatedHours: 32,
+    stream: "INTERDISCIPLINARY",
+    targetSkillName: "GIS Spatial Cartography & Vector Topography",
+    format: "INTERACTIVE_COURSE",
+    description: "Satellite image processing, coordinate systems, raster/vector spatial analysis, QGIS workflows, and multi-spectral indices.",
+    accreditedBy: "Indian Space Research Organisation (ISRO) / IIRS",
+  },
+  {
+    id: "res-int-003",
+    title: "Solid Waste Management, Biogas & Circular Economy",
+    provider: "NPTEL / IIT Kharagpur (Prof. Brajesh Kumar Dubey)",
+    url: "https://nptel.ac.in/courses/105105160",
+    isFree: true,
+    estimatedHours: 30,
+    stream: "INTERDISCIPLINARY",
+    targetSkillName: "Anaerobic Digestion & Bio-Methane Engineering",
+    format: "VIDEO_SERIES",
+    description: "Municipal solid waste characterization, anaerobic digestion kinetics, biomethane upgrading (CBG/SATAT), and life cycle assessment.",
+    accreditedBy: "IIT Kharagpur / Ministry of Education",
+  },
+  {
+    id: "res-int-004",
+    title: "Forensic Science, Crime Scene Investigation & Physical Evidence",
+    provider: "e-PG Pathshala / National Forensic Sciences University (NFSU)",
+    url: "https://epgp.inflibnet.ac.in/",
+    isFree: true,
+    estimatedHours: 26,
+    stream: "INTERDISCIPLINARY",
+    targetSkillName: "Physical Evidence Chain of Custody (BNSS/CrPC)",
+    format: "OFFICIAL_CURRICULUM",
+    description: "Crime scene photography, fingerprint dusting, biological trace collection, chain of custody protocol, and court-admissible forensic reporting.",
+    accreditedBy: "National Forensic Sciences University (NFSU) / UGC",
+  },
+
+  // --- 13. UNDECIDED (Diagnostic & Multi-Stream Exploration) ---
+  {
+    id: "res-und-001",
+    title: "NCERT Career Cards & Multi-Stream Exploration Toolkit",
+    provider: "NCERT / CIET (Central Institute of Educational Technology) & Swayam",
+    url: "https://swayam.gov.in/ncert",
+    isFree: true,
+    estimatedHours: 15,
+    stream: "UNDECIDED",
+    targetSkillName: "Structured Problem Solving & Systems Thinking",
+    format: "OFFICIAL_CURRICULUM",
+    description: "Official National Council of Educational Research and Training guidance framework for multi-stream diagnostic exploration across science, commerce, humanities, vocational, and creative pathways.",
+    accreditedBy: "NCERT / Ministry of Education, Govt. of India",
+  },
+  {
+    id: "res-und-002",
+    title: "National Career Service (NCS) Occupational Exploration Directory",
+    provider: "Ministry of Labour & Employment, Govt. of India & Swayam",
+    url: "https://swayam.gov.in/explorer?searchText=Career+Guidance",
+    isFree: true,
+    estimatedHours: 18,
+    stream: "UNDECIDED",
+    targetSkillName: "Cross-Disciplinary Articulation & Writing",
+    format: "DOCUMENTATION",
+    description: "Official National Classification of Occupations (NCO) repository providing sector-wise career briefs, entry qualifications, statutory councils, and realistic job roles across India.",
+    accreditedBy: "Ministry of Labour & Employment, Govt. of India",
+  },
+  {
+    id: "res-und-003",
+    title: "Foundational Problem Solving, Creativity and Design Thinking",
+    provider: "NITI Aayog / Atal Innovation Mission (AIM) & Swayam",
+    url: "https://swayam.gov.in/explorer?searchText=Design+Thinking",
+    isFree: true,
+    estimatedHours: 20,
+    stream: "UNDECIDED",
+    targetSkillName: "Qualitative User Research & Synthesis",
+    format: "INTERACTIVE_COURSE",
+    description: "Hands-on multidisciplinary problem framing, stakeholder empathy interviewing, root-cause tree diagrams, and iterative prototyping.",
+    accreditedBy: "NITI Aayog, Govt. of India",
+  },
+  {
+    id: "res-und-004",
+    title: "Critical Thinking, Logic & Quantitative Reasoning",
+    provider: "Swayam / CEC (Consortium for Educational Communication)",
+    url: "https://swayam.gov.in/explorer?searchText=Critical+Thinking",
+    isFree: true,
+    estimatedHours: 22,
+    stream: "UNDECIDED",
+    targetSkillName: "Data Fluency & Spreadsheet Analytics",
+    format: "INTERACTIVE_COURSE",
+    description: "Systematic cognitive bias mitigation, inductive/deductive reasoning, data-informed evidence evaluation, and structured decision matrix design.",
+    accreditedBy: "UGC / CEC",
+  },
 ];
 
 /**
- * Returns curated learning resources matching a stream, target skill, or career slug
+ * Returns curated learning resources matching a stream, target skill, or career slug.
+ * Enforces strict multi-stream isolation:
+ * - UNDECIDED students receive neutral career exploration resources (never arbitrary tech/PCM).
+ * - Stream-specific queries prioritize matching skills within that stream, then other stream resources.
+ * - Cross-stream fallback defaults to neutral exploration tools (UNDECIDED) rather than technical coding content.
  */
 export function getCuratedResourcesForCareer(
   stream: EducationalStream,
   targetSkillNames: string[] = []
 ): CuratedLearningResource[] {
+  // 1. Undecided students specifically receive neutral career exploration resources
+  if (stream === "UNDECIDED") {
+    const undecidedResources = CURATED_LEARNING_RESOURCES.filter(
+      (res) => res.stream === "UNDECIDED"
+    );
+    return undecidedResources.slice(0, 5);
+  }
+
   const normalizedTargets = targetSkillNames.map((s) => s.toLowerCase());
 
-  // Prioritize resources matching skills, then stream
+  // 2. Prioritize resources in the requested stream matching target skills
   const matchingSkills = CURATED_LEARNING_RESOURCES.filter(
     (res) =>
       res.stream === stream &&
@@ -307,11 +653,22 @@ export function getCuratedResourcesForCareer(
       )
   );
 
+  // 3. Complement with additional authentic resources from the exact same stream
   const matchingStream = CURATED_LEARNING_RESOURCES.filter(
     (res) => res.stream === stream && !matchingSkills.some((m) => m.id === res.id)
   );
 
-  const fallback = CURATED_LEARNING_RESOURCES.filter((res) => res.stream !== stream);
+  const streamMatches = [...matchingSkills, ...matchingStream];
 
-  return [...matchingSkills, ...matchingStream, ...fallback].slice(0, 5);
+  // If the stream has at least one resource, return up to 5 items from that stream
+  if (streamMatches.length > 0) {
+    return streamMatches.slice(0, 5);
+  }
+
+  // 4. Safe fallback: Neutral exploration resources, avoiding arbitrary STEM contamination
+  const neutralFallback = CURATED_LEARNING_RESOURCES.filter(
+    (res) => res.stream === "UNDECIDED"
+  );
+
+  return neutralFallback.slice(0, 5);
 }
