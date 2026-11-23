@@ -15,6 +15,7 @@
   - Cumulative safe changes packaged from Phase 1 through Phase 6B.
   - Zero credential leakage, zero environment secrets committed, zero private student data.
   - `src/repositories/career.repository.ts` fortified with dual-slug alias matching for full database and local catalog resilience.
+  - Resolved client-side Minified React error #31 in `/student/discover` by sanitizing structured AI explanation objects and fortifying multi-attribute salary range formatting (`getAiSummary`, `getEntrySalaryLakhs`, `getMedianSalaryLakhs`).
 - **2. Isolated Staging Database Architecture (Neon Serverless PostgreSQL):**
   - Neon Project: `KAABIL` (`icy-heart-79451826`)
   - Staging Branch: `staging` (`br-soft-shadow-bb2b75y5`), isolated schema-only branch derived from `production`.
@@ -30,12 +31,14 @@
   - Validated unique skills: 418.
   - Validated learning resources: 45 curated public resources, including all Law and Agriculture learning resources.
   - Undecided Student exploration resources: 100% neutral with zero STEM contamination.
-- **4. Vercel Preview Deployment Configuration:**
+- **4. Vercel Preview Deployment Configuration & Live Acceptance Verification:**
   - Vercel Project: `kaabil` (`kaabil3`)
   - Configured Preview-specific `DATABASE_URL` pointing to isolated staging Neon pooler (`ep-curly-flower-bbli77he-pooler...`).
   - Configured Preview-specific `DIRECT_URL` pointing to isolated staging Neon compute (`ep-curly-flower-bbli77he...`).
   - Production environment variables remain 100% untouched (`ep-bitter-pine...`).
-  - Automatic preview deployment triggered on release candidate branch push.
+  - Automated preview deployment triggered on release candidate branch push.
+  - Working Preview URL: `https://kaabil-git-release-v100-rc1-kaabil3.vercel.app/`
+  - All 6 user journeys verified live: All 13 Streams (PASSED), Registration & Login (PASSED), Undecided Discovery & Filtering (PASSED), Skill Gaps & Roadmap (PASSED), AI Mentor with Statutory Citations (PASSED), Mobile Viewport & Pixel-Art Aesthetic (PASSED).
 
 ---
 
