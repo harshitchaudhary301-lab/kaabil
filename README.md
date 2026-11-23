@@ -2,7 +2,7 @@
 
 > **Tagline:** Discover Your Skills. Define Your Future.  
 > **Brand Message:** Every Stream. Every Skill. Every Future.  
-> **Version:** Production v2.1 — Phase 1 Complete (Premium Landing Page Transformation, Original Career Ecosystem Hero, 8-Innovation Bento Grid, 13-Stream Explorer, Intelligence Loop & Product Showcase)  
+> **Version:** Release Candidate v1.0.0-rc1 (Universal 13-Stream Intelligence, Isolated Preview Deployment & Full Verification)  
 > **Market:** India (All 28 States & UTs)  
 > **Core Principle:** KAABIL is **NEVER** limited to engineering or technology. It is a universal ecosystem built from the ground up for **ALL 13 educational streams** from Class 8 onward to working professionals.
 

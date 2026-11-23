@@ -536,7 +536,7 @@ describe("Phase 5: Release QA — Section 2: All 13 Streams Parameterized Verifi
     expect(repCareer.slug).toBeDefined();
     expect(repCareer.avgStartingSalaryInr).toBeGreaterThan(0);
     expect(repCareer.keyEntranceExams.length).toBeGreaterThan(0);
-    expect(repCareer.sources.length).toBeGreaterThan(0);
+    expect(repCareer.sources?.length).toBeGreaterThan(0);
 
     // 3. Learning Resources
     const resources = getCuratedResourcesForCareer(stream, []);

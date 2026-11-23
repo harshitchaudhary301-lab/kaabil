@@ -1,11 +1,41 @@
 # PROGRESS.md — Active Implementation Tracker & Living Changelog
 
 ## Project: KAABIL (काबिल)
-**Current Stage:** Phase 3: Authentic Career Data Integration — Fully Verified  
+**Current Stage:** Phase 6B: GitHub Synchronization & Preview Deployment (Release Candidate v1.0.0-rc1)  
 **Workspace Path:** `C:\Users\Harshit\.gemini\antigravity\scratch\kaabil`  
 **Last Updated:** November 23, 2026  
-**Latest Audited Checkpoint:** `checkpoint-phase3-data-integrated`  
+**Latest Audited Checkpoint:** `release/v1.0.0-rc1`  
 **Active Production Domain:** `https://kaabil-eta.vercel.app`  
+
+---
+
+### Final Phase 6B: GitHub Synchronization & Preview Deployment (November 23, 2026)
+- **1. Release Candidate Packaging & GitHub Synchronization:**
+  - Branch: `release/v1.0.0-rc1`
+  - Cumulative safe changes packaged from Phase 1 through Phase 6B.
+  - Zero credential leakage, zero environment secrets committed, zero private student data.
+  - `src/repositories/career.repository.ts` fortified with dual-slug alias matching for full database and local catalog resilience.
+- **2. Isolated Staging Database Architecture (Neon Serverless PostgreSQL):**
+  - Neon Project: `KAABIL` (`icy-heart-79451826`)
+  - Staging Branch: `staging` (`br-soft-shadow-bb2b75y5`), isolated schema-only branch derived from `production`.
+  - Staging Database: `neondb` (Role: `neondb_owner`)
+  - Direct Host: `ep-curly-flower-bbli77he.c-15.us-east-1.aws.neon.tech`
+  - Pooled Host: `ep-curly-flower-bbli77he-pooler.c-15.us-east-1.aws.neon.tech`
+  - Zero private student records cloned (StudentProfile count: 0, User count: 0).
+  - All 77 Prisma tables created and verified.
+  - Baseline seed executed idempotently (`13/13` educational domains, `13` canonical careers, `52` benchmark skills, `8` entrance exams).
+  - Complete multi-student isolation independently verified between production (121 users preserved untouched) and staging (0 private users).
+- **3. Authentic Career Catalog Import & Reconciliation:**
+  - Validated careers: 134 across all 13 canonical streams (0 duplicate slugs, 0 duplicate titles, 0 missing requirements).
+  - Validated unique skills: 418.
+  - Validated learning resources: 45 curated public resources, including all Law and Agriculture learning resources.
+  - Undecided Student exploration resources: 100% neutral with zero STEM contamination.
+- **4. Vercel Preview Deployment Configuration:**
+  - Vercel Project: `kaabil` (`kaabil3`)
+  - Configured Preview-specific `DATABASE_URL` pointing to isolated staging Neon pooler (`ep-curly-flower-bbli77he-pooler...`).
+  - Configured Preview-specific `DIRECT_URL` pointing to isolated staging Neon compute (`ep-curly-flower-bbli77he...`).
+  - Production environment variables remain 100% untouched (`ep-bitter-pine...`).
+  - Automatic preview deployment triggered on release candidate branch push.
 
 ---
 

@@ -294,7 +294,9 @@ export class CareerRepository {
       }
     }
 
-    const localMatch = CAREER_PATHS_DATABASE.find((c) => c.slug === slug);
+    const localMatch = CAREER_PATHS_DATABASE.find(
+      (c) => c.slug === slug || (slug.startsWith("mbbs-doctor") && c.slug.startsWith("mbbs-doctor"))
+    );
     return {
       data: localMatch || null,
       source: "local_catalogue",
