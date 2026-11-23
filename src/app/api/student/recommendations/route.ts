@@ -221,6 +221,11 @@ export async function GET(req: NextRequest) {
             ...rec.breakdown,
           };
 
+          const aiExplanationSummary =
+            typeof aiResult.explanation === "string"
+              ? aiResult.explanation
+              : aiResult.explanation?.personalizedSummary || "";
+
           return {
             ...rec,
             score: rec.compatibilityScore,
@@ -228,8 +233,8 @@ export async function GET(req: NextRequest) {
             reasons: rec.explanationPoints && rec.explanationPoints.length > 0
               ? rec.explanationPoints
               : [rec.whySuited || `Well aligned with your chosen stream and academic preparation.`],
-            aiReasoning: aiResult.explanation,
-            aiExplanation: aiResult.explanation,
+            aiReasoning: aiExplanationSummary,
+            aiExplanation: aiExplanationSummary,
             aiProvider: aiResult.source === "gemini_ai" ? "GEMINI_2_FLASH" : "DETERMINISTIC_HYBRID",
           };
         }
@@ -260,6 +265,11 @@ export async function GET(req: NextRequest) {
           ...rec.breakdown,
         };
 
+        const deterministicSummary =
+          typeof deterministicExp === "string"
+            ? deterministicExp
+            : deterministicExp?.personalizedSummary || "";
+
         return {
           ...rec,
           score: rec.compatibilityScore,
@@ -267,8 +277,8 @@ export async function GET(req: NextRequest) {
           reasons: rec.explanationPoints && rec.explanationPoints.length > 0
             ? rec.explanationPoints
             : [rec.whySuited || `Well aligned with your chosen stream and academic preparation.`],
-          aiReasoning: deterministicExp,
-          aiExplanation: deterministicExp,
+          aiReasoning: deterministicSummary,
+          aiExplanation: deterministicSummary,
           aiProvider: "DETERMINISTIC_HYBRID",
         };
       })

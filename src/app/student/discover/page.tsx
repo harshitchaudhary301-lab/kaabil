@@ -41,9 +41,12 @@ interface Recommendation {
     slug: string;
     title: string;
     stream: string;
-    domain: string;
-    description: string;
-    salaryRange?: { entry: number; median: number; senior: number };
+    domain?: string;
+    domainName?: string;
+    description?: string;
+    overview?: string;
+    tagline?: string;
+    salaryRange?: { entry?: number; median?: number; senior?: number; min?: number; max?: number };
     avgStartingSalaryInr?: number;
     avgMidCareerSalaryInr?: number;
     growthOutlook: string;
@@ -51,7 +54,7 @@ interface Recommendation {
     regulatoryBody: string;
     verificationStatus: string;
     keyEntranceExams: string[];
-    skills: string[];
+    skills: string[] | { name?: string; title?: string }[];
     sources?: { name: string; url: string }[];
   };
   score?: number;
@@ -85,9 +88,41 @@ interface Recommendation {
   isInterdisciplinary?: boolean;
   dataSufficiency?: string;
   scoreDisclaimer?: string;
-  aiReasoning?: string;
-  aiExplanation?: string;
+  aiReasoning?: any;
+  aiExplanation?: any;
   aiProvider?: string;
+}
+
+function getAiSummary(rec: Recommendation): string {
+  const r = rec.aiReasoning;
+  if (typeof r === "string") return r;
+  if (r && typeof r === "object" && "personalizedSummary" in r) {
+    return String((r as any).personalizedSummary || "");
+  }
+  const e = rec.aiExplanation;
+  if (typeof e === "string") return e;
+  if (e && typeof e === "object" && "personalizedSummary" in e) {
+    return String((e as any).personalizedSummary || "");
+  }
+  return "";
+}
+
+function getEntrySalaryLakhs(career: Recommendation["career"]): string {
+  const entry =
+    career.salaryRange?.entry ??
+    (career.salaryRange as any)?.min ??
+    career.avgStartingSalaryInr ??
+    0;
+  return (entry / 100000).toFixed(1);
+}
+
+function getMedianSalaryLakhs(career: Recommendation["career"]): string {
+  const median =
+    career.salaryRange?.median ??
+    (career.salaryRange as any)?.max ??
+    career.avgMidCareerSalaryInr ??
+    0;
+  return (median / 100000).toFixed(1);
 }
 
 export default function StudentDiscoverPage() {
@@ -210,9 +245,11 @@ export default function StudentDiscoverPage() {
   // Backend already filters by stream before ranking; local filter only for search text.
   // Stream labels shown are those actually returned (may be a subset when stream param was set).
   const filteredRecommendations = recommendations.filter((rec) => {
+    const title = rec.career?.title || "";
+    const domain = rec.career?.domain || rec.career?.domainName || "";
     const matchesSearch =
-      rec.career.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      rec.career.domain.toLowerCase().includes(searchQuery.toLowerCase());
+      title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      domain.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesSearch;
   });
 
@@ -427,7 +464,7 @@ export default function StudentDiscoverPage() {
                               </Badge>
                             )}
                             <Badge variant="outline" className="text-[10px] text-primary border-primary/20 bg-primary/5">
-                              {rec.career.domain}
+                              {rec.career.domain || rec.career.domainName || rec.career.stream?.replace(/_/g, " ") || "General"}
                             </Badge>
                             <Badge
                               variant="secondary"
@@ -450,7 +487,7 @@ export default function StudentDiscoverPage() {
                             {rec.career.title}
                           </h3>
                           <p className="text-xs sm:text-sm text-text-secondary mt-1 leading-relaxed">
-                            {rec.career.description}
+                            {rec.career.description || rec.career.overview || rec.career.tagline || ""}
                           </p>
                         </div>
 
@@ -505,7 +542,7 @@ export default function StudentDiscoverPage() {
                               {(rec.reasons || rec.explanationPoints || [rec.whySuited]).map((reason, idx) => (
                                 <li key={idx} className="flex items-start gap-1.5">
                                   <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                                  <span>{reason}</span>
+                                  <span>{typeof reason === "string" ? reason : JSON.stringify(reason)}</span>
                                 </li>
                               ))}
                             </ul>
@@ -530,7 +567,7 @@ export default function StudentDiscoverPage() {
                         )}
 
                         {/* Layer 3 Generative AI / Explainability Banner */}
-                        {(rec.aiReasoning || rec.aiExplanation) && (
+                        {Boolean(getAiSummary(rec)) && (
                           <div className="p-3.5 rounded-xl bg-primary/5 border border-primary/20 space-y-1.5">
                             <div className="flex items-center justify-between">
                               <span className="text-[11px] font-bold text-primary flex items-center gap-1.5">
@@ -544,7 +581,7 @@ export default function StudentDiscoverPage() {
                               </span>
                             </div>
                             <p className="text-xs text-text-secondary leading-relaxed italic">
-                              &ldquo;{rec.aiReasoning || rec.aiExplanation}&rdquo;
+                              &ldquo;{getAiSummary(rec)}&rdquo;
                             </p>
                           </div>
                         )}
@@ -560,7 +597,7 @@ export default function StudentDiscoverPage() {
                               variant="outline"
                               className="text-[10px] bg-slate-50 text-text-secondary"
                             >
-                              {typeof skill === "string" ? skill : (skill as any).name}
+                              {typeof skill === "string" ? skill : (skill as any)?.name || (skill as any)?.title || String(skill)}
                             </Badge>
                           ))}
                         </div>
@@ -585,13 +622,13 @@ export default function StudentDiscoverPage() {
                           <div className="flex justify-between">
                             <span className="text-text-secondary">Entry Salary:</span>
                             <span className="font-semibold text-text-primary">
-                              ₹{(((rec.career.salaryRange?.entry ?? rec.career.avgStartingSalaryInr ?? 0)) / 100000).toFixed(1)} L/yr
+                              ₹{getEntrySalaryLakhs(rec.career)} L/yr
                             </span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-text-secondary">Median (5 Yrs):</span>
                             <span className="font-semibold text-emerald-700">
-                              ₹{(((rec.career.salaryRange?.median ?? rec.career.avgMidCareerSalaryInr ?? 0)) / 100000).toFixed(1)} L/yr
+                              ₹{getMedianSalaryLakhs(rec.career)} L/yr
                             </span>
                           </div>
                           <div className="flex justify-between">
